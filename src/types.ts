@@ -204,6 +204,7 @@ export type RemoteBackendTarget = {
   lastConnectedAtMs?: number | null;
 };
 export type ThemePreference = "system" | "light" | "dark" | "dim";
+export type AccentColor = "blue" | "green" | "purple" | "orange" | "pink" | "teal" | "red";
 export type PersonalityPreference = "friendly" | "pragmatic";
 export type FollowUpMessageBehavior = "queue" | "steer";
 export type ComposerSendIntent = "default" | "queue" | "steer";
@@ -267,6 +268,7 @@ export type AppSettings = {
   lastComposerReasoningEffort: string | null;
   uiScale: number;
   theme: ThemePreference;
+  accentColor: AccentColor;
   usageShowRemaining: boolean;
   showMessageFilePath: boolean;
   chatHistoryScrollbackItems: number | null;

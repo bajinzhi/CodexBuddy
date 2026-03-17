@@ -109,6 +109,7 @@ const baseSettings: AppSettings = {
   lastComposerReasoningEffort: null,
   uiScale: 1,
   theme: "system",
+  accentColor: "blue",
   usageShowRemaining: false,
   showMessageFilePath: true,
   chatHistoryScrollbackItems: 200,

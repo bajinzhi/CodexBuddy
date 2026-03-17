@@ -489,6 +489,8 @@ pub(crate) struct AppSettings {
     pub(crate) ui_scale: f64,
     #[serde(default = "default_theme", rename = "theme")]
     pub(crate) theme: String,
+    #[serde(default = "default_accent_color", rename = "accentColor")]
+    pub(crate) accent_color: String,
     #[serde(
         default = "default_usage_show_remaining",
         rename = "usageShowRemaining"
@@ -705,6 +707,10 @@ fn default_ui_scale() -> f64 {
 
 fn default_theme() -> String {
     "system".to_string()
+}
+
+fn default_accent_color() -> String {
+    "blue".to_string()
 }
 
 fn default_usage_show_remaining() -> bool {
@@ -1155,6 +1161,7 @@ impl Default for AppSettings {
             last_composer_reasoning_effort: None,
             ui_scale: 1.0,
             theme: default_theme(),
+            accent_color: default_accent_color(),
             usage_show_remaining: default_usage_show_remaining(),
             show_message_file_path: default_show_message_file_path(),
             chat_history_scrollback_items: default_chat_history_scrollback_items(),

@@ -21,6 +21,7 @@ import { isMobilePlatform } from "@utils/platformPaths";
 import { DEFAULT_COMMIT_MESSAGE_PROMPT } from "@utils/commitMessagePrompt";
 
 const allowedThemes = new Set(["system", "light", "dark", "dim"]);
+const allowedAccentColors = new Set(["blue", "green", "purple", "orange", "pink", "teal", "red"]);
 const allowedPersonality = new Set(["friendly", "pragmatic"]);
 const allowedFollowUpMessageBehavior = new Set(["queue", "steer"]);
 const DEFAULT_REMOTE_BACKEND_HOST = "127.0.0.1:4732";
@@ -167,6 +168,7 @@ function buildDefaultSettings(): AppSettings {
     lastComposerReasoningEffort: null,
     uiScale: UI_SCALE_DEFAULT,
     theme: "system",
+    accentColor: "blue",
     usageShowRemaining: false,
     showMessageFilePath: true,
     chatHistoryScrollbackItems: CHAT_SCROLLBACK_DEFAULT,
@@ -247,6 +249,7 @@ function normalizeAppSettings(settings: AppSettings): AppSettings {
     codexArgs: settings.codexArgs?.trim() ? settings.codexArgs.trim() : null,
     uiScale: clampUiScale(settings.uiScale),
     theme: allowedThemes.has(settings.theme) ? settings.theme : "system",
+    accentColor: allowedAccentColors.has(settings.accentColor) ? settings.accentColor : "blue",
     uiFontFamily: normalizeFontFamily(
       settings.uiFontFamily,
       DEFAULT_UI_FONT_FAMILY,

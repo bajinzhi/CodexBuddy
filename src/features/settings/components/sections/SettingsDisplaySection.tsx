@@ -1,5 +1,5 @@
 import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
-import type { AppSettings } from "@/types";
+import type { AccentColor, AppSettings } from "@/types";
 import {
   CODE_FONT_SIZE_MAX,
   CODE_FONT_SIZE_MIN,
@@ -21,6 +21,16 @@ import {
   SettingsToggleRow,
   SettingsToggleSwitch,
 } from "@/features/design-system/components/settings/SettingsPrimitives";
+
+const ACCENT_OPTIONS: { id: AccentColor; label: string; swatch: string }[] = [
+  { id: "blue", label: "Blue", swatch: "rgb(100, 200, 255)" },
+  { id: "green", label: "Green", swatch: "rgb(52, 211, 153)" },
+  { id: "purple", label: "Purple", swatch: "rgb(168, 130, 255)" },
+  { id: "orange", label: "Orange", swatch: "rgb(251, 191, 36)" },
+  { id: "pink", label: "Pink", swatch: "rgb(244, 114, 182)" },
+  { id: "teal", label: "Teal", swatch: "rgb(45, 212, 191)" },
+  { id: "red", label: "Red", swatch: "rgb(248, 113, 113)" },
+];
 
 type SettingsDisplaySectionProps = {
   appSettings: AppSettings;
@@ -187,6 +197,39 @@ export function SettingsDisplaySection({
           <option value="dark">Dark</option>
           <option value="dim">Dim</option>
         </select>
+      </div>
+      <div className="settings-field">
+        <label className="settings-field-label">Accent color</label>
+        <div className="settings-accent-swatches">
+          {ACCENT_OPTIONS.map(({ id, label, swatch }) => (
+            <button
+              key={id}
+              type="button"
+              className={`settings-accent-swatch${appSettings.accentColor === id ? " active" : ""}`}
+              style={{ "--swatch-color": swatch } as React.CSSProperties}
+              title={label}
+              aria-label={label}
+              onClick={() =>
+                void onUpdateAppSettings({
+                  ...appSettings,
+                  accentColor: id,
+                })
+              }
+            >
+              {appSettings.accentColor === id && (
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                  <path
+                    d="M2.5 6L5 8.5L9.5 3.5"
+                    stroke="currentColor"
+                    strokeWidth="1.6"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              )}
+            </button>
+          ))}
+        </div>
       </div>
       <SettingsToggleRow
         title="Show remaining Codex limits"

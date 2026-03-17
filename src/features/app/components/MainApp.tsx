@@ -1533,6 +1533,7 @@ export default function MainApp() {
     planPanelHeight,
     terminalPanelHeight,
     debugPanelHeight,
+    accentColor: appSettings.accentColor,
     appSettings,
   });
 

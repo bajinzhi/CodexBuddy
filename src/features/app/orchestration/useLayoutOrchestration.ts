@@ -1,5 +1,5 @@
 import { useMemo, type CSSProperties } from "react";
-import type { AppSettings } from "@/types";
+import type { AccentColor, AppSettings } from "@/types";
 import { isWindowsPlatform } from "@utils/platformPaths";
 
 type UseAppShellOrchestrationOptions = {
@@ -20,6 +20,7 @@ type UseAppShellOrchestrationOptions = {
   planPanelHeight: number;
   terminalPanelHeight: number;
   debugPanelHeight: number;
+  accentColor: AccentColor;
   appSettings: Pick<AppSettings, "uiFontFamily" | "codeFontFamily" | "codeFontSize">;
 };
 
@@ -41,19 +42,21 @@ export function useAppShellOrchestration({
   planPanelHeight,
   terminalPanelHeight,
   debugPanelHeight,
+  accentColor,
   appSettings,
 }: UseAppShellOrchestrationOptions) {
   const isWindows = isWindowsPlatform();
   const showGitDetail = Boolean(selectedDiffPath) && isPhone && centerMode === "diff";
   const isThreadOpen = Boolean(activeThreadId && showComposer);
 
+  const accentClass = accentColor !== "blue" ? ` accent-${accentColor}` : "";
   const appClassName = `app ${isCompact ? "layout-compact" : "layout-desktop"}${
     isPhone ? " layout-phone" : ""
   }${isTablet ? " layout-tablet" : ""}${
     shouldReduceTransparency ? " reduced-transparency" : ""
   }${!isCompact && sidebarCollapsed ? " sidebar-collapsed" : ""}${
     !isCompact && rightPanelCollapsed ? " right-panel-collapsed" : ""
-  }${isWindows ? " is-windows" : ""}`;
+  }${isWindows ? " is-windows" : ""}${accentClass}`;
 
   const appStyle = useMemo<CSSProperties>(
     () => ({

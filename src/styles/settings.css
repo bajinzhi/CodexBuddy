@@ -1300,3 +1300,35 @@
     background: var(--surface-topbar);
   }
 }
+
+/* ── Accent color swatches ───────────────────────────────── */
+
+.settings-accent-swatches {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.settings-accent-swatch {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  background: var(--swatch-color);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  padding: 0;
+  transition: border-color 120ms ease, transform 120ms ease;
+}
+
+.settings-accent-swatch:hover {
+  transform: scale(1.12);
+}
+
+.settings-accent-swatch.active {
+  border-color: var(--swatch-color);
+  box-shadow: 0 0 0 2px var(--surface-sidebar-opaque, #121212), 0 0 0 4px var(--swatch-color);
+}

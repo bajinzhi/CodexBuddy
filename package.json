@@ -1,7 +1,7 @@
 {
-  "name": "codex-monitor",
+  "name": "codex-buddy",
   "private": true,
-  "version": "0.7.63",
+  "version": "0.0.1",
   "type": "module",
   "scripts": {
     "sync:material-icons": "node scripts/sync-material-icons.mjs",
@@ -69,6 +69,7 @@
     "eslint-plugin-react": "^7.36.1",
     "eslint-plugin-react-hooks": "^4.6.2",
     "jsdom": "^27.0.1",
+    "sharp": "^0.34.5",
     "typescript": "~5.8.3",
     "vite": "^7.0.4",
     "vitest": "^3.2.4"

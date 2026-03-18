@@ -444,7 +444,7 @@ jobs:
           artifacts_dir = Path("release-artifacts")
 
           def release_url(filename):
-            return f"https://github.com/Dimillian/CodexMonitor/releases/download/v${VERSION}/{quote(filename)}"
+            return f"https://github.com/bajinzhi/CodexMonitor/releases/download/v${VERSION}/{quote(filename)}"
 
           platforms = {
             "darwin-aarch64": {

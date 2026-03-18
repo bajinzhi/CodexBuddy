@@ -19,7 +19,7 @@ const subscribeAppServerEventsMock = vi.mocked(subscribeAppServerEvents);
 
 const workspace: WorkspaceInfo = {
   id: "workspace-1",
-  name: "CodexMonitor",
+  name: "CodexBuddy",
   path: "/tmp/codex",
   connected: true,
   settings: { sidebarCollapsed: false },

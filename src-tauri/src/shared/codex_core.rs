@@ -711,7 +711,7 @@ pub(crate) async fn skills_list_core(
     let workspace_path = resolve_workspace_path_core(workspaces, &workspace_id).await?;
 
     // Codex can discover project-scoped skills from `<workspace>/.agents/skills`.
-    // Some environments don't surface those reliably in CodexMonitor unless we
+    // Some environments don't surface those reliably in CodexBuddy unless we
     // pass the default project skills path explicitly.
     let mut source_paths: Vec<String> = vec![];
     let project_skills_dir = Path::new(&workspace_path).join(".agents").join("skills");
@@ -864,7 +864,7 @@ mod tests {
 
     #[test]
     fn read_image_data_url_core_succeeds_with_file_uri_for_real_file() {
-        let dir = std::env::temp_dir().join("codex_monitor_test");
+        let dir = std::env::temp_dir().join("codex_buddy_test");
         std::fs::create_dir_all(&dir).unwrap();
         let img_path = dir.join("test_photo.png");
         let png_bytes: &[u8] = &[

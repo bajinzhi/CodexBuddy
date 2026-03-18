@@ -278,7 +278,7 @@ describe("Messages", () => {
 
   it("routes markdown href file paths through the file opener", () => {
     const linkedPath =
-      "/Users/dimillian/Documents/Dev/CodexMonitor/src/features/messages/components/Markdown.tsx:244";
+      "/Users/bajinzhi/Documents/Dev/CodexBuddy/src/features/messages/components/Markdown.tsx:244";
     const items: ConversationItem[] = [
       {
         id: "msg-file-href-link",
@@ -356,7 +356,7 @@ describe("Messages", () => {
 
   it("routes absolute href file paths with #L anchors through the file opener", () => {
     const linkedPath =
-      "/Users/dimillian/Documents/Dev/CodexMonitor/src/features/messages/components/Markdown.tsx#L244";
+      "/Users/bajinzhi/Documents/Dev/CodexBuddy/src/features/messages/components/Markdown.tsx#L244";
     const items: ConversationItem[] = [
       {
         id: "msg-file-href-anchor-link",
@@ -379,12 +379,12 @@ describe("Messages", () => {
 
     fireEvent.click(screen.getByText("this file"));
     expect(openFileLinkMock).toHaveBeenCalledWith(
-      "/Users/dimillian/Documents/Dev/CodexMonitor/src/features/messages/components/Markdown.tsx:244",
+      "/Users/bajinzhi/Documents/Dev/CodexBuddy/src/features/messages/components/Markdown.tsx:244",
     );
   });
 
   it("routes dotless workspace href file paths through the file opener", () => {
-    const linkedPath = "/workspace/CodexMonitor/LICENSE";
+    const linkedPath = "/workspace/CodexBuddy/LICENSE";
     const items: ConversationItem[] = [
       {
         id: "msg-file-href-workspace-dotless-link",
@@ -572,9 +572,9 @@ describe("Messages", () => {
   });
 
   it("renders absolute file references as workspace-relative paths", () => {
-    const workspacePath = "/Users/dimillian/Documents/Dev/CodexMonitor";
+    const workspacePath = "/Users/bajinzhi/Documents/Dev/CodexBuddy";
     const absolutePath =
-      "/Users/dimillian/Documents/Dev/CodexMonitor/src/features/messages/components/Markdown.tsx:244";
+      "/Users/bajinzhi/Documents/Dev/CodexBuddy/src/features/messages/components/Markdown.tsx:244";
     const items: ConversationItem[] = [
       {
         id: "msg-file-link-absolute-inside",
@@ -607,8 +607,8 @@ describe("Messages", () => {
   });
 
   it("renders absolute file references outside workspace using dotdot-relative paths", () => {
-    const workspacePath = "/Users/dimillian/Documents/Dev/CodexMonitor";
-    const absolutePath = "/Users/dimillian/Documents/Other/IceCubesApp/file.rs:123";
+    const workspacePath = "/Users/bajinzhi/Documents/Dev/CodexBuddy";
+    const absolutePath = "/Users/bajinzhi/Documents/Other/IceCubesApp/file.rs:123";
     const items: ConversationItem[] = [
       {
         id: "msg-file-link-absolute-outside",

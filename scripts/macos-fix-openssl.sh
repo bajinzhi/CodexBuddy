@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-app_path="${1:-src-tauri/target/release/bundle/macos/Codex Monitor.app}"
+app_path="${1:-src-tauri/target/release/bundle/macos/CodexBuddy.app}"
 identity="${CODESIGN_IDENTITY:-}"
 entitlements_path="${ENTITLEMENTS_PATH:-src-tauri/Entitlements.plist}"
 
@@ -44,11 +44,11 @@ fi
 libssl="${openssl_prefix}/lib/libssl.3.dylib"
 libcrypto="${openssl_prefix}/lib/libcrypto.3.dylib"
 frameworks_dir="${app_path}/Contents/Frameworks"
-bin_path="${app_path}/Contents/MacOS/codex-monitor"
-daemon_path="${app_path}/Contents/MacOS/codex_monitor_daemon"
-daemonctl_path="${app_path}/Contents/MacOS/codex_monitor_daemonctl"
-daemon_source="${DAEMON_BINARY_PATH:-src-tauri/target/release/codex_monitor_daemon}"
-daemonctl_source="${DAEMONCTL_BINARY_PATH:-src-tauri/target/release/codex_monitor_daemonctl}"
+bin_path="${app_path}/Contents/MacOS/codex-buddy"
+daemon_path="${app_path}/Contents/MacOS/codex_buddy_daemon"
+daemonctl_path="${app_path}/Contents/MacOS/codex_buddy_daemonctl"
+daemon_source="${DAEMON_BINARY_PATH:-src-tauri/target/release/codex_buddy_daemon}"
+daemonctl_source="${DAEMONCTL_BINARY_PATH:-src-tauri/target/release/codex_buddy_daemonctl}"
 
 copy_if_missing() {
   local source_path="$1"

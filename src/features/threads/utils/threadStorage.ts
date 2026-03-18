@@ -1,10 +1,10 @@
 import type { AccessMode, ServiceTier } from "@/types";
 
-const STORAGE_KEY_THREAD_ACTIVITY = "codexmonitor.threadLastUserActivity";
-export const STORAGE_KEY_PINNED_THREADS = "codexmonitor.pinnedThreads";
-export const STORAGE_KEY_CUSTOM_NAMES = "codexmonitor.threadCustomNames";
-export const STORAGE_KEY_THREAD_CODEX_PARAMS = "codexmonitor.threadCodexParams";
-export const STORAGE_KEY_DETACHED_REVIEW_LINKS = "codexmonitor.detachedReviewLinks";
+const STORAGE_KEY_THREAD_ACTIVITY = "codexbuddy.threadLastUserActivity";
+export const STORAGE_KEY_PINNED_THREADS = "codexbuddy.pinnedThreads";
+export const STORAGE_KEY_CUSTOM_NAMES = "codexbuddy.threadCustomNames";
+export const STORAGE_KEY_THREAD_CODEX_PARAMS = "codexbuddy.threadCodexParams";
+export const STORAGE_KEY_DETACHED_REVIEW_LINKS = "codexbuddy.detachedReviewLinks";
 export const MAX_PINS_SOFT_LIMIT = 5;
 
 export type ThreadActivityMap = Record<string, Record<string, number>>;

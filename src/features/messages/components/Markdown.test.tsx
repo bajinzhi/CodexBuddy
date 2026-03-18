@@ -96,15 +96,15 @@ describe("Markdown file-like href behavior", () => {
     const onOpenFileLink = vi.fn();
     render(
       <Markdown
-        value="See [license](/workspace/CodexMonitor/LICENSE)"
+        value="See [license](/workspace/CodexBuddy/LICENSE)"
         className="markdown"
-        workspacePath="/Users/sotiriskaniras/Documents/Development/Forks/CodexMonitor"
+        workspacePath="/Users/sotiriskaniras/Documents/Development/Forks/CodexBuddy"
         onOpenFileLink={onOpenFileLink}
       />,
     );
 
     const link = screen.getByText("license").closest("a");
-    expect(link?.getAttribute("href")).toBe("/workspace/CodexMonitor/LICENSE");
+    expect(link?.getAttribute("href")).toBe("/workspace/CodexBuddy/LICENSE");
 
     const clickEvent = createEvent.click(link as Element, {
       bubbles: true,
@@ -112,7 +112,7 @@ describe("Markdown file-like href behavior", () => {
     });
     fireEvent(link as Element, clickEvent);
     expect(clickEvent.defaultPrevented).toBe(true);
-    expect(onOpenFileLink).toHaveBeenCalledWith("/workspace/CodexMonitor/LICENSE");
+    expect(onOpenFileLink).toHaveBeenCalledWith("/workspace/CodexBuddy/LICENSE");
   });
 
   it("intercepts mounted workspace links outside the old root allowlist", () => {
@@ -121,7 +121,7 @@ describe("Markdown file-like href behavior", () => {
       <Markdown
         value="See [workflows](/workspace/.github/workflows)"
         className="markdown"
-        workspacePath="/Users/sotiriskaniras/Documents/Development/Forks/CodexMonitor"
+        workspacePath="/Users/sotiriskaniras/Documents/Development/Forks/CodexBuddy"
         onOpenFileLink={onOpenFileLink}
       />,
     );
@@ -144,7 +144,7 @@ describe("Markdown file-like href behavior", () => {
       <Markdown
         value="See [assets](/workspace/dist/assets)"
         className="markdown"
-        workspacePath="/Users/sotiriskaniras/Documents/Development/Forks/CodexMonitor"
+        workspacePath="/Users/sotiriskaniras/Documents/Development/Forks/CodexBuddy"
         onOpenFileLink={onOpenFileLink}
       />,
     );
@@ -167,7 +167,7 @@ describe("Markdown file-like href behavior", () => {
       <Markdown
         value="See [overview](/workspace/reviews/overview)"
         className="markdown"
-        workspacePath="/Users/sotiriskaniras/Documents/Development/Forks/CodexMonitor"
+        workspacePath="/Users/sotiriskaniras/Documents/Development/Forks/CodexBuddy"
         onOpenFileLink={onOpenFileLink}
       />,
     );
@@ -190,7 +190,7 @@ describe("Markdown file-like href behavior", () => {
       <Markdown
         value="See [overview](/workspaces/team/reviews/overview)"
         className="markdown"
-        workspacePath="/Users/sotiriskaniras/Documents/Development/Forks/CodexMonitor"
+        workspacePath="/Users/sotiriskaniras/Documents/Development/Forks/CodexBuddy"
         onOpenFileLink={onOpenFileLink}
       />,
     );
@@ -211,15 +211,15 @@ describe("Markdown file-like href behavior", () => {
     const onOpenFileLink = vi.fn();
     render(
       <Markdown
-        value="See [src](/workspaces/team/CodexMonitor/src)"
+        value="See [src](/workspaces/team/CodexBuddy/src)"
         className="markdown"
-        workspacePath="/Users/sotiriskaniras/Documents/Development/Forks/CodexMonitor"
+        workspacePath="/Users/sotiriskaniras/Documents/Development/Forks/CodexBuddy"
         onOpenFileLink={onOpenFileLink}
       />,
     );
 
     const link = screen.getByText("src").closest("a");
-    expect(link?.getAttribute("href")).toBe("/workspaces/team/CodexMonitor/src");
+    expect(link?.getAttribute("href")).toBe("/workspaces/team/CodexBuddy/src");
 
     const clickEvent = createEvent.click(link as Element, {
       bubbles: true,
@@ -227,7 +227,7 @@ describe("Markdown file-like href behavior", () => {
     });
     fireEvent(link as Element, clickEvent);
     expect(clickEvent.defaultPrevented).toBe(true);
-    expect(onOpenFileLink).toHaveBeenCalledWith("/workspaces/team/CodexMonitor/src");
+    expect(onOpenFileLink).toHaveBeenCalledWith("/workspaces/team/CodexBuddy/src");
   });
 
   it("intercepts file hrefs that use #L line anchors", () => {

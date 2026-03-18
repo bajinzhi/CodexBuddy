@@ -100,7 +100,7 @@ mod tests {
 
     #[test]
     fn write_read_workspaces_persists_sort_and_group() {
-        let temp_dir = std::env::temp_dir().join(format!("codex-monitor-test-{}", Uuid::new_v4()));
+        let temp_dir = std::env::temp_dir().join(format!("codex-buddy-test-{}", Uuid::new_v4()));
         std::fs::create_dir_all(&temp_dir).expect("create temp dir");
         let path = temp_dir.join("workspaces.json");
 
@@ -131,7 +131,7 @@ mod tests {
 
     #[test]
     fn read_settings_sanitizes_non_tcp_remote_provider() {
-        let temp_dir = std::env::temp_dir().join(format!("codex-monitor-test-{}", Uuid::new_v4()));
+        let temp_dir = std::env::temp_dir().join(format!("codex-buddy-test-{}", Uuid::new_v4()));
         std::fs::create_dir_all(&temp_dir).expect("create temp dir");
         let path = temp_dir.join("settings.json");
 
@@ -171,7 +171,7 @@ mod tests {
 
     #[test]
     fn read_settings_migrates_follow_up_behavior_from_legacy_steer_enabled_true() {
-        let temp_dir = std::env::temp_dir().join(format!("codex-monitor-test-{}", Uuid::new_v4()));
+        let temp_dir = std::env::temp_dir().join(format!("codex-buddy-test-{}", Uuid::new_v4()));
         std::fs::create_dir_all(&temp_dir).expect("create temp dir");
         let path = temp_dir.join("settings.json");
 
@@ -191,7 +191,7 @@ mod tests {
 
     #[test]
     fn read_settings_migrates_follow_up_behavior_from_legacy_steer_enabled_false() {
-        let temp_dir = std::env::temp_dir().join(format!("codex-monitor-test-{}", Uuid::new_v4()));
+        let temp_dir = std::env::temp_dir().join(format!("codex-buddy-test-{}", Uuid::new_v4()));
         std::fs::create_dir_all(&temp_dir).expect("create temp dir");
         let path = temp_dir.join("settings.json");
 
@@ -211,7 +211,7 @@ mod tests {
 
     #[test]
     fn read_settings_keeps_existing_follow_up_behavior() {
-        let temp_dir = std::env::temp_dir().join(format!("codex-monitor-test-{}", Uuid::new_v4()));
+        let temp_dir = std::env::temp_dir().join(format!("codex-buddy-test-{}", Uuid::new_v4()));
         std::fs::create_dir_all(&temp_dir).expect("create temp dir");
         let path = temp_dir.join("settings.json");
 

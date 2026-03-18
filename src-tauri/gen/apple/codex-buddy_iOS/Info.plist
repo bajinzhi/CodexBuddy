@@ -11,13 +11,13 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>Codex Monitor</string>
+	<string>CodexBuddy</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>0.7.63</string>
+	<string>0.0.1</string>
 	<key>CFBundleVersion</key>
-	<string>0.7.63</string>
+	<string>0.0.1</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>
@@ -45,7 +45,7 @@
 		<string>fetch</string>
 	</array>
 	<key>CFBundleDisplayName</key>
-	<string>Codex Monitor</string>
+	<string>CodexBuddy</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Allow access to the microphone for dictation.</string>
 </dict>

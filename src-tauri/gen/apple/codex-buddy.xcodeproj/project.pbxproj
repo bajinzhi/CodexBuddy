@@ -22,7 +22,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		022C9B9709B6E33626712962 /* codex-monitor_iOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = "codex-monitor_iOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		022C9B9709B6E33626712962 /* codex-buddy_iOS.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = "codex-buddy_iOS.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		08DA73A3B0441143BDAB249C /* mod.rs */ = {isa = PBXFileReference; path = mod.rs; sourceTree = "<group>"; };
 		08E90DC456838C95694EF8D8 /* app_server.rs */ = {isa = PBXFileReference; path = app_server.rs; sourceTree = "<group>"; };
 		0C5D9C058CAABA28654FB273 /* storage.rs */ = {isa = PBXFileReference; path = storage.rs; sourceTree = "<group>"; };
@@ -65,7 +65,7 @@
 		9D954D38686C4132856A59E4 /* tcp_transport.rs */ = {isa = PBXFileReference; path = tcp_transport.rs; sourceTree = "<group>"; };
 		9E58DB47DA7B47D628EADE5D /* args.rs */ = {isa = PBXFileReference; path = args.rs; sourceTree = "<group>"; };
 		9E5C2A555AC05BDC3564838B /* local_usage_core.rs */ = {isa = PBXFileReference; path = local_usage_core.rs; sourceTree = "<group>"; };
-		A35E6BC600DBB2FF9C6EABCD /* codex_monitor_daemon.rs */ = {isa = PBXFileReference; path = codex_monitor_daemon.rs; sourceTree = "<group>"; };
+		A35E6BC600DBB2FF9C6EABCD /* codex_buddy_daemon.rs */ = {isa = PBXFileReference; path = codex_buddy_daemon.rs; sourceTree = "<group>"; };
 		A677124A2706E5BF201E0FEB /* mod.rs */ = {isa = PBXFileReference; path = mod.rs; sourceTree = "<group>"; };
 		AA0D64CE30289CCE13E59F0F /* worktree_core.rs */ = {isa = PBXFileReference; path = worktree_core.rs; sourceTree = "<group>"; };
 		AE51BE7D07536FD61C56B291 /* WebKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebKit.framework; path = System/Library/Frameworks/WebKit.framework; sourceTree = SDKROOT; };
@@ -96,7 +96,7 @@
 		F21403CBF1CB75B77D6CD4D8 /* window.rs */ = {isa = PBXFileReference; path = window.rs; sourceTree = "<group>"; };
 		F232CF7BE0BAFB0DDA272197 /* menu.rs */ = {isa = PBXFileReference; path = menu.rs; sourceTree = "<group>"; };
 		F735BFAFC67E7F8010E2186A /* tests.rs */ = {isa = PBXFileReference; path = tests.rs; sourceTree = "<group>"; };
-		F7E7F50DDC0E32C36762F226 /* codex-monitor_iOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "codex-monitor_iOS.entitlements"; sourceTree = "<group>"; };
+		F7E7F50DDC0E32C36762F226 /* codex-buddy_iOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = "codex-buddy_iOS.entitlements"; sourceTree = "<group>"; };
 		FB7082DA519893791E84DA90 /* assets */ = {isa = PBXFileReference; lastKnownFileType = folder; path = assets; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
@@ -130,13 +130,13 @@
 			path = files;
 			sourceTree = "<group>";
 		};
-		01096FE16EA19E6A2C83F468 /* codex-monitor_iOS */ = {
+		01096FE16EA19E6A2C83F468 /* codex-buddy_iOS */ = {
 			isa = PBXGroup;
 			children = (
-				F7E7F50DDC0E32C36762F226 /* codex-monitor_iOS.entitlements */,
+				F7E7F50DDC0E32C36762F226 /* codex-buddy_iOS.entitlements */,
 				DF8059D941E42CC381E36993 /* Info.plist */,
 			);
-			path = "codex-monitor_iOS";
+			path = "codex-buddy_iOS";
 			sourceTree = "<group>";
 		};
 		1520D0382B1D17E080470F05 = {
@@ -145,7 +145,7 @@
 				FB7082DA519893791E84DA90 /* assets */,
 				3F381072CFEA46313C66A851 /* Assets.xcassets */,
 				DA6F8CA66C86156DDE024DBD /* LaunchScreen.storyboard */,
-				01096FE16EA19E6A2C83F468 /* codex-monitor_iOS */,
+				01096FE16EA19E6A2C83F468 /* codex-buddy_iOS */,
 				A47AFF5CADEC3443E0C5670C /* Externals */,
 				82525E4385E90833CF61C7A8 /* Sources */,
 				8B6C2150457718F38C7FCA0B /* src */,
@@ -228,7 +228,7 @@
 		74B7A9B5A8090991AAF921E0 /* bin */ = {
 			isa = PBXGroup;
 			children = (
-				A35E6BC600DBB2FF9C6EABCD /* codex_monitor_daemon.rs */,
+				A35E6BC600DBB2FF9C6EABCD /* codex_buddy_daemon.rs */,
 			);
 			path = bin;
 			sourceTree = "<group>";
@@ -236,7 +236,7 @@
 		82525E4385E90833CF61C7A8 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
-				BD87CFB69FD8CF92388BEE5D /* codex-monitor */,
+				BD87CFB69FD8CF92388BEE5D /* codex-buddy */,
 			);
 			path = Sources;
 			sourceTree = "<group>";
@@ -321,13 +321,13 @@
 			path = settings;
 			sourceTree = "<group>";
 		};
-		BD87CFB69FD8CF92388BEE5D /* codex-monitor */ = {
+		BD87CFB69FD8CF92388BEE5D /* codex-buddy */ = {
 			isa = PBXGroup;
 			children = (
 				8B631803A68708BDF5FC92AF /* main.mm */,
 				1C8CA1237FC96B6623A1D1E8 /* bindings */,
 			);
-			path = "codex-monitor";
+			path = "codex-buddy";
 			sourceTree = "<group>";
 		};
 		BF709576DB015EF813732D22 /* workspaces */ = {
@@ -348,7 +348,7 @@
 		C10744B9FE87EBD6824B6DCA /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				022C9B9709B6E33626712962 /* codex-monitor_iOS.app */,
+				022C9B9709B6E33626712962 /* codex-buddy_iOS.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -356,9 +356,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		09F7A9973F81CD1301FD1481 /* codex-monitor_iOS */ = {
+		09F7A9973F81CD1301FD1481 /* codex-buddy_iOS */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 4245402F66C53104E9663F2B /* Build configuration list for PBXNativeTarget "codex-monitor_iOS" */;
+			buildConfigurationList = 4245402F66C53104E9663F2B /* Build configuration list for PBXNativeTarget "codex-buddy_iOS" */;
 			buildPhases = (
 				3A3448A587D98E369778B54B /* Build Rust Code */,
 				77CD29A54DE8CA310796629E /* Sources */,
@@ -369,11 +369,11 @@
 			);
 			dependencies = (
 			);
-			name = "codex-monitor_iOS";
+			name = "codex-buddy_iOS";
 			packageProductDependencies = (
 			);
-			productName = "codex-monitor_iOS";
-			productReference = 022C9B9709B6E33626712962 /* codex-monitor_iOS.app */;
+			productName = "codex-buddy_iOS";
+			productReference = 022C9B9709B6E33626712962 /* codex-buddy_iOS.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -385,7 +385,7 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
 			};
-			buildConfigurationList = 4D2F35D5D2B53F099DB9297F /* Build configuration list for PBXProject "codex-monitor" */;
+			buildConfigurationList = 4D2F35D5D2B53F099DB9297F /* Build configuration list for PBXProject "codex-buddy" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -399,7 +399,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				09F7A9973F81CD1301FD1481 /* codex-monitor_iOS */,
+				09F7A9973F81CD1301FD1481 /* codex-buddy_iOS */,
 			);
 		};
 /* End PBXProject section */
@@ -461,7 +461,7 @@
 					arm64,
 				);
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = "codex-monitor_iOS/codex-monitor_iOS.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "codex-buddy_iOS/codex-buddy_iOS.entitlements";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				ENABLE_BITCODE = NO;
 				"EXCLUDED_ARCHS[sdk=iphoneos*]" = x86_64;
@@ -469,7 +469,7 @@
 					"$(inherited)",
 					"\".\"",
 				);
-				INFOPLIST_FILE = "codex-monitor_iOS/Info.plist";
+				INFOPLIST_FILE = "codex-buddy_iOS/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -481,8 +481,8 @@
 				);
 				"LIBRARY_SEARCH_PATHS[arch=arm64]" = "$(inherited) $(PROJECT_DIR)/Externals/arm64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(DT_TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME) $(DT_TOOLCHAIN_DIR)/usr/lib/swift-5.0/$(PLATFORM_NAME)";
 				"LIBRARY_SEARCH_PATHS[arch=x86_64]" = "$(inherited) $(PROJECT_DIR)/Externals/x86_64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(DT_TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME) $(DT_TOOLCHAIN_DIR)/usr/lib/swift-5.0/$(PLATFORM_NAME)";
-				PRODUCT_BUNDLE_IDENTIFIER = com.dimillian.codexmonitor.ios;
-				PRODUCT_NAME = "Codex Monitor";
+				PRODUCT_BUNDLE_IDENTIFIER = com.bajinzhi.codexbuddy.ios;
+				PRODUCT_NAME = "CodexBuddy";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALID_ARCHS = arm64;
@@ -498,7 +498,7 @@
 					arm64,
 				);
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_ENTITLEMENTS = "codex-monitor_iOS/codex-monitor_iOS.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "codex-buddy_iOS/codex-buddy_iOS.entitlements";
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				ENABLE_BITCODE = NO;
 				"EXCLUDED_ARCHS[sdk=iphoneos*]" = x86_64;
@@ -506,7 +506,7 @@
 					"$(inherited)",
 					"\".\"",
 				);
-				INFOPLIST_FILE = "codex-monitor_iOS/Info.plist";
+				INFOPLIST_FILE = "codex-buddy_iOS/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -518,8 +518,8 @@
 				);
 				"LIBRARY_SEARCH_PATHS[arch=arm64]" = "$(inherited) $(PROJECT_DIR)/Externals/arm64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(DT_TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME) $(DT_TOOLCHAIN_DIR)/usr/lib/swift-5.0/$(PLATFORM_NAME)";
 				"LIBRARY_SEARCH_PATHS[arch=x86_64]" = "$(inherited) $(PROJECT_DIR)/Externals/x86_64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(DT_TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME) $(DT_TOOLCHAIN_DIR)/usr/lib/swift-5.0/$(PLATFORM_NAME)";
-				PRODUCT_BUNDLE_IDENTIFIER = com.dimillian.codexmonitor.ios;
-				PRODUCT_NAME = "Codex Monitor";
+				PRODUCT_BUNDLE_IDENTIFIER = com.bajinzhi.codexbuddy.ios;
+				PRODUCT_NAME = "CodexBuddy";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALID_ARCHS = arm64;
@@ -649,7 +649,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		4245402F66C53104E9663F2B /* Build configuration list for PBXNativeTarget "codex-monitor_iOS" */ = {
+		4245402F66C53104E9663F2B /* Build configuration list for PBXNativeTarget "codex-buddy_iOS" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				8ABC0B8E4F1EE76167F9E08F /* debug */,
@@ -658,7 +658,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = debug;
 		};
-		4D2F35D5D2B53F099DB9297F /* Build configuration list for PBXProject "codex-monitor" */ = {
+		4D2F35D5D2B53F099DB9297F /* Build configuration list for PBXProject "codex-buddy" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				F9C2416A9640DD1FA341DC22 /* debug */,

@@ -15,7 +15,7 @@ mod file_ops;
 mod file_policy;
 #[path = "../git_utils.rs"]
 mod git_utils;
-#[path = "codex_monitor_daemon/rpc.rs"]
+#[path = "codex_buddy_daemon/rpc.rs"]
 mod rpc;
 #[path = "../rules.rs"]
 mod rules;
@@ -23,7 +23,7 @@ mod rules;
 mod shared;
 #[path = "../storage.rs"]
 mod storage;
-#[path = "codex_monitor_daemon/transport.rs"]
+#[path = "codex_buddy_daemon/transport.rs"]
 mod transport;
 #[allow(dead_code)]
 #[path = "../types.rs"]
@@ -94,7 +94,7 @@ use workspace_settings::apply_workspace_settings_update;
 
 const DEFAULT_LISTEN_ADDR: &str = "127.0.0.1:4732";
 const MAX_IN_FLIGHT_RPC_PER_CONNECTION: usize = 32;
-const DAEMON_NAME: &str = "codex-monitor-daemon";
+const DAEMON_NAME: &str = "codex-buddy-daemon";
 
 fn spawn_with_client(
     event_sink: DaemonEventSink,
@@ -1478,21 +1478,27 @@ fn default_data_dir() -> PathBuf {
     if let Ok(xdg) = env::var("XDG_DATA_HOME") {
         let trimmed = xdg.trim();
         if !trimmed.is_empty() {
-            return PathBuf::from(trimmed).join("codex-monitor-daemon");
+            return PathBuf::from(trimmed).join("codex-buddy-daemon");
         }
     }
     let home = env::var("HOME").unwrap_or_else(|_| ".".to_string());
     PathBuf::from(home)
         .join(".local")
         .join("share")
-        .join("codex-monitor-daemon")
+        .join("codex-buddy-daemon")
 }
 
 fn usage() -> String {
     format!(
         "\
-USAGE:\n  codex-monitor-daemon [--listen <addr>] [--data-dir <path>] [--token <token> | --insecure-no-auth]\n\n\
-OPTIONS:\n  --listen <addr>          Bind address (default: {DEFAULT_LISTEN_ADDR})\n  --data-dir <path>        Data dir holding workspaces.json/settings.json\n  --token <token>          Shared token required by TCP clients\n  --insecure-no-auth       Disable TCP auth (dev only)\n  -h, --help               Show this help\n"
+USAGE:\n  codex-buddy-daemon [--listen <addr>] [--data-dir <path>] [--token <token> | --insecure-no-auth]\n\n\
+OPTIONS:
+  --listen <addr>          Bind address (default: {DEFAULT_LISTEN_ADDR})
+  --data-dir <path>        Data dir holding workspaces.json/settings.json
+  --token <token>          Shared token required by TCP clients
+  --insecure-no-auth       Disable TCP auth (dev only)
+  -h, --help               Show this help
+"
     )
 }
 
@@ -1500,7 +1506,7 @@ fn parse_args() -> Result<DaemonConfig, String> {
     let mut listen = DEFAULT_LISTEN_ADDR
         .parse::<SocketAddr>()
         .map_err(|err| err.to_string())?;
-    let mut token = env::var("CODEX_MONITOR_DAEMON_TOKEN")
+    let mut token = env::var("CODEX_BUDDY_DAEMON_TOKEN")
         .ok()
         .map(|value| value.trim().to_string())
         .filter(|value| !value.is_empty());
@@ -1544,7 +1550,7 @@ fn parse_args() -> Result<DaemonConfig, String> {
 
     if token.is_none() && !insecure_no_auth {
         return Err(
-            "Missing --token (or set CODEX_MONITOR_DAEMON_TOKEN). Use --insecure-no-auth for local dev only."
+            "Missing --token (or set CODEX_BUDDY_DAEMON_TOKEN). Use --insecure-no-auth for local dev only."
                 .to_string(),
         );
     }
@@ -1588,7 +1594,7 @@ mod tests {
             .expect("time")
             .as_nanos();
         let dir = std::env::temp_dir().join(format!(
-            "codex-monitor-{prefix}-{}-{unique}",
+            "codex-buddy-{prefix}-{}-{unique}",
             std::process::id()
         ));
         std::fs::create_dir_all(&dir).expect("create temp dir");
@@ -1606,7 +1612,7 @@ mod tests {
             app_settings: Mutex::new(AppSettings::default()),
             event_sink: DaemonEventSink { tx },
             codex_login_cancels: Mutex::new(HashMap::new()),
-            daemon_binary_path: Some("/tmp/codex-monitor-daemon".to_string()),
+            daemon_binary_path: Some("/tmp/codex-buddy-daemon".to_string()),
         }
     }
 
@@ -1932,7 +1938,7 @@ fn main() {
             }
         };
         eprintln!(
-            "codex-monitor-daemon listening on {} (data dir: {})",
+            "codex-buddy-daemon listening on {} (data dir: {})",
             config.listen,
             state
                 .storage_path

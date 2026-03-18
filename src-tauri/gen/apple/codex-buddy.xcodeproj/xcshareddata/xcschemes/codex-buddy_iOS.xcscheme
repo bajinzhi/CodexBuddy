@@ -15,9 +15,9 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "09F7A9973F81CD1301FD1481"
-               BuildableName = "Codex Monitor.app"
-               BlueprintName = "codex-monitor_iOS"
-               ReferencedContainer = "container:codex-monitor.xcodeproj">
+               BuildableName = "CodexBuddy.app"
+               BlueprintName = "codex-buddy_iOS"
+               ReferencedContainer = "container:codex-buddy.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -31,9 +31,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "09F7A9973F81CD1301FD1481"
-            BuildableName = "Codex Monitor.app"
-            BlueprintName = "codex-monitor_iOS"
-            ReferencedContainer = "container:codex-monitor.xcodeproj">
+            BuildableName = "CodexBuddy.app"
+            BlueprintName = "codex-buddy_iOS"
+            ReferencedContainer = "container:codex-buddy.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
       <EnvironmentVariables>
@@ -66,9 +66,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "09F7A9973F81CD1301FD1481"
-            BuildableName = "Codex Monitor.app"
-            BlueprintName = "codex-monitor_iOS"
-            ReferencedContainer = "container:codex-monitor.xcodeproj">
+            BuildableName = "CodexBuddy.app"
+            BlueprintName = "codex-buddy_iOS"
+            ReferencedContainer = "container:codex-buddy.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
       <EnvironmentVariables>
@@ -95,9 +95,9 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "09F7A9973F81CD1301FD1481"
-            BuildableName = "Codex Monitor.app"
-            BlueprintName = "codex-monitor_iOS"
-            ReferencedContainer = "container:codex-monitor.xcodeproj">
+            BuildableName = "CodexBuddy.app"
+            BlueprintName = "codex-buddy_iOS"
+            ReferencedContainer = "container:codex-buddy.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
       <EnvironmentVariables>

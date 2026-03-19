@@ -7,6 +7,7 @@ import { Composer } from "./Composer";
 import type {
   AppOption,
   AppMention,
+  ComposerQuickCommand,
   ComposerSendIntent,
   FollowUpMessageBehavior,
 } from "../../../types";
@@ -41,6 +42,7 @@ type HarnessProps = {
   followUpMessageBehavior?: FollowUpMessageBehavior;
   steerAvailable?: boolean;
   selectedServiceTier?: "fast" | "flex" | null;
+  quickCommands?: ComposerQuickCommand[];
 };
 
 function ComposerHarness({
@@ -50,6 +52,7 @@ function ComposerHarness({
   followUpMessageBehavior = "queue",
   steerAvailable = false,
   selectedServiceTier = null,
+  quickCommands = [],
 }: HarnessProps) {
   const [draftText, setDraftText] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -85,6 +88,7 @@ function ComposerHarness({
       onDraftChange={setDraftText}
       textareaRef={textareaRef}
       dictationEnabled={false}
+      quickCommands={quickCommands}
     />
   );
 }
@@ -125,6 +129,38 @@ describe("Composer send triggers", () => {
     render(<ComposerHarness onSend={onSend} selectedServiceTier="fast" />);
 
     expect(screen.getByLabelText("Fast mode enabled")).toBeTruthy();
+  });
+
+  it("hides the quick commands button when the composer does not support it", () => {
+    const onSend = vi.fn();
+    render(<ComposerHarness onSend={onSend} />);
+
+    expect(screen.queryByLabelText("Quick commands")).toBeNull();
+  });
+
+  it("inserts a quick command into the composer at the cursor", () => {
+    const onSend = vi.fn();
+    render(
+      <ComposerHarness
+        onSend={onSend}
+        quickCommands={[
+          {
+            id: "quick-1",
+            label: "Bug triage",
+            text: "Summarize the issue, identify root cause, and suggest a fix.",
+          },
+        ]}
+      />,
+    );
+
+    const textarea = screen.getByRole("textbox") as HTMLTextAreaElement;
+    fireEvent.change(textarea, { target: { value: "Start: " } });
+    textarea.setSelectionRange(7, 7);
+
+    fireEvent.click(screen.getByLabelText("Quick commands"));
+    fireEvent.click(screen.getByRole("button", { name: /Bug triage/i }));
+
+    expect(textarea.value).toBe("Start: Summarize the issue, identify root cause, and suggest a fix.");
   });
 
   it("blurs the textarea after Enter send on mobile", () => {

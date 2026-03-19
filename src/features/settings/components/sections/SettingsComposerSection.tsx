@@ -1,32 +1,48 @@
 import type { AppSettings } from "@/types";
+import Trash2 from "lucide-react/dist/esm/icons/trash-2";
 import { useTranslation } from "react-i18next";
 import {
   SettingsSection,
   SettingsToggleRow,
   SettingsToggleSwitch,
 } from "@/features/design-system/components/settings/SettingsPrimitives";
+import { getQuickCommandLabel } from "@/utils/quickCommands";
 
 type ComposerPreset = AppSettings["composerEditorPreset"];
 
 type SettingsComposerSectionProps = {
   appSettings: AppSettings;
+  quickCommandDrafts: AppSettings["quickCommands"];
   optionKeyLabel: string;
   followUpShortcutLabel: string;
   composerPresetLabels: Record<ComposerPreset, string>;
   onComposerPresetChange: (preset: ComposerPreset) => void;
+  onQuickCommandDraftChange: (
+    id: string,
+    updates: Partial<AppSettings["quickCommands"][number]>,
+  ) => void;
+  onCommitQuickCommands: () => void;
+  onAddQuickCommand: () => void;
+  onDeleteQuickCommand: (id: string) => void;
   onUpdateAppSettings: (next: AppSettings) => Promise<void>;
 };
 
 export function SettingsComposerSection({
   appSettings,
+  quickCommandDrafts,
   optionKeyLabel,
   followUpShortcutLabel,
   composerPresetLabels,
   onComposerPresetChange,
+  onQuickCommandDraftChange,
+  onCommitQuickCommands,
+  onAddQuickCommand,
+  onDeleteQuickCommand,
   onUpdateAppSettings,
 }: SettingsComposerSectionProps) {
   const { t } = useTranslation(["settings", "common"]);
   const steerUnavailable = !appSettings.steerEnabled;
+
   return (
     <SettingsSection
       title={t("composer.title")}
@@ -106,6 +122,74 @@ export function SettingsComposerSection({
         {steerUnavailable && (
           <div className="settings-help">{t("composer.steerUnavailableHelp")}</div>
         )}
+      </div>
+      <div className="settings-divider" />
+      <div className="settings-subsection-title">{t("composer.quickCommandsTitle")}</div>
+      <div className="settings-subsection-subtitle">
+        {t("composer.quickCommandsSubtitle")}
+      </div>
+      <div className="settings-field">
+        {quickCommandDrafts.length > 0 ? (
+          <div className="settings-quick-command-list">
+            {quickCommandDrafts.map((command) => (
+              <div key={command.id} className="settings-quick-command-row">
+                <div className="settings-quick-command-fields">
+                  <input
+                    className="settings-input settings-input--compact"
+                    value={command.label}
+                    placeholder={getQuickCommandLabel(
+                      command,
+                      t("composer.quickCommandsUntitled"),
+                    )}
+                    onChange={(event) =>
+                      onQuickCommandDraftChange(command.id, {
+                        label: event.target.value,
+                      })
+                    }
+                    onBlur={onCommitQuickCommands}
+                    aria-label={t("composer.quickCommandsLabelAria")}
+                  />
+                  <textarea
+                    className="settings-agents-textarea settings-agents-textarea--compact"
+                    value={command.text}
+                    placeholder={t("composer.quickCommandsTextPlaceholder")}
+                    onChange={(event) =>
+                      onQuickCommandDraftChange(command.id, {
+                        text: event.target.value,
+                      })
+                    }
+                    onBlur={onCommitQuickCommands}
+                    rows={3}
+                    aria-label={t("composer.quickCommandsTextAria")}
+                  />
+                </div>
+                <button
+                  type="button"
+                  className="ghost icon-button"
+                  onClick={() => onDeleteQuickCommand(command.id)}
+                  aria-label={t("composer.quickCommandsDelete")}
+                  title={t("composer.quickCommandsDelete")}
+                >
+                  <Trash2 aria-hidden />
+                </button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="settings-empty">{t("composer.quickCommandsEmpty")}</div>
+        )}
+        <div className="settings-field-actions">
+          <button
+            type="button"
+            className="ghost settings-button-compact"
+            onClick={onAddQuickCommand}
+          >
+            {t("composer.quickCommandsAdd")}
+          </button>
+        </div>
+        <div className="settings-help">
+          {t("composer.quickCommandsHelp")}
+        </div>
       </div>
       <div className="settings-divider" />
       <div className="settings-subsection-title">{t("composer.presetsTitle")}</div>

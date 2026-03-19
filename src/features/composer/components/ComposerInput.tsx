@@ -23,11 +23,14 @@ import ScrollText from "lucide-react/dist/esm/icons/scroll-text";
 import Wrench from "lucide-react/dist/esm/icons/wrench";
 import FileText from "lucide-react/dist/esm/icons/file-text";
 import Plug from "lucide-react/dist/esm/icons/plug";
+import type { ComposerQuickCommand } from "../../../types";
+import { getQuickCommandLabel, isQuickCommandUsable } from "../../../utils/quickCommands";
 import { useComposerImageDrop } from "../hooks/useComposerImageDrop";
 import {
   PopoverMenuItem,
   PopoverSurface,
 } from "../../design-system/components/popover/PopoverPrimitives";
+import { useMenuController } from "../../app/hooks/useMenuController";
 import { ComposerAttachments } from "./ComposerAttachments";
 import { DictationWaveform } from "../../dictation/components/DictationWaveform";
 import { ReviewInlinePrompt } from "./ReviewInlinePrompt";
@@ -53,6 +56,9 @@ type ComposerInputProps = {
   onDismissDictationError?: () => void;
   dictationHint?: string | null;
   onDismissDictationHint?: () => void;
+  quickCommands?: ComposerQuickCommand[];
+  onApplyQuickCommand?: (commandText: string) => void;
+  onOpenQuickCommandsSettings?: () => void;
   attachments?: string[];
   onAddAttachment?: () => void;
   onAttachImages?: (paths: string[]) => void;
@@ -156,6 +162,9 @@ export function ComposerInput({
   onDismissDictationError,
   dictationHint = null,
   onDismissDictationHint,
+  quickCommands = [],
+  onApplyQuickCommand,
+  onOpenQuickCommandsSettings,
   attachments = [],
   onAddAttachment,
   onAttachImages,
@@ -198,6 +207,15 @@ export function ComposerInput({
   const [mobileActionsOpen, setMobileActionsOpen] = useState(false);
   const [isPhoneLayout, setIsPhoneLayout] = useState(false);
   const [isPhoneTallInput, setIsPhoneTallInput] = useState(false);
+  const {
+    isOpen: quickCommandsOpen,
+    containerRef: quickCommandsRef,
+    close: closeQuickCommands,
+    toggle: toggleQuickCommands,
+  } = useMenuController();
+  const usableQuickCommands = quickCommands.filter(isQuickCommandUsable);
+  const showQuickCommands =
+    usableQuickCommands.length > 0 || Boolean(onOpenQuickCommandsSettings);
   const reviewPromptOpen = Boolean(reviewPrompt);
   const {
     dropTargetRef,
@@ -326,6 +344,18 @@ export function ComposerInput({
     }
   }, [disabled, mobileActionsOpen]);
 
+  useEffect(() => {
+    if (disabled && quickCommandsOpen) {
+      closeQuickCommands();
+    }
+  }, [closeQuickCommands, disabled, quickCommandsOpen]);
+
+  useEffect(() => {
+    if (!showQuickCommands && quickCommandsOpen) {
+      closeQuickCommands();
+    }
+  }, [closeQuickCommands, quickCommandsOpen, showQuickCommands]);
+
   const handleActionClick = useCallback(() => {
     if (canStop) {
       onStop();
@@ -429,6 +459,22 @@ export function ComposerInput({
     setMobileActionsOpen(false);
     handleMicClick();
   }, [handleMicClick]);
+
+  const handleQuickCommandClick = useCallback(
+    (command: ComposerQuickCommand) => {
+      if (disabled || !onApplyQuickCommand) {
+        return;
+      }
+      closeQuickCommands();
+      onApplyQuickCommand(command.text);
+    },
+    [closeQuickCommands, disabled, onApplyQuickCommand],
+  );
+
+  const handleOpenQuickCommandsSettings = useCallback(() => {
+    closeQuickCommands();
+    onOpenQuickCommandsSettings?.();
+  }, [closeQuickCommands, onOpenQuickCommandsSettings]);
 
   return (
     <div className={`composer-input${isPhoneLayout && isPhoneTallInput ? " is-phone-tall" : ""}`}>
@@ -703,6 +749,60 @@ export function ComposerInput({
         >
           {isExpanded ? <ChevronDown aria-hidden /> : <ChevronUp aria-hidden />}
         </button>
+      )}
+      {showQuickCommands && (
+        <div className="composer-quick-commands" ref={quickCommandsRef}>
+          <button
+            className={`composer-action composer-action--quick${
+              quickCommandsOpen ? " is-active" : ""
+            }`}
+            onClick={toggleQuickCommands}
+            disabled={disabled}
+            aria-expanded={quickCommandsOpen}
+            aria-haspopup="dialog"
+            aria-label="Quick commands"
+            title="Quick commands"
+          >
+            <ScrollText aria-hidden />
+          </button>
+          {quickCommandsOpen && (
+            <PopoverSurface className="composer-quick-commands-popover" role="dialog">
+              <div className="composer-quick-commands-title">Quick commands</div>
+              {usableQuickCommands.length > 0 ? (
+                <div className="composer-quick-commands-list">
+                  {usableQuickCommands.map((command) => (
+                    <button
+                      key={command.id}
+                      type="button"
+                      className="composer-quick-commands-item"
+                      onClick={() => handleQuickCommandClick(command)}
+                    >
+                      <span className="composer-quick-commands-item-label">
+                        {getQuickCommandLabel(command)}
+                      </span>
+                      <span className="composer-quick-commands-item-preview">
+                        {command.text.trim()}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="composer-quick-commands-empty">
+                  No quick commands yet. Add them in Composer settings.
+                </div>
+              )}
+              {onOpenQuickCommandsSettings && (
+                <button
+                  type="button"
+                  className="ghost composer-quick-commands-manage"
+                  onClick={handleOpenQuickCommandsSettings}
+                >
+                  Manage quick commands
+                </button>
+              )}
+            </PopoverSurface>
+          )}
+        </div>
       )}
       <button
         className={`composer-action composer-action--mic${

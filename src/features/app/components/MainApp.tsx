@@ -1707,6 +1707,7 @@ export default function MainApp() {
       experimentalAppsEnabled: appSettings.experimentalAppsEnabled,
       followUpMessageBehavior: appSettings.followUpMessageBehavior,
       composerFollowUpHintEnabled: appSettings.composerFollowUpHintEnabled,
+      quickCommands: appSettings.quickCommands,
       dictationEnabled: appSettings.dictationEnabled,
       splitChatDiffView: appSettings.splitChatDiffView,
       gitDiffIgnoreWhitespaceChanges:
@@ -1805,6 +1806,7 @@ export default function MainApp() {
       dictationError,
       dictationHint,
     },
+    openComposerSettings: () => modalActions.openSettings("composer"),
     openAppIconById,
     openInitGitRepoPrompt: modalActions.openInitGitRepoPrompt,
     startUncommittedReview,

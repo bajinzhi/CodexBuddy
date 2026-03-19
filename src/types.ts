@@ -227,6 +227,12 @@ export type ComposerEditorSettings = {
   continueListOnShiftEnter: boolean;
 };
 
+export type ComposerQuickCommand = {
+  id: string;
+  label: string;
+  text: string;
+};
+
 export type OpenAppTarget = {
   id: string;
   label: string;
@@ -315,6 +321,7 @@ export type AppSettings = {
   composerFenceAutoWrapPasteCodeLike: boolean;
   composerListContinuation: boolean;
   composerCodeBlockCopyUseModifier: boolean;
+  quickCommands: ComposerQuickCommand[];
   workspaceGroups: WorkspaceGroup[];
   globalWorktreesFolder: string | null;
   openAppTargets: OpenAppTarget[];

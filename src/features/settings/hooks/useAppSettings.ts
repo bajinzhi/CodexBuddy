@@ -25,6 +25,7 @@ import {
   persistUiLanguagePreference,
 } from "@/i18n/preferences";
 import { normalizeCommonLinks } from "@settings/components/settingsViewHelpers";
+import { normalizeQuickCommands } from "@utils/quickCommands";
 
 const allowedUiLanguages = new Set(["system", "en", "zh-CN"]);
 const allowedThemes = new Set(["system", "light", "dark", "dim"]);
@@ -214,6 +215,7 @@ function buildDefaultSettings(): AppSettings {
     composerFenceAutoWrapPasteCodeLike: false,
     composerListContinuation: false,
     composerCodeBlockCopyUseModifier: false,
+    quickCommands: [],
     workspaceGroups: [],
     openAppTargets: DEFAULT_OPEN_APP_TARGETS,
     selectedOpenAppId: DEFAULT_OPEN_APP_ID,
@@ -292,6 +294,7 @@ function normalizeAppSettings(settings: AppSettings): AppSettings {
       settings.reviewDeliveryMode === "detached" ? "detached" : "inline",
     chatHistoryScrollbackItems,
     commitMessagePrompt,
+    quickCommands: normalizeQuickCommands(settings.quickCommands),
     openAppTargets: normalizedTargets,
     selectedOpenAppId,
     commonLinks: normalizedCommonLinks,

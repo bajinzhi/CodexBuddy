@@ -9,6 +9,7 @@ import type {
 } from "@/types";
 import { isMacPlatform, isWindowsPlatform } from "@utils/platformPaths";
 import { useSettingsOpenAppDrafts } from "./useSettingsOpenAppDrafts";
+import { useSettingsQuickCommandDrafts } from "./useSettingsQuickCommandDrafts";
 import { useSettingsShortcutDrafts } from "./useSettingsShortcutDrafts";
 import { useSettingsCommonLinksDrafts } from "./useSettingsCommonLinksDrafts";
 import { useSettingsCodexSection } from "./useSettingsCodexSection";
@@ -133,6 +134,17 @@ export function useSettingsViewOrchestration({
   const dictationReady = dictationModelStatus?.state === "ready";
 
   const {
+    quickCommandDrafts,
+    handleQuickCommandDraftChange,
+    handleCommitQuickCommandDrafts,
+    handleAddQuickCommand,
+    handleDeleteQuickCommand,
+  } = useSettingsQuickCommandDrafts({
+    appSettings,
+    onUpdateAppSettings,
+  });
+
+  const {
     openAppDrafts,
     openAppSelectedId,
     handleOpenAppDraftChange,
@@ -235,6 +247,7 @@ export function useSettingsViewOrchestration({
     displaySectionProps,
     composerSectionProps: {
       appSettings,
+      quickCommandDrafts,
       optionKeyLabel,
       followUpShortcutLabel,
       composerPresetLabels: COMPOSER_PRESET_LABELS,
@@ -248,6 +261,10 @@ export function useSettingsViewOrchestration({
           ...config,
         });
       },
+      onQuickCommandDraftChange: handleQuickCommandDraftChange,
+      onCommitQuickCommands: handleCommitQuickCommandDrafts,
+      onAddQuickCommand: handleAddQuickCommand,
+      onDeleteQuickCommand: handleDeleteQuickCommand,
       onUpdateAppSettings,
     },
     dictationSectionProps: {

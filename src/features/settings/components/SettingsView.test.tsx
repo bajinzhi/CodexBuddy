@@ -151,6 +151,7 @@ const baseSettings: AppSettings = {
   composerFenceAutoWrapPasteCodeLike: false,
   composerListContinuation: false,
   composerCodeBlockCopyUseModifier: false,
+  quickCommands: [],
   workspaceGroups: [],
   openAppTargets: [
     {

@@ -1411,3 +1411,19 @@
   border-color: var(--swatch-color);
   box-shadow: 0 0 0 2px var(--surface-sidebar-opaque, #121212), 0 0 0 4px var(--swatch-color);
 }
+.settings-quick-command-list {
+  display: grid;
+  gap: 12px;
+}
+
+.settings-quick-command-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+}
+
+.settings-quick-command-fields {
+  display: grid;
+  gap: 8px;
+}

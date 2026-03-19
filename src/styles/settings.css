@@ -968,6 +968,85 @@
   gap: 10px;
 }
 
+.settings-common-links {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.settings-common-link-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px solid var(--border-muted);
+  background: var(--surface-card);
+  flex-wrap: wrap;
+}
+
+.settings-common-link-row.is-incomplete {
+  border-color: color-mix(in srgb, var(--status-error) 45%, var(--border-muted));
+}
+
+.settings-common-link-fields {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.settings-common-link-field {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+}
+
+.settings-common-link-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
+.settings-common-link-status {
+  font-size: 11px;
+  color: var(--status-error);
+  padding: 2px 6px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--status-error) 40%, transparent);
+  background: color-mix(in srgb, var(--status-error) 12%, transparent);
+}
+
+.settings-common-link-input[data-invalid] {
+  border-color: color-mix(in srgb, var(--status-error) 60%, var(--border-muted));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--status-error) 25%, transparent);
+}
+
+.settings-common-link-order {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.settings-common-link-input--label {
+  width: 160px;
+}
+
+.settings-common-link-input--url {
+  width: 280px;
+  max-width: 100%;
+}
+
+.settings-common-link-footer {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
 .settings-open-apps {
   display: flex;
   flex-direction: column;

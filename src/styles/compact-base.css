@@ -43,6 +43,10 @@
   bottom: calc(100% + 8px);
 }
 
+.app.layout-compact .sidebar-common-links-popover {
+  bottom: calc(100% + 8px);
+}
+
 .compact-topbar {
   padding: 10px 16px 8px;
 }

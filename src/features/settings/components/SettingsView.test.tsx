@@ -163,6 +163,7 @@ const baseSettings: AppSettings = {
     },
   ],
   selectedOpenAppId: "vscode",
+  commonLinks: [],
   globalWorktreesFolder: null,
 };
 
@@ -399,6 +400,50 @@ const renderFeaturesSection = (
     onCancelDictationDownload: vi.fn(),
     onRemoveDictationModel: vi.fn(),
     initialSection: "features",
+  };
+
+  render(<SettingsView {...props} />);
+  return { onUpdateAppSettings };
+};
+
+const renderCommonLinksSection = (
+  options: {
+    appSettings?: Partial<AppSettings>;
+    onUpdateAppSettings?: ComponentProps<typeof SettingsView>["onUpdateAppSettings"];
+  } = {},
+) => {
+  cleanup();
+  const onUpdateAppSettings =
+    options.onUpdateAppSettings ?? vi.fn().mockResolvedValue(undefined);
+
+  const props: ComponentProps<typeof SettingsView> = {
+    reduceTransparency: false,
+    onToggleTransparency: vi.fn(),
+    appSettings: { ...baseSettings, ...options.appSettings },
+    openAppIconById: {},
+    onUpdateAppSettings,
+    workspaceGroups: [],
+    groupedWorkspaces: [],
+    ungroupedLabel: "Ungrouped",
+    onClose: vi.fn(),
+    onMoveWorkspace: vi.fn(),
+    onDeleteWorkspace: vi.fn(),
+    onCreateWorkspaceGroup: vi.fn().mockResolvedValue(null),
+    onRenameWorkspaceGroup: vi.fn().mockResolvedValue(null),
+    onMoveWorkspaceGroup: vi.fn().mockResolvedValue(null),
+    onDeleteWorkspaceGroup: vi.fn().mockResolvedValue(null),
+    onAssignWorkspaceGroup: vi.fn().mockResolvedValue(null),
+    onRunDoctor: vi.fn().mockResolvedValue(createDoctorResult()),
+    onUpdateWorkspaceSettings: vi.fn().mockResolvedValue(undefined),
+    scaleShortcutTitle: "Scale shortcut",
+    scaleShortcutText: "Use Command +/-",
+    onTestNotificationSound: vi.fn(),
+    onTestSystemNotification: vi.fn(),
+    dictationModelStatus: null,
+    onDownloadDictationModel: vi.fn(),
+    onCancelDictationDownload: vi.fn(),
+    onRemoveDictationModel: vi.fn(),
+    initialSection: "common-links",
   };
 
   render(<SettingsView {...props} />);
@@ -1793,6 +1838,48 @@ describe("SettingsView mobile layout", () => {
         Reflect.deleteProperty(window.navigator, "maxTouchPoints");
       }
     }
+  });
+});
+
+describe("SettingsView Common links", () => {
+  it("persists trimmed common links from the settings section", async () => {
+    const onUpdateAppSettings = vi.fn().mockResolvedValue(undefined);
+    renderCommonLinksSection({
+      appSettings: {
+        commonLinks: [
+          {
+            id: "docs",
+            label: " Docs ",
+            url: " https://example.com/docs ",
+          },
+        ],
+      },
+      onUpdateAppSettings,
+    });
+
+    const labelInput = screen.getByLabelText("Common link label 1");
+    const urlInput = screen.getByLabelText("Common link URL 1");
+
+    await act(async () => {
+      fireEvent.change(labelInput, { target: { value: " Product docs " } });
+      fireEvent.change(urlInput, { target: { value: " https://example.com/product " } });
+      fireEvent.blur(urlInput);
+    });
+
+    await waitFor(() => {
+      expect(onUpdateAppSettings).toHaveBeenCalled();
+    });
+
+    const nextSettings = onUpdateAppSettings.mock.calls[
+      onUpdateAppSettings.mock.calls.length - 1
+    ]?.[0] as AppSettings;
+    expect(nextSettings.commonLinks).toEqual([
+      {
+        id: "docs",
+        label: "Product docs",
+        url: "https://example.com/product",
+      },
+    ]);
   });
 });
 

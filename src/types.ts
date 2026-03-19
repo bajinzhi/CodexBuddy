@@ -236,6 +236,12 @@ export type OpenAppTarget = {
   args: string[];
 };
 
+export type CommonLink = {
+  id: string;
+  label: string;
+  url: string;
+};
+
 export type AppSettings = {
   codexBin: string | null;
   codexArgs: string | null;
@@ -313,6 +319,7 @@ export type AppSettings = {
   globalWorktreesFolder: string | null;
   openAppTargets: OpenAppTarget[];
   selectedOpenAppId: string;
+  commonLinks: CommonLink[];
 };
 
 export type CodexFeatureStage =

@@ -24,6 +24,7 @@ type UseMainAppLayoutSurfacesArgs = {
     | "showMessageFilePath"
     | "openAppTargets"
     | "selectedOpenAppId"
+    | "commonLinks"
     | "experimentalAppsEnabled"
     | "followUpMessageBehavior"
     | "composerFollowUpHintEnabled"
@@ -420,6 +421,7 @@ export function useMainAppLayoutSurfaces({
         onSwitchAccount,
         onCancelSwitchAccount,
         accountSwitching,
+        commonLinks: appSettings.commonLinks,
         onOpenSettings: sidebarHandlers.onOpenSettings,
         onOpenDebug: handleDebugClick,
         showDebugButton,

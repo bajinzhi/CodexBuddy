@@ -5,6 +5,7 @@ import { SettingsDisplaySection } from "./SettingsDisplaySection";
 import { SettingsEnvironmentsSection } from "./SettingsEnvironmentsSection";
 import { SettingsFeaturesSection } from "./SettingsFeaturesSection";
 import { SettingsGitSection } from "./SettingsGitSection";
+import { SettingsCommonLinksSection } from "./SettingsCommonLinksSection";
 import { SettingsOpenAppsSection } from "./SettingsOpenAppsSection";
 import { SettingsProjectsSection } from "./SettingsProjectsSection";
 import { SettingsServerSection } from "./SettingsServerSection";
@@ -43,6 +44,9 @@ export function SettingsSectionContainers({
   }
   if (activeSection === "shortcuts") {
     return <SettingsShortcutsSection {...orchestration.shortcutsSectionProps} />;
+  }
+  if (activeSection === "common-links") {
+    return <SettingsCommonLinksSection {...orchestration.commonLinksSectionProps} />;
   }
   if (activeSection === "open-apps") {
     return <SettingsOpenAppsSection {...orchestration.openAppsSectionProps} />;

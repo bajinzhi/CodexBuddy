@@ -146,4 +146,40 @@ describe("useSidebarLayoutActions", () => {
     expect(connectWorkspace).toHaveBeenCalledWith(workspace);
     expect(setActiveTab).toHaveBeenCalledWith("codex");
   });
+
+  it("forwards explicit settings sections", () => {
+    const openSettings = vi.fn();
+    const { result } = renderHook(() =>
+      useSidebarLayoutActions({
+        openSettings,
+        resetPullRequestSelection: vi.fn(),
+        clearDraftState: vi.fn(),
+        clearDraftStateIfDifferentWorkspace: vi.fn(),
+        selectHome: vi.fn(),
+        exitDiffView: vi.fn(),
+        selectWorkspace: vi.fn(),
+        setActiveThreadId: vi.fn(),
+        connectWorkspace: vi.fn(async () => {}),
+        isCompact: false,
+        setActiveTab: vi.fn(),
+        workspacesById: new Map([[workspace.id, workspace]]),
+        updateWorkspaceSettings: vi.fn(async () => workspace),
+        removeThread: vi.fn(),
+        clearDraftForThread: vi.fn(),
+        removeImagesForThread: vi.fn(),
+        refreshThread: vi.fn(async () => {}),
+        handleRenameThread: vi.fn(),
+        removeWorkspace: vi.fn(async () => {}),
+        removeWorktree: vi.fn(async () => {}),
+        loadOlderThreadsForWorkspace: vi.fn(async () => {}),
+        listThreadsForWorkspace: vi.fn(async () => {}),
+      }),
+    );
+
+    act(() => {
+      result.current.onOpenSettings("common-links");
+    });
+
+    expect(openSettings).toHaveBeenCalledWith("common-links");
+  });
 });

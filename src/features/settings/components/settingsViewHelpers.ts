@@ -1,10 +1,11 @@
 import type {
   AppSettings,
+  CommonLink,
   OpenAppTarget,
   WorkspaceInfo,
 } from "@/types";
 import { translate } from "@/i18n/translate";
-import type { OpenAppDraft, ShortcutDrafts } from "./settingsTypes";
+import type { CommonLinkDraft, OpenAppDraft, ShortcutDrafts } from "./settingsTypes";
 import { SETTINGS_MOBILE_BREAKPOINT_PX } from "./settingsViewConstants";
 
 export const normalizeOverrideValue = (value: string): string | null => {
@@ -37,6 +38,73 @@ export const isNarrowSettingsViewport = (): boolean => {
     return false;
   }
   return window.matchMedia(`(max-width: ${SETTINGS_MOBILE_BREAKPOINT_PX}px)`).matches;
+};
+
+export const buildCommonLinkDrafts = (links: CommonLink[]): CommonLinkDraft[] =>
+  links.map((link, index) => ({
+    id:
+      typeof link.id === "string" && link.id.trim().length > 0
+        ? link.id
+        : `common-link-${index + 1}`,
+    label: typeof link.label === "string" ? link.label : "",
+    url: typeof link.url === "string" ? link.url : "",
+  }));
+
+const isCommonLinkLabelValid = (label: string) => label.trim().length > 0;
+
+export const isCommonLinkUrlValid = (url: string) => {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+};
+
+export const isCommonLinkDraftComplete = (draft: CommonLinkDraft) => {
+  if (!isCommonLinkLabelValid(draft.label)) {
+    return false;
+  }
+  return draft.url.trim().length > 0;
+};
+
+export const isCommonLinkTargetComplete = (link: CommonLink) => {
+  if (!isCommonLinkLabelValid(link.label)) {
+    return false;
+  }
+  return link.url.trim().length > 0;
+};
+
+export const isCommonLinkTargetUsable = (link: CommonLink) =>
+  isCommonLinkTargetComplete(link) && isCommonLinkUrlValid(link.url);
+
+export const normalizeCommonLinks = (links: CommonLinkDraft[]): CommonLink[] => {
+  const usedIds = new Set<string>();
+  return links.map((link, index) => {
+    const rawId = typeof link.id === "string" ? link.id.trim() : "";
+    const baseId = rawId || `common-link-${index + 1}`;
+    const label = typeof link.label === "string" ? link.label.trim() : "";
+    const url = typeof link.url === "string" ? link.url.trim() : "";
+    let id = baseId;
+    let suffix = 2;
+    while (usedIds.has(id)) {
+      id = `${baseId}-${suffix}`;
+      suffix += 1;
+    }
+    usedIds.add(id);
+    return {
+      id,
+      label,
+      url,
+    };
+  });
+};
+
+export const createCommonLinkId = () => {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+  return `common-link-${Date.now()}-${Math.random().toString(16).slice(2)}`;
 };
 
 export const buildOpenAppDrafts = (targets: OpenAppTarget[]): OpenAppDraft[] =>

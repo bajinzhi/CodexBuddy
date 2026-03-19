@@ -78,6 +78,7 @@ describe("useAppSettings", () => {
     expect(result.current.settings.backendMode).toBe("local");
     expect(result.current.settings.dictationModelId).toBe("base");
     expect(result.current.settings.interruptShortcut).toBeTruthy();
+    expect(result.current.settings.commonLinks).toEqual([]);
   });
 
   it("persists settings via updateAppSettings and updates local state", async () => {
@@ -169,5 +170,41 @@ describe("useAppSettings", () => {
     await expect(result.current.doctor("/bin/codex", null)).resolves.toEqual(
       response,
     );
+  });
+
+  it("normalizes common links and preserves unusable drafts", async () => {
+    getAppSettingsMock.mockResolvedValue(
+      ({
+        commonLinks: [
+          {
+            id: "",
+            label: " Docs ",
+            url: " https://example.com/docs ",
+          },
+          {
+            id: "",
+            label: " Local ",
+            url: " ftp://example.com/files ",
+          },
+        ],
+      } as unknown) as AppSettings,
+    );
+
+    const { result } = renderHook(() => useAppSettings());
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    expect(result.current.settings.commonLinks).toEqual([
+      {
+        id: "common-link-1",
+        label: "Docs",
+        url: "https://example.com/docs",
+      },
+      {
+        id: "common-link-2",
+        label: "Local",
+        url: "ftp://example.com/files",
+      },
+    ]);
   });
 });

@@ -1,4 +1,4 @@
-import type { OpenAppTarget } from "@/types";
+import type { CommonLink, OpenAppTarget } from "@/types";
 
 type SettingsSection =
   | "projects"
@@ -8,6 +8,7 @@ type SettingsSection =
   | "composer"
   | "dictation"
   | "shortcuts"
+  | "common-links"
   | "open-apps"
   | "git"
   | "server"
@@ -58,3 +59,5 @@ export type ShortcutDraftKey =
 export type ShortcutDrafts = Record<ShortcutDraftKey, string>;
 
 export type OpenAppDraft = OpenAppTarget & { argsText: string };
+
+export type CommonLinkDraft = CommonLink;

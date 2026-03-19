@@ -1703,6 +1703,7 @@ export default function MainApp() {
       showMessageFilePath: appSettings.showMessageFilePath,
       openAppTargets: appSettings.openAppTargets,
       selectedOpenAppId: appSettings.selectedOpenAppId,
+      commonLinks: appSettings.commonLinks,
       experimentalAppsEnabled: appSettings.experimentalAppsEnabled,
       followUpMessageBehavior: appSettings.followUpMessageBehavior,
       composerFollowUpHintEnabled: appSettings.composerFollowUpHintEnabled,

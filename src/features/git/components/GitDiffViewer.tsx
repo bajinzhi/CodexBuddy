@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ask } from "@tauri-apps/plugin-dialog";
+import { useTranslation } from "react-i18next";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import type { SelectedLineRange } from "@pierre/diffs";
 import { WorkerPoolContextProvider } from "@pierre/diffs/react";
@@ -146,6 +147,7 @@ export function GitDiffViewer({
   onActivePathChange,
   onInsertComposerText,
 }: GitDiffViewerProps) {
+  const { t } = useTranslation("git");
   const containerRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const activePathRef = useRef<string | null>(null);
@@ -320,15 +322,15 @@ export function GitDiffViewer({
         return;
       }
       const confirmed = await ask(
-        `Discard changes in:\n\n${path}\n\nThis cannot be undone.`,
-        { title: "Discard changes", kind: "warning" },
+        t("discardChangesSingle", { path }),
+        { title: t("discardChangesTitle"), kind: "warning" },
       );
       if (!confirmed) {
         return;
       }
       await onRevertFile(path);
     },
-    [onRevertFile],
+    [onRevertFile, t],
   );
 
   useEffect(() => {
@@ -453,15 +455,14 @@ export function GitDiffViewer({
 
   const emptyStateCopy = pullRequest
     ? {
-        title: "No file changes in this pull request",
-        subtitle:
-          "The pull request loaded, but there are no diff hunks to render for this selection.",
-        hint: "Try switching to another pull request or commit from the Git panel.",
+        title: t("emptyPullRequestTitle"),
+        subtitle: t("emptyPullRequestSubtitle"),
+        hint: t("emptyPullRequestHint"),
       }
     : {
-        title: "Working tree is clean",
-        subtitle: "No local changes were detected for the current workspace.",
-        hint: "Make an edit, stage a file, or select a commit to inspect changes here.",
+        title: t("emptyWorkingTreeTitle"),
+        subtitle: t("emptyWorkingTreeSubtitle"),
+        hint: t("emptyWorkingTreeHint"),
       };
 
   return (
@@ -511,8 +512,8 @@ export function GitDiffViewer({
                 <button
                   type="button"
                   className="diff-viewer-header-action diff-viewer-header-action--discard"
-                  title="Discard changes in this file"
-                  aria-label="Discard changes in this file"
+                  title={t("discardThisFile")}
+                  aria-label={t("discardThisFile")}
                   onClick={(event) => {
                     event.preventDefault();
                     event.stopPropagation();
@@ -530,7 +531,7 @@ export function GitDiffViewer({
         {error && <div className="diff-viewer-empty">{error}</div>}
         {!error && isLoading && diffs.length > 0 && (
           <div className="diff-viewer-loading diff-viewer-loading-overlay">
-            Refreshing diff...
+            {t("refreshingDiff")}
           </div>
         )}
         {!error && !isLoading && !diffs.length && (

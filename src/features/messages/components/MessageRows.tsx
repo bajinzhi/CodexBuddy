@@ -1,6 +1,7 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { MouseEvent } from "react";
 import { createPortal } from "react-dom";
+import { useTranslation } from "react-i18next";
 import Brain from "lucide-react/dist/esm/icons/brain";
 import Check from "lucide-react/dist/esm/icons/check";
 import Copy from "lucide-react/dist/esm/icons/copy";
@@ -25,6 +26,8 @@ import {
   exploreKindLabel,
   formatDurationMs,
   formatToolStatusLabel,
+  getCommandTextForDisplay,
+  getToolDisplayDetail,
   normalizeMessageImageSrc,
   toolNameFromTitle,
   toolStatusTone,
@@ -106,6 +109,7 @@ const MessageImageGrid = memo(function MessageImageGrid({
   onOpen: (index: number) => void;
   hasText: boolean;
 }) {
+  const { t } = useTranslation("app");
   return (
     <div
       className={`message-image-grid${hasText ? " message-image-grid--with-text" : ""}`}
@@ -117,7 +121,7 @@ const MessageImageGrid = memo(function MessageImageGrid({
           type="button"
           className="message-image-thumb"
           onClick={() => onOpen(index)}
-          aria-label={`Open image ${index + 1}`}
+          aria-label={t("messages.openImage", { index: index + 1 })}
         >
           <img src={image.src} alt={image.label} loading="lazy" />
         </button>
@@ -135,6 +139,7 @@ const ImageLightbox = memo(function ImageLightbox({
   activeIndex: number;
   onClose: () => void;
 }) {
+  const { t } = useTranslation("app");
   const activeImage = images[activeIndex];
 
   useEffect(() => {
@@ -176,7 +181,7 @@ const ImageLightbox = memo(function ImageLightbox({
           type="button"
           className="message-image-lightbox-close"
           onClick={onClose}
-          aria-label="Close image preview"
+          aria-label={t("messages.closeImagePreview")}
         >
           <X size={16} aria-hidden />
         </button>
@@ -305,6 +310,7 @@ export const WorkingIndicator = memo(function WorkingIndicator({
   showPollingFetchStatus = false,
   pollingIntervalMs = 12000,
 }: WorkingIndicatorProps) {
+  const { t } = useTranslation("app");
   const [elapsedMs, setElapsedMs] = useState(0);
   const [pollCountdownSeconds, setPollCountdownSeconds] = useState(() =>
     Math.max(1, Math.ceil(pollingIntervalMs / 1000)),
@@ -346,7 +352,7 @@ export const WorkingIndicator = memo(function WorkingIndicator({
           <div className="working-timer">
             <span className="working-timer-clock">{formatDurationMs(elapsedMs)}</span>
           </div>
-          <span className="working-text">{reasoningLabel || "Working…"}</span>
+          <span className="working-text">{reasoningLabel || t("messages.working")}</span>
         </div>
       )}
       {!isThinking && lastDurationMs !== null && hasItems && (
@@ -354,8 +360,8 @@ export const WorkingIndicator = memo(function WorkingIndicator({
           <span className="turn-complete-line" aria-hidden />
           <span className="turn-complete-label">
             {showPollingFetchStatus
-              ? `New message will be fetched in ${pollCountdownSeconds} seconds`
-              : `Done in ${formatDurationMs(lastDurationMs)}`}
+              ? t("messages.newMessageFetchedIn", { count: pollCountdownSeconds })
+              : t("messages.doneIn", { duration: formatDurationMs(lastDurationMs) })}
           </span>
           <span className="turn-complete-line" aria-hidden />
         </div>
@@ -376,6 +382,7 @@ export const MessageRow = memo(function MessageRow({
   onOpenFileLinkMenu,
   onOpenThreadLink,
 }: MessageRowProps) {
+  const { t } = useTranslation("app");
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const bubbleRef = useRef<HTMLDivElement | null>(null);
   const selectionSnapshotRef = useRef<string | null>(null);
@@ -474,8 +481,8 @@ export const MessageRow = memo(function MessageRow({
               selectionSnapshotRef.current = getSelectedMessageText();
             }}
             onClick={handleQuote}
-            aria-label="Quote message"
-            title="Quote message"
+            aria-label={t("messages.quoteMessage")}
+            title={t("messages.quoteMessage")}
           >
             <Quote size={14} aria-hidden />
           </button>
@@ -484,8 +491,8 @@ export const MessageRow = memo(function MessageRow({
           type="button"
           className={`ghost message-copy-button${isCopied ? " is-copied" : ""}`}
           onClick={() => onCopy(item)}
-          aria-label="Copy message"
-          title="Copy message"
+          aria-label={t("messages.copyMessage")}
+          title={t("messages.copyMessage")}
         >
           <span className="message-copy-icon" aria-hidden>
             <Copy className="message-copy-icon-copy" size={14} />
@@ -508,6 +515,7 @@ export const ReasoningRow = memo(function ReasoningRow({
   onOpenFileLinkMenu,
   onOpenThreadLink,
 }: ReasoningRowProps) {
+  const { t } = useTranslation("app");
   const { summaryTitle, bodyText, hasBody } = parsed;
   const reasoningTone: StatusTone = hasBody ? "completed" : "processing";
   return (
@@ -517,7 +525,7 @@ export const ReasoningRow = memo(function ReasoningRow({
         className="tool-inline-bar-toggle"
         onClick={() => onToggle(item.id)}
         aria-expanded={isExpanded}
-        aria-label="Toggle reasoning details"
+        aria-label={t("messages.toggleReasoningDetails")}
       />
       <div className="tool-inline-content">
         <button
@@ -559,7 +567,11 @@ export const ReviewRow = memo(function ReviewRow({
   onOpenFileLinkMenu,
   onOpenThreadLink,
 }: ReviewRowProps) {
-  const title = item.state === "started" ? "Review started" : "Review completed";
+  const { t } = useTranslation("app");
+  const title =
+    item.state === "started"
+      ? t("messages.reviewStarted")
+      : t("messages.reviewCompleted");
   return (
     <div className="item-card review">
       <div className="review-header">
@@ -567,7 +579,7 @@ export const ReviewRow = memo(function ReviewRow({
         <span
           className={`review-badge ${item.state === "started" ? "active" : "done"}`}
         >
-          Review
+          {t("messages.reviewBadge")}
         </span>
       </div>
       {item.text && (
@@ -604,13 +616,17 @@ export const UserInputRow = memo(function UserInputRow({
   isExpanded,
   onToggle,
 }: UserInputRowProps) {
+  const { t } = useTranslation("app");
   const first = item.questions[0];
   const previewQuestion =
-    first?.question?.trim() || first?.header?.trim() || "Input requested";
-  const firstAnswer = first?.answers[0]?.trim() || "No answer provided";
+    first?.question?.trim() || first?.header?.trim() || t("messages.inputRequested");
+  const firstAnswer = first?.answers[0]?.trim() || t("messages.noAnswerProvided");
   const previewAnswer =
     first && first.answers.length > 1
-      ? `${firstAnswer} +${first.answers.length - 1}`
+      ? t("messages.answerWithMore", {
+          answer: firstAnswer,
+          count: first.answers.length - 1,
+        })
       : firstAnswer;
   const extraQuestions = Math.max(0, item.questions.length - 1);
 
@@ -621,7 +637,7 @@ export const UserInputRow = memo(function UserInputRow({
         className="tool-inline-bar-toggle"
         onClick={() => onToggle(item.id)}
         aria-expanded={isExpanded}
-        aria-label="Toggle answered input details"
+        aria-label={t("messages.toggleAnsweredInputDetails")}
       />
       <div className="tool-inline-content">
         <button
@@ -631,16 +647,21 @@ export const UserInputRow = memo(function UserInputRow({
           aria-expanded={isExpanded}
         >
           <Check className="tool-inline-icon completed" size={14} aria-hidden />
-          <span className="tool-inline-label">answered:</span>
+          <span className="tool-inline-label">{t("messages.answeredLabel")}</span>
           <span className="tool-inline-value user-input-inline-preview">
             {previewQuestion}: {previewAnswer}
-            {extraQuestions > 0 ? ` +${extraQuestions} more` : ""}
+            {extraQuestions > 0
+              ? t("messages.moreQuestions", { count: extraQuestions })
+              : ""}
           </span>
         </button>
         {isExpanded && (
           <div className="user-input-inline-details">
             {item.questions.map((question, index) => {
-              const title = question.question || question.header || `Question ${index + 1}`;
+              const title =
+                question.question ||
+                question.header ||
+                t("messages.questionFallback", { index: index + 1 });
               return (
                 <div
                   key={`${question.id}-${index}`}
@@ -660,7 +681,7 @@ export const UserInputRow = memo(function UserInputRow({
                     </div>
                   ) : (
                     <div className="user-input-inline-empty-answer">
-                      No answer provided.
+                      {t("messages.noAnswerProvidedSentence")}
                     </div>
                   )}
                 </div>
@@ -684,13 +705,13 @@ export const ToolRow = memo(function ToolRow({
   onOpenThreadLink,
   onRequestAutoScroll,
 }: ToolRowProps) {
+  const { t } = useTranslation("app");
   const isFileChange = item.toolType === "fileChange";
   const isCommand = item.toolType === "commandExecution";
   const isPlan = item.toolType === "plan";
-  const commandText = isCommand
-    ? item.title.replace(/^Command:\s*/i, "").trim()
-    : "";
+  const commandText = isCommand ? getCommandTextForDisplay(item) : "";
   const summary = buildToolSummary(item, commandText);
+  const displayDetail = getToolDisplayDetail(item);
   const changeNames = (item.changes ?? [])
     .map((change) => basename(change.path))
     .filter(Boolean);
@@ -699,16 +720,19 @@ export const ToolRow = memo(function ToolRow({
   const ToolIcon = toolIconForSummary(item, summary);
   const summaryLabel = isFileChange
     ? changeNames.length > 1
-      ? "files edited"
-      : "file edited"
+      ? t("messages.filesEdited")
+      : t("messages.fileEdited")
     : isCommand
       ? ""
       : summary.label;
   const inlineStatus = formatToolStatusLabel(item);
   const summaryValue = isFileChange
     ? changeNames.length > 1
-      ? `${changeNames[0]} +${changeNames.length - 1}`
-      : changeNames[0] || "changes"
+      ? t("messages.changeSummaryWithMore", {
+          name: changeNames[0],
+          count: changeNames.length - 1,
+        })
+      : changeNames[0] || t("messages.changes")
     : summary.value;
   const shouldFadeCommand =
     isCommand && !isExpanded && (summaryValue?.length ?? 0) > 80;
@@ -757,9 +781,10 @@ export const ToolRow = memo(function ToolRow({
       try {
         await exportMarkdownFile(output, buildPlanExportFileName(item.id));
       } catch (error) {
-        const message = error instanceof Error ? error.message : "Unable to export plan.";
+        const message =
+          error instanceof Error ? error.message : t("messages.unableToExportPlan");
         pushErrorToast({
-          title: "Plan export failed",
+          title: t("messages.planExportFailed"),
           message,
         });
       } finally {
@@ -776,7 +801,7 @@ export const ToolRow = memo(function ToolRow({
         className="tool-inline-bar-toggle"
         onClick={() => onToggle(item.id)}
         aria-expanded={isExpanded}
-        aria-label="Toggle tool details"
+        aria-label={t("messages.toggleToolDetails")}
       />
       <div className="tool-inline-content">
         <button
@@ -817,7 +842,7 @@ export const ToolRow = memo(function ToolRow({
         )}
         {isExpanded && isCommand && item.detail && (
           <div className="tool-inline-detail tool-inline-muted">
-            cwd: {item.detail}
+            {t("messages.cwd", { path: item.detail })}
           </div>
         )}
         {isExpanded && isFileChange && hasChanges && (
@@ -846,9 +871,9 @@ export const ToolRow = memo(function ToolRow({
             ))}
           </div>
         )}
-        {isExpanded && isFileChange && !hasChanges && item.detail && (
+        {isExpanded && isFileChange && !hasChanges && displayDetail && (
           <Markdown
-            value={item.detail}
+            value={displayDetail}
             className="item-text markdown"
             showFilePath={showMessageFilePath}
             workspacePath={workspacePath}
@@ -878,7 +903,7 @@ export const ToolRow = memo(function ToolRow({
               onClick={handlePlanExport}
               disabled={isExportingPlan}
             >
-              {isExportingPlan ? "Exporting..." : "Export .md"}
+              {isExportingPlan ? t("messages.exportingPlan") : t("messages.exportPlan")}
             </button>
           </div>
         )}
@@ -888,7 +913,9 @@ export const ToolRow = memo(function ToolRow({
 });
 
 export const ExploreRow = memo(function ExploreRow({ item }: ExploreRowProps) {
-  const title = item.status === "exploring" ? "Exploring" : "Explored";
+  const { t } = useTranslation("app");
+  const title =
+    item.status === "exploring" ? t("messages.exploring") : t("messages.explored");
   return (
     <div className="tool-inline explore-inline">
       <div className="tool-inline-bar-toggle" aria-hidden />

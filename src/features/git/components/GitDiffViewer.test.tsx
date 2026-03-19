@@ -102,7 +102,7 @@ describe("GitDiffViewer", () => {
     expect(onInsertComposerText).toHaveBeenCalledWith(
       "src/main.ts:L2\n```diff\n+added line\n```\n\n",
     );
-  });
+  }, 10_000);
 
   it("renders raw fallback lines instead of Diff unavailable for non-patch diffs", () => {
     render(

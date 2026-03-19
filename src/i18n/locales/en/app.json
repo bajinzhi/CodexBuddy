@@ -1,0 +1,235 @@
+{
+  "resetAt": "Resets {{relative}}",
+  "credits": {
+    "available": "Available credits: {{value}}",
+    "availableUnlimited": "Available credits: Unlimited"
+  },
+  "notifications": {
+    "dismissError": "Dismiss error",
+    "approvalNeeded": "Approval needed",
+    "noExtraDetails": "No extra details.",
+    "allowCommandsThatStartWith": "Allow commands that start with {{command}}",
+    "agentComplete": "Agent Complete",
+    "agentError": "Agent Error",
+    "taskFinished": "Your agent has finished its task.",
+    "errorOccurred": "An error occurred.",
+    "approvalTitleWithWorkspace": "Approval needed — {{workspace}}",
+    "approvalTitle": "Approval needed",
+    "questionTitleWithWorkspace": "Question — {{workspace}}",
+    "questionTitle": "Question",
+    "inputNeeded": "Your input is needed.",
+    "planReadyTitleWithWorkspace": "Plan ready — {{workspace}}",
+    "planReadyTitle": "Plan ready",
+    "planReadyBody": "Plan is ready. Open CodexBuddy to respond."
+  },
+  "update": {
+    "whatsNew": "What's New",
+    "updatedLoadingNotes": "Updated successfully. Loading release notes...",
+    "updatedReady": "Updated successfully. Here is what is new:",
+    "updatedFallback": "Updated to v{{version}}. Release notes could not be loaded.",
+    "title": "Update",
+    "checking": "Checking for updates...",
+    "available": "A new version is available.",
+    "latest": "You're up to date.",
+    "downloading": "Downloading update…",
+    "downloaded": "{{downloaded}} downloaded",
+    "installing": "Installing update…",
+    "restarting": "Restarting…",
+    "failed": "Update failed."
+  },
+  "workspaces": {
+    "enterAbsoluteDirectoryPath": "Enter at least one absolute directory path.",
+    "added_one": "Added {{count}} workspace.",
+    "added_other": "Added {{count}} workspaces.",
+    "skippedExisting_one": "Skipped {{count}} already added workspace.",
+    "skippedExisting_other": "Skipped {{count}} already added workspaces.",
+    "skippedInvalid_one": "Skipped {{count}} invalid path (not a folder).",
+    "skippedInvalid_other": "Skipped {{count}} invalid paths (not a folder).",
+    "failedToAdd_one": "Failed to add {{count}} workspace.",
+    "failedToAdd_other": "Failed to add {{count}} workspaces.",
+    "failuresHeading": "Failures:",
+    "moreFailures_one": "- …and {{count}} more",
+    "moreFailures_other": "- …and {{count}} more",
+    "someFailedTitle": "Some workspaces failed to add",
+    "someSkippedTitle": "Some workspaces were skipped",
+    "workspaceFallback": "this workspace",
+    "worktreeFallback": "this worktree",
+    "deleteWorkspacePrompt": "Are you sure you want to delete \"{{name}}\"?\n\nThis will remove the workspace from CodexBuddy.{{detail}}",
+    "deleteWorkspaceDetail_one": "\n\nThis will also delete {{count}} worktree on disk.",
+    "deleteWorkspaceDetail_other": "\n\nThis will also delete {{count}} worktrees on disk.",
+    "deleteWorktreePrompt": "Are you sure you want to delete \"{{name}}\"?\n\nThis will close the agent, remove its worktree, and delete it from CodexBuddy.",
+    "deleteWorkspaceTitle": "Delete Workspace",
+    "deleteWorktreeTitle": "Delete Worktree",
+    "deleteWorkspaceFailed": "Delete workspace failed",
+    "deleteWorktreeFailed": "Delete worktree failed",
+    "failedToAddWorkspace": "Failed to add workspace.\n\n{{message}}",
+    "failedToAddWorkspaces": "Failed to add workspaces.\n\n{{message}}",
+    "failedToImportWorkspaceFromUrl": "Failed to import workspace from URL.\n\n{{message}}"
+  },
+  "threads": {
+    "ignoredArgsTitle": "Some codex args are ignored",
+    "ignoredArgsMessage": "Selected flags are ignored for per-thread overrides.",
+    "items": {
+      "planTitle": "Plan",
+      "commandTitle": "Command",
+      "commandTitleWithCommand": "Command: {{command}}",
+      "fileChangesTitle": "File changes",
+      "pendingChanges": "Pending changes",
+      "toolTitle": "Tool: {{server}}{{tool}}",
+      "collabTitle": "Collab: {{tool}}",
+      "collabToolCallTitle": "Collab tool call",
+      "webSearchTitle": "Web search",
+      "imageViewTitle": "Image view",
+      "contextCompactionTitle": "Context compaction",
+      "contextCompactionDetail": "Compacting conversation context to fit token limits."
+    }
+  },
+  "toasts": {
+    "copyFailedTitle": "Copy failed",
+    "clipboardUnavailable": "Clipboard access is unavailable in this environment. Copy the script manually instead.",
+    "clipboardWriteFailed": "Could not write to the clipboard. Copy the script manually instead.",
+    "folderPickerTitle": "Select worktrees folder",
+    "folderPickerOpenFailed": "Failed to open folder picker",
+    "launchScriptError": "Launch script error",
+    "openWorkspaceFailed": "Couldn't open workspace",
+    "showFileInManagerFailed": "Couldn't show file in {{fileManager}}",
+    "selectGitRootFirst": "Select a git root first."
+  },
+  "menus": {
+    "thread": {
+      "syncFromServer": "Sync from server",
+      "copyId": "Copy ID",
+      "pin": "Pin",
+      "unpin": "Unpin"
+    },
+    "workspace": {
+      "reloadThreads": "Reload threads"
+    },
+    "worktree": {
+      "showInFileManager": "Show in {{fileManager}}",
+      "deleteWorktree": "Delete worktree",
+      "revealFailed": "Couldn't show worktree in {{fileManager}}"
+    },
+    "clone": {
+      "deleteClone": "Delete clone",
+      "revealFailed": "Couldn't show clone in {{fileManager}}"
+    }
+  },
+  "controls": {
+    "window": {
+      "group": "Window controls",
+      "minimize": "Minimize window",
+      "restore": "Restore window",
+      "maximize": "Maximize window",
+      "close": "Close window"
+    },
+    "sidebar": {
+      "hideThreads": "Hide threads sidebar",
+      "showThreads": "Show threads sidebar",
+      "hideGit": "Hide git sidebar",
+      "showGit": "Show git sidebar"
+    },
+    "resize": {
+      "sidebar": "Resize sidebar",
+      "chatDiffSplit": "Resize chat/diff split",
+      "rightPanel": "Resize right panel",
+      "planPanel": "Resize plan panel",
+      "projects": "Resize projects"
+    },
+    "diffView": {
+      "group": "Diff view",
+      "split": "Dual-panel diff",
+      "unified": "Single-column diff"
+    },
+    "refreshCurrentThread": "Refresh current thread from server",
+    "selectEditor": "Select editor",
+    "panelTabList": "Panel"
+  },
+  "openApp": {
+    "openInTarget": "Open in {{target}}",
+    "setCommandInSettings": "Set command in Settings",
+    "setAppNameInSettings": "Set app name in Settings"
+  },
+  "mainHeader": {
+    "worktreeInfo": "Worktree info",
+    "confirmRename": "Confirm rename",
+    "updateUpstreamPrompt": "Do you want to update the upstream branch to {{branch}}?",
+    "updateUpstream": "Update upstream",
+    "terminalRepoRoot": "Terminal (repo root)",
+    "copyCommand": "Copy command",
+    "openWorktreeInTerminal": "Open this worktree in your terminal.",
+    "reveal": "Reveal",
+    "branchSearchPlaceholder": "Search or create branch",
+    "searchBranches": "Search branches",
+    "createBranchHint": "Create branch “{{branch}}”",
+    "noBranchesFound": "No branches found",
+    "toggleTerminal": "Toggle terminal panel",
+    "copyThread": "Copy thread"
+  },
+  "messages": {
+    "answerWithMore": "{{answer}} +{{count}}",
+    "answeredLabel": "answered:",
+    "closeImagePreview": "Close image preview",
+    "codeLabel": "Code",
+    "collapseToolCalls": "Collapse tool calls",
+    "copied": "Copied",
+    "copy": "Copy",
+    "copyCodeBlock": "Copy code block",
+    "copyMessage": "Copy message",
+    "cwd": "cwd: {{path}}",
+    "doneIn": "Done in {{duration}}",
+    "emptyNewThread": "Send a prompt to start a new agent.",
+    "emptyThread": "Send a prompt to the agent.",
+    "expandToolCalls": "Expand tool calls",
+    "exportPlan": "Export .md",
+    "exportingPlan": "Exporting...",
+    "explored": "Explored",
+    "exploring": "Exploring",
+    "fileEdited": "file edited",
+    "filesEdited": "files edited",
+    "changeSummaryWithMore": "{{name}} +{{count}}",
+    "changes": "changes",
+    "collabStatus": {
+      "waitingFor": "waiting for",
+      "waitedFor": "waited for",
+      "resuming": "resuming",
+      "resumed": "resumed",
+      "closing": "closing",
+      "closed": "closed",
+      "spawning": "spawning",
+      "spawned": "spawned",
+      "sendingTo": "sending to",
+      "sentTo": "sent to",
+      "subAgent": "sub-agent"
+    },
+    "inputRequested": "Input requested",
+    "loading": "Loading…",
+    "messageCount_one": "{{count}} message",
+    "messageCount_other": "{{count}} messages",
+    "moreQuestions_one": " +{{count}} more",
+    "moreQuestions_other": " +{{count}} more",
+    "newMessageFetchedIn_one": "New message will be fetched in {{count}} second",
+    "newMessageFetchedIn_other": "New message will be fetched in {{count}} seconds",
+    "noAnswerProvided": "No answer provided",
+    "noAnswerProvidedSentence": "No answer provided.",
+    "openImage": "Open image {{index}}",
+    "planExportFailed": "Plan export failed",
+    "questionFallback": "Question {{index}}",
+    "quoteMessage": "Quote message",
+    "reviewBadge": "Review",
+    "reviewCompleted": "Review completed",
+    "reviewStarted": "Review started",
+    "toggleAnsweredInputDetails": "Toggle answered input details",
+    "toggleReasoningDetails": "Toggle reasoning details",
+    "toggleToolDetails": "Toggle tool details",
+    "toolCallCount_one": "{{count}} tool call",
+    "toolCallCount_other": "{{count}} tool calls",
+    "unableToExportPlan": "Unable to export plan.",
+    "working": "Working…"
+  },
+  "debug": {
+    "title": "Debug",
+    "resize": "Resize debug panel",
+    "empty": "No debug events yet."
+  }
+}

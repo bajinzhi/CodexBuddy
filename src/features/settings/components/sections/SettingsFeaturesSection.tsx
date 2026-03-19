@@ -1,4 +1,5 @@
 import type { CodexFeature } from "@/types";
+import { useTranslation } from "react-i18next";
 import {
   SettingsSection,
   SettingsSubsection,
@@ -47,10 +48,14 @@ const FEATURE_DESCRIPTION_FALLBACKS: Record<string, string> = {
   responses_websockets_v2: "Enable Responses API WebSocket v2 mode.",
 };
 
-function formatFeatureLabel(feature: CodexFeature): string {
+function formatFeatureLabel(feature: CodexFeature, translateLabel: (key: string) => string): string {
   const displayName = feature.displayName?.trim();
   if (displayName) {
     return displayName;
+  }
+  const localized = translateLabel(feature.name);
+  if (localized) {
+    return localized;
   }
   return feature.name
     .split("_")
@@ -59,24 +64,33 @@ function formatFeatureLabel(feature: CodexFeature): string {
     .join(" ");
 }
 
-function featureSubtitle(feature: CodexFeature): string {
+function featureSubtitle(
+  feature: CodexFeature,
+  translateDescription: (key: string) => string,
+  stageDescriptions: {
+    deprecated: string;
+    removed: string;
+    featureKey: (name: string) => string;
+  },
+): string {
   if (feature.description?.trim()) {
     return feature.description;
   }
   if (feature.announcement?.trim()) {
     return feature.announcement;
   }
-  const fallbackDescription = FEATURE_DESCRIPTION_FALLBACKS[feature.name];
+  const fallbackDescription =
+    translateDescription(feature.name) || FEATURE_DESCRIPTION_FALLBACKS[feature.name];
   if (fallbackDescription) {
     return fallbackDescription;
   }
   if (feature.stage === "deprecated") {
-    return "Deprecated feature flag.";
+    return stageDescriptions.deprecated;
   }
   if (feature.stage === "removed") {
-    return "Legacy feature flag kept for backward compatibility.";
+    return stageDescriptions.removed;
   }
-  return `Feature key: features.${feature.name}`;
+  return stageDescriptions.featureKey(feature.name);
 }
 
 export function SettingsFeaturesSection({
@@ -93,31 +107,40 @@ export function SettingsFeaturesSection({
   onToggleCodexFeature,
   onUpdateAppSettings,
 }: SettingsFeaturesSectionProps) {
+  const { t } = useTranslation(["settings", "common"]);
+  const translateFeatureLabel = (name: string) => {
+    const value = t(`features.featureLabels.${name}`, { defaultValue: "" });
+    return value.trim();
+  };
+  const translateFeatureDescription = (name: string) => {
+    const value = t(`features.featureDescriptions.${name}`, { defaultValue: "" });
+    return value.trim();
+  };
   return (
     <SettingsSection
-      title="Features"
-      subtitle="Manage stable and experimental Codex features."
+      title={t("features.title")}
+      subtitle={t("features.subtitle")}
     >
       <SettingsToggleRow
-        title="Config file"
-        subtitle={`Open the Codex config in ${fileManagerName()}.`}
+        title={t("features.configFileTitle")}
+        subtitle={t("features.configFileSubtitle", { fileManager: fileManagerName() })}
       >
         <button type="button" className="ghost" onClick={onOpenConfig}>
-          {openInFileManagerLabel()}
+          {t("features.openConfigButton", {
+            fileManager: fileManagerName(),
+            defaultValue: openInFileManagerLabel(),
+          })}
         </button>
       </SettingsToggleRow>
       {openConfigError && <div className="settings-help">{openConfigError}</div>}
       <SettingsSubsection
-        title="Stable Features"
-        subtitle="Production-ready features enabled by default."
+        title={t("features.stableTitle")}
+        subtitle={t("features.stableSubtitle")}
       />
       <SettingsToggleRow
-        title="Personality"
+        title={t("features.personalityTitle")}
         subtitle={
-          <>
-            Choose Codex communication style (writes top-level <code>personality</code> in
-            config.toml).
-          </>
+          t("features.personalitySubtitle")
         }
       >
         <select
@@ -130,15 +153,15 @@ export function SettingsFeaturesSection({
               personality: event.target.value as (typeof appSettings)["personality"],
             })
           }
-          aria-label="Personality"
+          aria-label={t("features.personalityTitle")}
         >
-          <option value="friendly">Friendly</option>
-          <option value="pragmatic">Pragmatic</option>
+          <option value="friendly">{t("features.personalityOptions.friendly")}</option>
+          <option value="pragmatic">{t("features.personalityOptions.pragmatic")}</option>
         </select>
       </SettingsToggleRow>
       <SettingsToggleRow
-        title="Pause queued messages when a response is required"
-        subtitle="Keep queued messages paused while Codex is waiting for plan accept/changes or your answers."
+        title={t("features.pauseQueuedTitle")}
+        subtitle={t("features.pauseQueuedSubtitle")}
       >
         <SettingsToggleSwitch
           pressed={appSettings.pauseQueuedMessagesWhenResponseRequired}
@@ -154,8 +177,12 @@ export function SettingsFeaturesSection({
       {stableFeatures.map((feature) => (
         <SettingsToggleRow
           key={feature.name}
-          title={formatFeatureLabel(feature)}
-          subtitle={featureSubtitle(feature)}
+          title={formatFeatureLabel(feature, translateFeatureLabel)}
+          subtitle={featureSubtitle(feature, translateFeatureDescription, {
+            deprecated: t("features.deprecated"),
+            removed: t("features.removed"),
+            featureKey: (name) => t("features.featureKey", { name }),
+          })}
         >
           <SettingsToggleSwitch
             pressed={feature.enabled}
@@ -168,17 +195,21 @@ export function SettingsFeaturesSection({
         !featuresLoading &&
         !featureError &&
         stableFeatures.length === 0 && (
-        <div className="settings-help">No stable feature flags returned by Codex.</div>
+        <div className="settings-help">{t("features.noStable")}</div>
       )}
       <SettingsSubsection
-        title="Experimental Features"
-        subtitle="Preview and under-development features."
+        title={t("features.experimentalTitle")}
+        subtitle={t("features.experimentalSubtitle")}
       />
       {experimentalFeatures.map((feature) => (
         <SettingsToggleRow
           key={feature.name}
-          title={formatFeatureLabel(feature)}
-          subtitle={featureSubtitle(feature)}
+          title={formatFeatureLabel(feature, translateFeatureLabel)}
+          subtitle={featureSubtitle(feature, translateFeatureDescription, {
+            deprecated: t("features.deprecated"),
+            removed: t("features.removed"),
+            featureKey: (name) => t("features.featureKey", { name }),
+          })}
         >
           <SettingsToggleSwitch
             pressed={feature.enabled}
@@ -193,15 +224,15 @@ export function SettingsFeaturesSection({
         hasDynamicFeatureRows &&
         experimentalFeatures.length === 0 && (
           <div className="settings-help">
-            No preview or under-development feature flags returned by Codex.
+            {t("features.noExperimental")}
           </div>
         )}
       {featuresLoading && (
-        <div className="settings-help">Loading Codex feature flags...</div>
+        <div className="settings-help">{t("features.loading")}</div>
       )}
       {!hasFeatureWorkspace && !featuresLoading && (
         <div className="settings-help">
-          Connect a workspace to load Codex feature flags.
+          {t("features.connectWorkspace")}
         </div>
       )}
       {featureError && <div className="settings-help">{featureError}</div>}

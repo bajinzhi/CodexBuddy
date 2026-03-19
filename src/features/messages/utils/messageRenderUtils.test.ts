@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import i18n from "../../../i18n";
 import type { ConversationItem } from "../../../types";
 import { buildToolSummary, statusToneFromText } from "./messageRenderUtils";
 
@@ -38,6 +39,17 @@ describe("messageRenderUtils", () => {
     expect(summary.value).toBe("codex monitor");
   });
 
+  it("strips localized command prefixes when building summaries", () => {
+    const summary = buildToolSummary(
+      makeToolItem({
+        toolType: "commandExecution",
+        title: "命令：rg reducers",
+      }),
+      "",
+    );
+    expect(summary.value).toBe("rg reducers");
+  });
+
   it("classifies camelCase inProgress as processing", () => {
     expect(statusToneFromText("inProgress")).toBe("processing");
   });
@@ -63,5 +75,43 @@ describe("messageRenderUtils", () => {
     expect(summary.label).toBe("waited for");
     expect(summary.value).toBe("Robie [explorer]");
     expect(summary.output).toContain("Robie [explorer]: completed");
+  });
+
+  it("localizes collab status verbs in zh-CN", async () => {
+    await i18n.changeLanguage("zh-CN");
+
+    const summary = buildToolSummary(
+      makeToolItem({
+        toolType: "collabToolCall",
+        title: "Collab: send",
+        detail: "From thread-parent → thread-child",
+        status: "inProgress",
+        collabReceivers: [
+          {
+            threadId: "thread-child",
+            nickname: "Robie",
+            role: "explorer",
+          },
+        ],
+      }),
+      "",
+    );
+
+    expect(summary.label).toBe("正在发送给");
+    expect(summary.value).toBe("Robie [explorer]");
+  });
+
+  it("relocalizes cached tool titles at render time", async () => {
+    const item = makeToolItem({
+      toolType: "plan",
+      title: "Plan",
+      detail: "completed",
+    });
+
+    expect(buildToolSummary(item, "").value).toBe("Plan");
+
+    await i18n.changeLanguage("zh-CN");
+
+    expect(buildToolSummary(item, "").value).toBe("计划");
   });
 });

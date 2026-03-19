@@ -1,17 +1,14 @@
+import i18n from "@/i18n";
+import { formatRelativeTimeValue } from "@/i18n/format";
+import { normalizeSupportedUiLocale } from "@/i18n/preferences";
+import { translate } from "@/i18n/translate";
+
 export function formatRelativeTime(timestamp: number) {
   const now = Date.now();
   const diffSeconds = Math.round((timestamp - now) / 1000);
   const absSeconds = Math.abs(diffSeconds);
   if (absSeconds < 5) {
-    return "now";
-  }
-  if (absSeconds < 60) {
-    const value = Math.max(1, Math.round(absSeconds));
-    return diffSeconds < 0 ? `${value}s ago` : `in ${value}s`;
-  }
-  if (absSeconds < 60 * 60) {
-    const value = Math.max(1, Math.round(absSeconds / 60));
-    return diffSeconds < 0 ? `${value}m ago` : `in ${value}m`;
+    return translate("status.now", { ns: "common" });
   }
   const ranges: { unit: Intl.RelativeTimeFormatUnit; seconds: number }[] = [
     { unit: "year", seconds: 60 * 60 * 24 * 365 },
@@ -26,33 +23,51 @@ export function formatRelativeTime(timestamp: number) {
     ranges.find((entry) => absSeconds >= entry.seconds) ||
     ranges[ranges.length - 1];
   if (!range) {
-    return "now";
+    return translate("status.now", { ns: "common" });
   }
   const value = Math.round(diffSeconds / range.seconds);
-  const formatter = new Intl.RelativeTimeFormat(undefined, { numeric: "auto" });
-  return formatter.format(value, range.unit);
+  return formatRelativeTimeValue(value, range.unit);
 }
 
 export function formatRelativeTimeShort(timestamp: number) {
   const now = Date.now();
   const absSeconds = Math.abs(Math.round((timestamp - now) / 1000));
+  const locale = normalizeSupportedUiLocale(i18n.resolvedLanguage || i18n.language);
+  const units =
+    locale === "zh-CN"
+      ? {
+          minute: "分",
+          hour: "小时",
+          day: "天",
+          week: "周",
+          month: "个月",
+          year: "年",
+        }
+      : {
+          minute: "m",
+          hour: "h",
+          day: "d",
+          week: "w",
+          month: "mo",
+          year: "y",
+        };
   if (absSeconds < 60) {
-    return "now";
+    return translate("status.now", { ns: "common" });
   }
   if (absSeconds < 60 * 60) {
-    return `${Math.max(1, Math.round(absSeconds / 60))}m`;
+    return `${Math.max(1, Math.round(absSeconds / 60))}${units.minute}`;
   }
   if (absSeconds < 60 * 60 * 24) {
-    return `${Math.max(1, Math.round(absSeconds / (60 * 60)))}h`;
+    return `${Math.max(1, Math.round(absSeconds / (60 * 60)))}${units.hour}`;
   }
   if (absSeconds < 60 * 60 * 24 * 7) {
-    return `${Math.max(1, Math.round(absSeconds / (60 * 60 * 24)))}d`;
+    return `${Math.max(1, Math.round(absSeconds / (60 * 60 * 24)))}${units.day}`;
   }
   if (absSeconds < 60 * 60 * 24 * 30) {
-    return `${Math.max(1, Math.round(absSeconds / (60 * 60 * 24 * 7)))}w`;
+    return `${Math.max(1, Math.round(absSeconds / (60 * 60 * 24 * 7)))}${units.week}`;
   }
   if (absSeconds < 60 * 60 * 24 * 365) {
-    return `${Math.max(1, Math.round(absSeconds / (60 * 60 * 24 * 30)))}mo`;
+    return `${Math.max(1, Math.round(absSeconds / (60 * 60 * 24 * 30)))}${units.month}`;
   }
-  return `${Math.max(1, Math.round(absSeconds / (60 * 60 * 24 * 365)))}y`;
+  return `${Math.max(1, Math.round(absSeconds / (60 * 60 * 24 * 365)))}${units.year}`;
 }

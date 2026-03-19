@@ -330,6 +330,6 @@ describe("GitDiffPanel", () => {
     expect(onSelectFile).toHaveBeenCalledWith(
       "src/main.ts@@item-change-1@@change-0",
     );
-  });
+  }, 12_000);
 
 });

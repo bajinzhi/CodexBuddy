@@ -1,5 +1,6 @@
 import type { ComponentProps } from "react";
 import RefreshCw from "lucide-react/dist/esm/icons/refresh-cw";
+import { useTranslation } from "react-i18next";
 import { MainHeaderActions } from "@app/components/MainHeaderActions";
 import { WorkspaceHome } from "@/features/workspaces/components/WorkspaceHome";
 
@@ -28,6 +29,7 @@ export function useMainAppDisplayNodes({
   sidebarToggleProps,
   workspaceHomeProps,
 }: UseMainAppDisplayNodesArgs) {
+  const { t } = useTranslation("app");
   const mainHeaderActionsNode = (
     <>
       {showCompactCodexThreadActions ? (
@@ -36,9 +38,9 @@ export function useMainAppDisplayNodes({
           className="ghost main-header-action ds-tooltip-trigger"
           onClick={handleMobileThreadRefresh}
           data-tauri-drag-region="false"
-          aria-label="Refresh current thread from server"
-          title="Refresh current thread from server"
-          data-tooltip="Refresh current thread from server"
+          aria-label={t("controls.refreshCurrentThread")}
+          title={t("controls.refreshCurrentThread")}
+          data-tooltip={t("controls.refreshCurrentThread")}
           data-tooltip-placement="bottom"
           disabled={mobileThreadRefreshLoading}
         >

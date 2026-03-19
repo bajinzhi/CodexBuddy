@@ -1,4 +1,5 @@
 import { useThemePreference } from "../../layout/hooks/useThemePreference";
+import { useLanguagePreference } from "../../layout/hooks/useLanguagePreference";
 import { useTransparencyPreference } from "../../layout/hooks/useTransparencyPreference";
 import { useUiScaleShortcuts } from "../../layout/hooks/useUiScaleShortcuts";
 import { useAppSettings } from "../../settings/hooks/useAppSettings";
@@ -13,6 +14,7 @@ export function useAppSettingsController() {
     isLoading: appSettingsLoading,
   } = useAppSettings();
 
+  useLanguagePreference(appSettings.uiLanguage);
   useThemePreference(appSettings.theme);
   const { reduceTransparency, setReduceTransparency } =
     useTransparencyPreference();

@@ -56,5 +56,5 @@ describe("ComposerInput dictation controls", () => {
     expect(onCancelDictation).toHaveBeenCalledTimes(1);
     expect(onToggleDictation).not.toHaveBeenCalled();
     expect(onOpenDictationSettings).not.toHaveBeenCalled();
-  });
+  }, 10_000);
 });

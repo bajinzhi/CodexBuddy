@@ -1,4 +1,5 @@
-import { vi } from "vitest";
+import { beforeAll, beforeEach, vi } from "vitest";
+import i18n, { initializeI18n } from "../i18n";
 
 if (!("IS_REACT_ACT_ENVIRONMENT" in globalThis)) {
   Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", {
@@ -87,3 +88,19 @@ if (!existingLocalStorage || typeof existingLocalStorage.clear !== "function") {
     configurable: true,
   });
 }
+
+beforeAll(async () => {
+  await initializeI18n();
+});
+
+beforeEach(async () => {
+  if (!i18n.isInitialized) {
+    await initializeI18n("en");
+    return;
+  }
+  if (i18n.resolvedLanguage !== "en") {
+    await i18n.changeLanguage("en");
+  } else if (typeof document !== "undefined") {
+    document.documentElement.lang = "en";
+  }
+});

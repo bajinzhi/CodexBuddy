@@ -2,6 +2,7 @@
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AppSettings, CodexDoctorResult } from "@/types";
+import { UI_LANGUAGE_STORAGE_KEY } from "@/i18n/preferences";
 import { useAppSettings } from "./useAppSettings";
 import {
   getAppSettings,
@@ -23,6 +24,7 @@ const runCodexDoctorMock = vi.mocked(runCodexDoctor);
 describe("useAppSettings", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    window.localStorage.clear();
   });
 
   afterEach(() => {
@@ -34,6 +36,7 @@ describe("useAppSettings", () => {
       ({
         uiScale: UI_SCALE_MAX + 1,
         theme: "nope" as unknown as AppSettings["theme"],
+        uiLanguage: "invalid" as unknown as AppSettings["uiLanguage"],
         backendMode: "remote",
         remoteBackendHost: "example:1234",
         personality: "unknown",
@@ -49,15 +52,18 @@ describe("useAppSettings", () => {
 
     expect(result.current.settings.uiScale).toBe(UI_SCALE_MAX);
     expect(result.current.settings.theme).toBe("system");
+    expect(result.current.settings.uiLanguage).toBe("system");
     expect(result.current.settings.uiFontFamily).toContain("system-ui");
     expect(result.current.settings.codeFontFamily).toContain("ui-monospace");
     expect(result.current.settings.codeFontSize).toBe(16);
     expect(result.current.settings.personality).toBe("friendly");
     expect(result.current.settings.backendMode).toBe("remote");
     expect(result.current.settings.remoteBackendHost).toBe("example:1234");
+    expect(window.localStorage.getItem(UI_LANGUAGE_STORAGE_KEY)).toBe("system");
   });
 
   it("keeps defaults when getAppSettings fails", async () => {
+    window.localStorage.setItem(UI_LANGUAGE_STORAGE_KEY, "zh-CN");
     getAppSettingsMock.mockRejectedValue(new Error("boom"));
 
     const { result } = renderHook(() => useAppSettings());
@@ -65,6 +71,7 @@ describe("useAppSettings", () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
     expect(result.current.settings.uiScale).toBe(UI_SCALE_DEFAULT);
+    expect(result.current.settings.uiLanguage).toBe("zh-CN");
     expect(result.current.settings.theme).toBe("system");
     expect(result.current.settings.uiFontFamily).toContain("system-ui");
     expect(result.current.settings.codeFontFamily).toContain("ui-monospace");
@@ -88,6 +95,7 @@ describe("useAppSettings", () => {
       codeFontFamily: "  ",
       codeFontSize: 2,
       notificationSoundsEnabled: false,
+      uiLanguage: "zh-CN",
     };
     const saved: AppSettings = {
       ...result.current.settings,
@@ -98,6 +106,7 @@ describe("useAppSettings", () => {
       codeFontFamily: "JetBrains Mono, monospace",
       codeFontSize: 13,
       notificationSoundsEnabled: false,
+      uiLanguage: "zh-CN",
     };
     updateAppSettingsMock.mockResolvedValue(saved);
 
@@ -114,11 +123,13 @@ describe("useAppSettings", () => {
         codeFontFamily: expect.stringContaining("ui-monospace"),
         codeFontSize: 9,
         notificationSoundsEnabled: false,
+        uiLanguage: "zh-CN",
       }),
     );
     expect(returned).toEqual(saved);
     expect(result.current.settings.theme).toBe("dark");
     expect(result.current.settings.uiScale).toBe(2.4);
+    expect(window.localStorage.getItem(UI_LANGUAGE_STORAGE_KEY)).toBe("zh-CN");
   });
 
   it("surfaces doctor errors", async () => {

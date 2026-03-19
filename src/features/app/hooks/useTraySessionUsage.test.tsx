@@ -49,7 +49,7 @@ describe("useTraySessionUsage", () => {
 
   it("builds the current session usage summary from workspace rate limits", () => {
     expect(buildTraySessionUsage(makeRateLimits(), false)).toEqual({
-      sessionLabel: "12% used · Resets 2 hours",
+      sessionLabel: "12% used · Resets in 2 hours",
       weeklyLabel: null,
     });
   });
@@ -67,7 +67,7 @@ describe("useTraySessionUsage", () => {
         true,
       ),
     ).toEqual({
-      sessionLabel: "58% remaining · Resets 2 hours",
+      sessionLabel: "58% remaining · Resets in 2 hours",
       weeklyLabel: null,
     });
   });
@@ -85,8 +85,8 @@ describe("useTraySessionUsage", () => {
         false,
       ),
     ).toEqual({
-      sessionLabel: "12% used · Resets 2 hours",
-      weeklyLabel: "67% used · Resets 2 days",
+      sessionLabel: "12% used · Resets in 2 hours",
+      weeklyLabel: "67% used · Resets in 2 days",
     });
   });
 
@@ -111,7 +111,7 @@ describe("useTraySessionUsage", () => {
     await vi.runAllTimersAsync();
     expect(setTraySessionUsageMock).toHaveBeenCalledTimes(1);
     expect(setTraySessionUsageMock).toHaveBeenLastCalledWith({
-      sessionLabel: "12% used · Resets 2 hours",
+      sessionLabel: "12% used · Resets in 2 hours",
       weeklyLabel: null,
     });
 
@@ -143,7 +143,7 @@ describe("useTraySessionUsage", () => {
     await vi.advanceTimersByTimeAsync(150);
     expect(setTraySessionUsageMock).toHaveBeenCalledTimes(2);
     expect(setTraySessionUsageMock).toHaveBeenLastCalledWith({
-      sessionLabel: "12% used · Resets 2 hours",
+      sessionLabel: "12% used · Resets in 2 hours",
       weeklyLabel: null,
     });
   });

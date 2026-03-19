@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef } from "react";
 import type { Dispatch, MutableRefObject, SetStateAction } from "react";
+import { translate } from "@/i18n/translate";
 import { pushErrorToast } from "@/services/toasts";
 import type {
   AccessMode,
@@ -368,8 +369,8 @@ export function useThreadSelectionHandlersOrchestration({
       const next = normalizeCodexArgsInput(value);
       if (next && getIgnoredCodexArgsFlagsMetadata(next).hasIgnoredFlags) {
         pushErrorToast({
-          title: "Some codex args are ignored",
-          message: "Selected flags are ignored for per-thread overrides.",
+          title: translate("threads.ignoredArgsTitle", { ns: "app" }),
+          message: translate("threads.ignoredArgsMessage", { ns: "app" }),
         });
       }
       setSelectedCodexArgsOverride?.(next);

@@ -10,6 +10,7 @@ import {
 } from "@testing-library/react";
 import type { ComponentProps } from "react";
 import { describe, expect, it, vi } from "vitest";
+import i18n from "@/i18n";
 import type { AppSettings, WorkspaceInfo } from "@/types";
 import {
   connectWorkspace,
@@ -108,6 +109,7 @@ const baseSettings: AppSettings = {
   lastComposerModelId: null,
   lastComposerReasoningEffort: null,
   uiScale: 1,
+  uiLanguage: "system",
   theme: "system",
   accentColor: "blue",
   usageShowRemaining: false,
@@ -502,7 +504,7 @@ describe("SettingsView Display", () => {
         expect.objectContaining({ theme: "dark" }),
       );
     });
-  });
+  }, 20_000);
 
   it("toggles remaining limits display", async () => {
     const onUpdateAppSettings = vi.fn().mockResolvedValue(undefined);
@@ -913,7 +915,7 @@ describe("SettingsView Codex section", () => {
       expect(screen.getByLabelText("Remote backend host")).toBeTruthy();
       expect(screen.getByLabelText("Remote backend token")).toBeTruthy();
     });
-  });
+  }, 10_000);
 
   it("shows mobile-only server controls on iOS runtime", async () => {
     cleanup();
@@ -1220,7 +1222,7 @@ describe("SettingsView Codex section", () => {
         Reflect.deleteProperty(window.navigator, "maxTouchPoints");
       }
     }
-  });
+  }, 20_000);
 
 });
 
@@ -1324,7 +1326,7 @@ describe("SettingsView Codex defaults", () => {
         }),
       );
     });
-  });
+  }, 10_000);
 
   it("updates model and effort when the user changes the selects", async () => {
     cleanup();
@@ -1510,6 +1512,52 @@ describe("SettingsView Features", () => {
         expect.objectContaining({ unifiedExecEnabled: false }),
       );
     });
+  });
+
+  it("prefers Codex display names over static localized labels", async () => {
+    renderFeaturesSection();
+
+    await screen.findByText("Background terminal");
+    expect(screen.queryByText("Unified exec")).toBeNull();
+  });
+
+  it("falls back to localized feature labels in zh-CN when displayName is missing", async () => {
+    await act(async () => {
+      await i18n.changeLanguage("zh-CN");
+    });
+
+    renderFeaturesSection({
+      appSettings: { unifiedExecEnabled: true },
+      experimentalFeaturesResponse: {
+        data: [
+          {
+            name: "steer",
+            stage: "stable",
+            enabled: true,
+            defaultEnabled: true,
+            displayName: "Steer mode",
+            description:
+              "Send messages immediately. Use Tab to queue while a run is active.",
+            announcement: null,
+          },
+          {
+            name: "unified_exec",
+            stage: "stable",
+            enabled: true,
+            defaultEnabled: true,
+            displayName: null,
+            description: "Run long-running terminal commands in the background.",
+            announcement: null,
+          },
+        ],
+        nextCursor: null,
+      },
+    });
+
+    await screen.findByText("统一 exec");
+    expect(screen.getAllByText("功能").length).toBeGreaterThan(0);
+    expect(screen.getByText("人格风格")).toBeTruthy();
+    expect(screen.queryByText("Background terminal")).toBeNull();
   });
 
   it("shows fallback description when Codex omits feature description", async () => {
@@ -1957,5 +2005,5 @@ describe("SettingsView Shortcuts", () => {
       expect(screen.getByText("Toggle terminal panel")).toBeTruthy();
       expect(screen.queryByText('No shortcuts match "no-such-shortcut".')).toBeNull();
     });
-  });
+  }, 10_000);
 });

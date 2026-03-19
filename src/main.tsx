@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import * as Sentry from "@sentry/react";
 import App from "./App";
+import { initializeI18n } from "./i18n";
 import { isMobilePlatform } from "./utils/platformPaths";
 
 const sentryDsn =
@@ -89,8 +90,13 @@ function syncMobileViewportHeight() {
 disableMobileZoomGestures();
 syncMobileViewportHeight();
 
-ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-);
+async function bootstrap() {
+  await initializeI18n();
+  ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>,
+  );
+}
+
+void bootstrap();

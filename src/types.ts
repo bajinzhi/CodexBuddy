@@ -204,6 +204,8 @@ export type RemoteBackendTarget = {
   lastConnectedAtMs?: number | null;
 };
 export type ThemePreference = "system" | "light" | "dark" | "dim";
+export type UiLanguagePreference = "system" | "en" | "zh-CN";
+export type SupportedUiLocale = "en" | "zh-CN";
 export type AccentColor = "blue" | "green" | "purple" | "orange" | "pink" | "teal" | "red";
 export type PersonalityPreference = "friendly" | "pragmatic";
 export type FollowUpMessageBehavior = "queue" | "steer";
@@ -267,6 +269,7 @@ export type AppSettings = {
   lastComposerModelId: string | null;
   lastComposerReasoningEffort: string | null;
   uiScale: number;
+  uiLanguage: UiLanguagePreference;
   theme: ThemePreference;
   accentColor: AccentColor;
   usageShowRemaining: boolean;

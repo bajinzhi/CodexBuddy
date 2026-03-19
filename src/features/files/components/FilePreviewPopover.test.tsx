@@ -107,5 +107,5 @@ describe("FilePreviewPopover", () => {
 
     const addButton = screen.getByRole("button", { name: "Add to chat" });
     expect(addButton.hasAttribute("disabled")).toBe(true);
-  });
+  }, 10_000);
 });

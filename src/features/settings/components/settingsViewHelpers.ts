@@ -3,6 +3,7 @@ import type {
   OpenAppTarget,
   WorkspaceInfo,
 } from "@/types";
+import { translate } from "@/i18n/translate";
 import type { OpenAppDraft, ShortcutDrafts } from "./settingsTypes";
 import { SETTINGS_MOBILE_BREAKPOINT_PX } from "./settingsViewConstants";
 
@@ -126,18 +127,26 @@ export const buildEditorContentMeta = ({
   truncated,
   isDirty,
 }: EditorContentMetaInput) => {
-  const status = isLoading ? "Loading…" : isSaving ? "Saving…" : exists ? "" : "Not found";
+  const status = isLoading
+    ? translate("status.loading", { ns: "common" })
+    : isSaving
+      ? translate("status.saving", { ns: "common" })
+      : exists
+        ? ""
+        : translate("status.missing", { ns: "common" });
   const metaParts: string[] = [];
   if (status) {
     metaParts.push(status);
   }
   if (truncated) {
-    metaParts.push("Truncated");
+    metaParts.push(translate("settings:codex.editorMeta.truncated"));
   }
 
   return {
     meta: metaParts.join(" · "),
-    saveLabel: exists ? "Save" : "Create",
+    saveLabel: exists
+      ? translate("actions.save", { ns: "common" })
+      : translate("actions.create", { ns: "common" }),
     saveDisabled: isLoading || isSaving || !isDirty,
     refreshDisabled: isLoading || isSaving,
   };

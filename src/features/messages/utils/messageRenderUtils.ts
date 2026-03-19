@@ -1,4 +1,12 @@
 import { convertFileSrc } from "@tauri-apps/api/core";
+import { translate } from "@/i18n/translate";
+import {
+  collabToolNameFromTitle,
+  commandTextFromTitle,
+  isPendingChangesDetail,
+  mcpToolPartsFromTitle,
+  toolNameFromRawTitle,
+} from "@/utils/toolTitles";
 import type { ConversationItem } from "../../../types";
 
 export type ToolSummary = {
@@ -97,24 +105,39 @@ function formatCollabAgentLabel(agent: {
 }
 
 function summarizeCollabLabel(title: string, status?: string) {
-  const tool = title.replace(/^collab:\s*/i, "").trim().toLowerCase();
+  const tool = collabToolNameFromTitle(title).toLowerCase();
   const tone = statusToneFromText(status);
   if (tool.includes("wait")) {
-    return tone === "processing" ? "waiting for" : "waited for";
+    return translate(
+      tone === "processing" ? "messages.collabStatus.waitingFor" : "messages.collabStatus.waitedFor",
+      { ns: "app" },
+    );
   }
   if (tool.includes("resume")) {
-    return tone === "processing" ? "resuming" : "resumed";
+    return translate(
+      tone === "processing" ? "messages.collabStatus.resuming" : "messages.collabStatus.resumed",
+      { ns: "app" },
+    );
   }
   if (tool.includes("close")) {
-    return tone === "processing" ? "closing" : "closed";
+    return translate(
+      tone === "processing" ? "messages.collabStatus.closing" : "messages.collabStatus.closed",
+      { ns: "app" },
+    );
   }
   if (tool.includes("spawn")) {
-    return tone === "processing" ? "spawning" : "spawned";
+    return translate(
+      tone === "processing" ? "messages.collabStatus.spawning" : "messages.collabStatus.spawned",
+      { ns: "app" },
+    );
   }
   if (tool.includes("send") || tool.includes("interaction")) {
-    return tone === "processing" ? "sending to" : "sent to";
+    return translate(
+      tone === "processing" ? "messages.collabStatus.sendingTo" : "messages.collabStatus.sentTo",
+      { ns: "app" },
+    );
   }
-  return "sub-agent";
+  return translate("messages.collabStatus.subAgent", { ns: "app" });
 }
 
 function summarizeCollabReceiver(
@@ -127,7 +150,7 @@ function summarizeCollabReceiver(
         ? [item.collabReceiver]
         : [];
   if (receivers.length === 0) {
-    return item.title || "";
+    return getToolDisplayTitle(item);
   }
   if (receivers.length === 1) {
     return formatCollabAgentLabel(receivers[0]);
@@ -136,12 +159,7 @@ function summarizeCollabReceiver(
 }
 
 export function toolNameFromTitle(title: string) {
-  if (!title.toLowerCase().startsWith("tool:")) {
-    return "";
-  }
-  const [, toolPart = ""] = title.split(":");
-  const segments = toolPart.split("/").map((segment) => segment.trim());
-  return segments.length ? segments[segments.length - 1] : "";
+  return toolNameFromRawTitle(title);
 }
 
 export function formatCount(value: number, singular: string, plural: string) {
@@ -336,15 +354,77 @@ export function cleanCommandText(commandText: string) {
   return stripped.trim();
 }
 
+export function getCommandTextForDisplay(
+  item: Extract<ConversationItem, { kind: "tool" }>,
+) {
+  return commandTextFromTitle(item.title);
+}
+
+export function getToolDisplayTitle(
+  item: Extract<ConversationItem, { kind: "tool" }>,
+) {
+  if (item.toolType === "plan") {
+    return translate("threads.items.planTitle", { ns: "app" });
+  }
+  if (item.toolType === "commandExecution") {
+    const command = commandTextFromTitle(item.title);
+    return command
+      ? translate("threads.items.commandTitleWithCommand", {
+          ns: "app",
+          command,
+        })
+      : translate("threads.items.commandTitle", { ns: "app" });
+  }
+  if (item.toolType === "fileChange") {
+    return translate("threads.items.fileChangesTitle", { ns: "app" });
+  }
+  if (item.toolType === "mcpToolCall") {
+    const { server, tool } = mcpToolPartsFromTitle(item.title);
+    return translate("threads.items.toolTitle", {
+      ns: "app",
+      server,
+      tool: tool ? ` / ${tool}` : "",
+    });
+  }
+  if (item.toolType === "collabToolCall") {
+    const tool = collabToolNameFromTitle(item.title);
+    return tool
+      ? translate("threads.items.collabTitle", { ns: "app", tool })
+      : translate("threads.items.collabToolCallTitle", { ns: "app" });
+  }
+  if (item.toolType === "webSearch") {
+    return translate("threads.items.webSearchTitle", { ns: "app" });
+  }
+  if (item.toolType === "imageView") {
+    return translate("threads.items.imageViewTitle", { ns: "app" });
+  }
+  if (item.toolType === "contextCompaction") {
+    return translate("threads.items.contextCompactionTitle", { ns: "app" });
+  }
+  return item.title || "";
+}
+
+export function getToolDisplayDetail(
+  item: Extract<ConversationItem, { kind: "tool" }>,
+) {
+  if (item.toolType === "contextCompaction") {
+    return translate("threads.items.contextCompactionDetail", { ns: "app" });
+  }
+  if (item.toolType === "fileChange" && isPendingChangesDetail(item.detail || "")) {
+    return translate("threads.items.pendingChanges", { ns: "app" });
+  }
+  return item.detail || "";
+}
+
 export function buildToolSummary(
   item: Extract<ConversationItem, { kind: "tool" }>,
   commandText: string,
 ): ToolSummary {
   if (item.toolType === "commandExecution") {
-    const cleanedCommand = cleanCommandText(commandText);
+    const cleanedCommand = cleanCommandText(commandText || commandTextFromTitle(item.title));
     return {
       label: "command",
-      value: cleanedCommand || "Command",
+      value: cleanedCommand || getToolDisplayTitle(item),
       detail: "",
       output: item.output || "",
     };
@@ -413,8 +493,8 @@ export function buildToolSummary(
 
   return {
     label: "tool",
-    value: item.title || "",
-    detail: item.detail || "",
+    value: getToolDisplayTitle(item),
+    detail: getToolDisplayDetail(item),
     output: item.output || "",
   };
 }

@@ -10,6 +10,7 @@ import GitBranch from "lucide-react/dist/esm/icons/git-branch";
 import ScrollText from "lucide-react/dist/esm/icons/scroll-text";
 import Search from "lucide-react/dist/esm/icons/search";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { PanelTabId } from "../../layout/components/PanelTabs";
 import { PanelShell } from "../../layout/components/PanelShell";
 import { pushErrorToast } from "../../../services/toasts";
@@ -233,6 +234,7 @@ export function GitDiffPanel({
   syncError = null,
   commitsAhead = 0,
 }: GitDiffPanelProps) {
+  const { t } = useTranslation(["git", "app"]);
   const [dismissedErrorSignatures, setDismissedErrorSignatures] = useState<Set<string>>(
     new Set(),
   );
@@ -268,8 +270,8 @@ export function GitDiffPanel({
     if (!pushNeedsSync) {
       return pushError;
     }
-    return `Remote has new commits. Sync (pull then push) before retrying.\n\n${pushError}`;
-  }, [pushError, pushNeedsSync]);
+    return t("pushNeedsSyncError", { error: pushError });
+  }, [pushError, pushNeedsSync, t]);
 
   const handleSyncFromError = useCallback(() => {
     void _onSync?.();
@@ -280,12 +282,12 @@ export function GitDiffPanel({
       return null;
     }
     return {
-      label: _syncLoading ? "Syncing..." : "Sync (pull then push)",
+      label: _syncLoading ? t("syncing") : t("syncPullPush"),
       onAction: handleSyncFromError,
       disabled: _syncLoading,
       loading: _syncLoading,
     };
-  }, [pushNeedsSync, _onSync, _syncLoading, handleSyncFromError]);
+  }, [pushNeedsSync, _onSync, _syncLoading, handleSyncFromError, t]);
 
   const githubBaseUrl = useMemo(() => getGitHubBaseUrl(gitRemoteUrl), [gitRemoteUrl]);
 
@@ -295,7 +297,7 @@ export function GitDiffPanel({
       event.stopPropagation();
 
       const copyItem = await MenuItem.new({
-        text: "Copy SHA",
+        text: t("copySha"),
         action: async () => {
           await navigator.clipboard.writeText(entry.sha);
         },
@@ -304,7 +306,7 @@ export function GitDiffPanel({
       const items = [copyItem];
       if (githubBaseUrl) {
         const openItem = await MenuItem.new({
-          text: "Open on GitHub",
+          text: t("common:actions.viewOnGitHub"),
           action: async () => {
             await openUrl(`${githubBaseUrl}/commit/${entry.sha}`);
           },
@@ -317,7 +319,7 @@ export function GitDiffPanel({
       const position = new LogicalPosition(event.clientX, event.clientY);
       await menu.popup(position, window);
     },
-    [githubBaseUrl],
+    [githubBaseUrl, t],
   );
 
   const showPullRequestMenu = useCallback(
@@ -326,7 +328,7 @@ export function GitDiffPanel({
       event.stopPropagation();
 
       const openItem = await MenuItem.new({
-        text: "Open on GitHub",
+        text: t("common:actions.viewOnGitHub"),
         action: async () => {
           await openUrl(pullRequest.url);
         },
@@ -337,7 +339,7 @@ export function GitDiffPanel({
       const position = new LogicalPosition(event.clientX, event.clientY);
       await menu.popup(position, window);
     },
-    [],
+    [t],
   );
 
   const discardFiles = useCallback(
@@ -349,12 +351,15 @@ export function GitDiffPanel({
       const isSingle = paths.length === 1;
       const previewLimit = 6;
       const preview = paths.slice(0, previewLimit).join("\n");
-      const more = paths.length > previewLimit ? `\n… and ${paths.length - previewLimit} more` : "";
+      const more =
+        paths.length > previewLimit
+          ? t("git:discardChangesMore", { count: paths.length - previewLimit })
+          : "";
       const message = isSingle
-        ? `Discard changes in:\n\n${paths[0]}\n\nThis cannot be undone.`
-        : `Discard changes in these files?\n\n${preview}${more}\n\nThis cannot be undone.`;
+        ? t("git:discardChangesSingle", { path: paths[0] })
+        : t("git:discardChangesMultiple", { preview, more });
       const confirmed = await ask(message, {
-        title: "Discard changes",
+        title: t("git:discardChangesTitle"),
         kind: "warning",
       });
       if (!confirmed) {
@@ -365,7 +370,7 @@ export function GitDiffPanel({
         await onRevertFile(path);
       }
     },
-    [onRevertFile],
+    [onRevertFile, t],
   );
 
   const discardFile = useCallback(
@@ -392,8 +397,6 @@ export function GitDiffPanel({
       }
 
       const fileCount = targetPaths.length;
-      const plural = fileCount > 1 ? "s" : "";
-      const countSuffix = fileCount > 1 ? ` (${fileCount})` : "";
       const normalizedRoot = resolveRootPath(gitRoot, workspacePath);
       const inferredRoot =
         !normalizedRoot && gitRootCandidates.length === 1
@@ -414,7 +417,7 @@ export function GitDiffPanel({
       if (stagedPaths.length > 0 && onUnstageFile) {
         items.push(
           await MenuItem.new({
-            text: `Unstage file${stagedPaths.length > 1 ? `s (${stagedPaths.length})` : ""}`,
+            text: t("unstageFiles", { count: stagedPaths.length }),
             action: async () => {
               for (const stagedPath of stagedPaths) {
                 await onUnstageFile(stagedPath);
@@ -427,7 +430,7 @@ export function GitDiffPanel({
       if (unstagedPaths.length > 0 && onStageFile) {
         items.push(
           await MenuItem.new({
-            text: `Stage file${unstagedPaths.length > 1 ? `s (${unstagedPaths.length})` : ""}`,
+            text: t("stageFiles", { count: unstagedPaths.length }),
             action: async () => {
               for (const unstagedPath of unstagedPaths) {
                 await onStageFile(unstagedPath);
@@ -449,13 +452,15 @@ export function GitDiffPanel({
 
         items.push(
           await MenuItem.new({
-            text: `Show in ${fileManagerLabel}`,
+            text: t("showInFileManager", { fileManager: fileManagerLabel }),
             action: async () => {
               try {
                 if (!resolvedRoot && !isAbsolutePathForPlatform(absolutePath)) {
                   pushErrorToast({
-                    title: `Couldn't show file in ${fileManagerLabel}`,
-                    message: "Select a git root first.",
+                    title: t("app:toasts.showFileInManagerFailed", {
+                      fileManager: fileManagerLabel,
+                    }),
+                    message: t("app:toasts.selectGitRootFirst"),
                   });
                   return;
                 }
@@ -464,7 +469,9 @@ export function GitDiffPanel({
               } catch (menuError) {
                 const message = menuError instanceof Error ? menuError.message : String(menuError);
                 pushErrorToast({
-                  title: `Couldn't show file in ${fileManagerLabel}`,
+                  title: t("app:toasts.showFileInManagerFailed", {
+                    fileManager: fileManagerLabel,
+                  }),
                   message,
                 });
                 console.warn("Failed to reveal file", {
@@ -478,13 +485,13 @@ export function GitDiffPanel({
 
         items.push(
           await MenuItem.new({
-            text: "Copy file name",
+            text: t("copyFileName"),
             action: async () => {
               await navigator.clipboard.writeText(fileName);
             },
           }),
           await MenuItem.new({
-            text: "Copy file path",
+            text: t("copyFilePath"),
             action: async () => {
               await navigator.clipboard.writeText(projectRelativePath);
             },
@@ -495,7 +502,7 @@ export function GitDiffPanel({
       if (onRevertFile) {
         items.push(
           await MenuItem.new({
-            text: `Discard change${plural}${countSuffix}`,
+            text: t("discardChangesMenu", { count: fileCount }),
             action: async () => {
               await discardFiles(targetPaths);
             },
@@ -524,16 +531,19 @@ export function GitDiffPanel({
       gitRoot,
       gitRootCandidates,
       workspacePath,
+      t,
     ],
   );
 
   const logCountLabel = logTotal
-    ? `${logTotal} commit${logTotal === 1 ? "" : "s"}`
+    ? t("commitCount", { count: logTotal })
     : logEntries.length
-      ? `${logEntries.length} commit${logEntries.length === 1 ? "" : "s"}`
-      : "No commits";
-  const logSyncLabel = logUpstream ? `↑${logAhead} ↓${logBehind}` : "No upstream configured";
-  const logUpstreamLabel = logUpstream ? `Upstream ${logUpstream}` : "";
+      ? t("commitCount", { count: logEntries.length })
+      : t("noCommits");
+  const logSyncLabel = logUpstream
+    ? `↑${logAhead} ↓${logBehind}`
+    : t("noUpstreamConfigured");
+  const logUpstreamLabel = logUpstream ? t("upstreamLabel", { upstream: logUpstream }) : "";
   const showAheadSection = Boolean(logUpstream && logAhead > 0);
   const showBehindSection = Boolean(logUpstream && logBehind > 0);
   const hasDiffTotals = totalAdditions > 0 || totalDeletions > 0;
@@ -541,7 +551,9 @@ export function GitDiffPanel({
     (total, group) => total + group.edits.length,
     0,
   );
-  const perFileDiffStatusLabel = `${perFileDiffGroups.length} files · ${perFileEditCount} edits`;
+  const perFileDiffStatusLabel = `${t("fileCount", {
+    count: perFileDiffGroups.length,
+  })} · ${t("editCount", { count: perFileEditCount })}`;
   const diffTotalsLabel = `+${totalAdditions} / -${totalDeletions}`;
   const diffStatusLabel = hasDiffTotals
     ? [logUpstream ? logSyncLabel : null, diffTotalsLabel].filter(Boolean).join(" · ")
@@ -643,7 +655,7 @@ export function GitDiffPanel({
       onFilePanelModeChange={onFilePanelModeChange}
       headerClassName="git-panel-header"
       headerRight={
-        <div className="git-panel-actions" role="group" aria-label="Git panel">
+        <div className="git-panel-actions" role="group" aria-label={t("panelLabel")}>
           <div className="git-panel-select">
             <span className="git-panel-select-icon" aria-hidden>
               <ModeIcon />
@@ -652,13 +664,13 @@ export function GitDiffPanel({
               className="git-panel-select-input"
               value={mode}
               onChange={(event) => onModeChange(event.target.value as GitDiffPanelProps["mode"])}
-              aria-label="Git panel view"
+              aria-label={t("panelViewLabel")}
             >
-              <option value="diff">Diff</option>
-              <option value="perFile">Agent edits</option>
-              <option value="log">Log</option>
-              <option value="issues">Issues</option>
-              <option value="prs">PRs</option>
+              <option value="diff">{t("modes.diff")}</option>
+              <option value="perFile">{t("modes.perFile")}</option>
+              <option value="log">{t("modes.log")}</option>
+              <option value="issues">{t("modes.issues")}</option>
+              <option value="prs">{t("modes.prs")}</option>
             </select>
           </div>
         </div>

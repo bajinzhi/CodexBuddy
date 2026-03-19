@@ -150,6 +150,35 @@ describe("threadItems", () => {
     expect(prepared.filter((item) => item.kind === "tool")).toHaveLength(0);
   });
 
+  it("summarizes localized command titles and keeps explore grouping", () => {
+    const items: ConversationItem[] = [
+      {
+        id: "cmd-zh-1",
+        kind: "tool",
+        toolType: "commandExecution",
+        title: "命令：cat src/foo.ts",
+        detail: "",
+        status: "completed",
+        output: "",
+      },
+      {
+        id: "msg-zh-1",
+        kind: "message",
+        role: "assistant",
+        text: "Done reading",
+      },
+    ];
+
+    const prepared = prepareThreadItems(items);
+    expect(prepared[0].kind).toBe("explore");
+    if (prepared[0].kind === "explore") {
+      expect(prepared[0].entries).toHaveLength(1);
+      expect(prepared[0].entries[0].kind).toBe("read");
+      expect(prepared[0].entries[0].label).toContain("foo.ts");
+    }
+    expect(prepared.filter((item) => item.kind === "tool")).toHaveLength(0);
+  });
+
   it("treats inProgress command status as exploring", () => {
     const items: ConversationItem[] = [
       {

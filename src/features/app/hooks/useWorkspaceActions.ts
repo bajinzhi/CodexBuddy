@@ -1,6 +1,7 @@
 import type { RefObject } from "react";
 import { useCallback } from "react";
 import * as Sentry from "@sentry/react";
+import { useTranslation } from "react-i18next";
 import type { DebugEntry, WorkspaceInfo } from "../../../types";
 
 type Params = {
@@ -40,6 +41,7 @@ export function useWorkspaceActions({
   composerInputRef,
   onDebug,
 }: Params) {
+  const { t } = useTranslation("app");
   const handleWorkspaceAdded = useCallback(
     (workspace: WorkspaceInfo) => {
       setActiveThreadId(null, workspace.id);
@@ -65,9 +67,9 @@ export function useWorkspaceActions({
         label: "workspace/add error",
         payload: message,
       });
-      alert(`Failed to add workspace.\n\n${message}`);
+      alert(t("workspaces.failedToAddWorkspace", { message }));
     }
-  }, [addWorkspace, handleWorkspaceAdded, onDebug]);
+  }, [addWorkspace, handleWorkspaceAdded, onDebug, t]);
 
   const handleAddWorkspacesFromPaths = useCallback(
     async (paths: string[]) => {
@@ -82,13 +84,13 @@ export function useWorkspaceActions({
           id: `${Date.now()}-client-add-workspace-error`,
           timestamp: Date.now(),
           source: "error",
-          label: "workspace/add error",
-          payload: message,
-        });
-        alert(`Failed to add workspaces.\n\n${message}`);
+        label: "workspace/add error",
+        payload: message,
+      });
+        alert(t("workspaces.failedToAddWorkspaces", { message }));
       }
     },
-    [addWorkspacesFromPaths, handleWorkspaceAdded, onDebug],
+    [addWorkspacesFromPaths, handleWorkspaceAdded, onDebug, t],
   );
 
   const handleAddWorkspaceFromPath = useCallback(
@@ -104,13 +106,13 @@ export function useWorkspaceActions({
           id: `${Date.now()}-client-add-workspace-error`,
           timestamp: Date.now(),
           source: "error",
-          label: "workspace/add error",
-          payload: message,
-        });
-        alert(`Failed to add workspace.\n\n${message}`);
+        label: "workspace/add error",
+        payload: message,
+      });
+        alert(t("workspaces.failedToAddWorkspace", { message }));
       }
     },
-    [addWorkspaceFromPath, handleWorkspaceAdded, onDebug],
+    [addWorkspaceFromPath, handleWorkspaceAdded, onDebug, t],
   );
 
 
@@ -127,16 +129,14 @@ export function useWorkspaceActions({
           id: `${Date.now()}-client-add-workspace-from-url-error`,
           timestamp: Date.now(),
           source: "error",
-          label: "workspace/add-from-url error",
-          payload: message,
-        });
-        alert(`Failed to import workspace from URL.
-
-${message}`);
+        label: "workspace/add-from-url error",
+        payload: message,
+      });
+        alert(t("workspaces.failedToImportWorkspaceFromUrl", { message }));
         throw error;
       }
     },
-    [addWorkspaceFromGitUrl, handleWorkspaceAdded, onDebug],
+    [addWorkspaceFromGitUrl, handleWorkspaceAdded, onDebug, t],
   );
 
   const handleAddAgent = useCallback(

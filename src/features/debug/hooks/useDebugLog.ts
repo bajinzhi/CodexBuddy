@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from "react";
+import { formatTime } from "@/i18n/format";
 import type { DebugEntry } from "../../../types";
 
 const MAX_DEBUG_ENTRIES = 200;
@@ -63,7 +64,7 @@ export function useDebugLog() {
   const handleCopyDebug = useCallback(async () => {
     const text = debugEntries
       .map((entry) => {
-        const timestamp = new Date(entry.timestamp).toLocaleTimeString();
+        const timestamp = formatTime(entry.timestamp);
         const payload =
           entry.payload !== undefined
             ? typeof entry.payload === "string"

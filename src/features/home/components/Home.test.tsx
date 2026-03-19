@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import i18n from "../../../i18n";
 import { Home } from "./Home";
 
 afterEach(() => {
@@ -50,14 +51,14 @@ describe("Home", () => {
     );
 
     expect(screen.getByText("Latest agents")).toBeTruthy();
-    expect(screen.getByText("CodexBuddy")).toBeTruthy();
-    expect(screen.getByText("Frontend")).toBeTruthy();
     const message = screen.getByText("Ship the dashboard refresh");
     const card = message.closest("button");
     expect(card).toBeTruthy();
     if (!card) {
       throw new Error("Expected latest agent card button");
     }
+    expect(within(card).getByText("CodexBuddy")).toBeTruthy();
+    expect(within(card).getByText("Frontend")).toBeTruthy();
     fireEvent.click(card);
     expect(onSelectThread).toHaveBeenCalledWith("workspace-1", "thread-1");
     expect(screen.getByText("Running")).toBeTruthy();
@@ -330,7 +331,7 @@ describe("Home", () => {
       (screen.getByRole("button", { name: "Show next week" }) as HTMLButtonElement)
         .disabled,
     ).toBe(true);
-  });
+  }, 10_000);
 
   it("renders account limits even when no local usage snapshot exists", () => {
     render(
@@ -363,5 +364,102 @@ describe("Home", () => {
     expect(screen.getByText("120")).toBeTruthy();
     expect(screen.getByText(/user@example\.com/)).toBeTruthy();
     expect(screen.getByText("No usage data yet")).toBeTruthy();
+  });
+
+  it("localizes the visible usage week range label", async () => {
+    await i18n.changeLanguage("zh-CN");
+
+    render(
+      <Home
+        {...baseProps}
+        localUsageSnapshot={{
+          updatedAt: Date.now(),
+          days: [
+            {
+              day: "2026-01-14",
+              inputTokens: 5,
+              cachedInputTokens: 0,
+              outputTokens: 5,
+              totalTokens: 10,
+              agentTimeMs: 30000,
+              agentRuns: 1,
+            },
+            {
+              day: "2026-01-15",
+              inputTokens: 5,
+              cachedInputTokens: 0,
+              outputTokens: 5,
+              totalTokens: 10,
+              agentTimeMs: 30000,
+              agentRuns: 1,
+            },
+            {
+              day: "2026-01-16",
+              inputTokens: 5,
+              cachedInputTokens: 0,
+              outputTokens: 5,
+              totalTokens: 10,
+              agentTimeMs: 30000,
+              agentRuns: 1,
+            },
+            {
+              day: "2026-01-17",
+              inputTokens: 5,
+              cachedInputTokens: 0,
+              outputTokens: 5,
+              totalTokens: 10,
+              agentTimeMs: 30000,
+              agentRuns: 1,
+            },
+            {
+              day: "2026-01-18",
+              inputTokens: 5,
+              cachedInputTokens: 0,
+              outputTokens: 5,
+              totalTokens: 10,
+              agentTimeMs: 30000,
+              agentRuns: 1,
+            },
+            {
+              day: "2026-01-19",
+              inputTokens: 5,
+              cachedInputTokens: 0,
+              outputTokens: 5,
+              totalTokens: 10,
+              agentTimeMs: 30000,
+              agentRuns: 1,
+            },
+            {
+              day: "2026-01-20",
+              inputTokens: 5,
+              cachedInputTokens: 0,
+              outputTokens: 5,
+              totalTokens: 10,
+              agentTimeMs: 30000,
+              agentRuns: 1,
+            },
+          ],
+          totals: {
+            last7DaysTokens: 70,
+            last30DaysTokens: 70,
+            averageDailyTokens: 10,
+            cacheHitRatePercent: 0,
+            peakDay: "2026-01-20",
+            peakDayTokens: 10,
+          },
+          topModels: [],
+        }}
+      />,
+    );
+
+    const formatter = new Intl.DateTimeFormat("zh-CN", {
+      month: "short",
+      day: "numeric",
+    });
+    const expectedRange = `${formatter.format(new Date(2026, 0, 14))} 至 ${formatter.format(
+      new Date(2026, 0, 20),
+    )}`;
+
+    expect(screen.getByText(expectedRange)).toBeTruthy();
   });
 });

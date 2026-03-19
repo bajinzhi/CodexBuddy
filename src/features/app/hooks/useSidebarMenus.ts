@@ -2,6 +2,7 @@ import { useCallback, type MouseEvent } from "react";
 import { Menu, MenuItem } from "@tauri-apps/api/menu";
 import { LogicalPosition } from "@tauri-apps/api/dpi";
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { useTranslation } from "react-i18next";
 
 import type { WorkspaceInfo } from "../../../types";
 import { pushErrorToast } from "../../../services/toasts";
@@ -30,6 +31,7 @@ export function useSidebarMenus({
   onDeleteWorkspace,
   onDeleteWorktree,
 }: SidebarMenuHandlers) {
+  const { t } = useTranslation(["app", "common"]);
   const showThreadMenu = useCallback(
     async (
       event: MouseEvent,
@@ -40,19 +42,19 @@ export function useSidebarMenus({
       event.preventDefault();
       event.stopPropagation();
       const renameItem = await MenuItem.new({
-        text: "Rename",
+        text: t("actions.rename", { ns: "common" }),
         action: () => onRenameThread(workspaceId, threadId),
       });
       const syncItem = await MenuItem.new({
-        text: "Sync from server",
+        text: t("menus.thread.syncFromServer", { ns: "app" }),
         action: () => onSyncThread(workspaceId, threadId),
       });
       const archiveItem = await MenuItem.new({
-        text: "Archive",
+        text: t("actions.archive", { ns: "common" }),
         action: () => onDeleteThread(workspaceId, threadId),
       });
       const copyItem = await MenuItem.new({
-        text: "Copy ID",
+        text: t("menus.thread.copyId", { ns: "app" }),
         action: async () => {
           try {
             await navigator.clipboard.writeText(threadId);
@@ -66,7 +68,9 @@ export function useSidebarMenus({
         const isPinned = isThreadPinned(workspaceId, threadId);
         items.push(
           await MenuItem.new({
-            text: isPinned ? "Unpin" : "Pin",
+            text: t(isPinned ? "menus.thread.unpin" : "menus.thread.pin", {
+              ns: "app",
+            }),
             action: () => {
               if (isPinned) {
                 onUnpinThread(workspaceId, threadId);
@@ -90,6 +94,7 @@ export function useSidebarMenus({
       onRenameThread,
       onSyncThread,
       onUnpinThread,
+      t,
     ],
   );
 
@@ -98,11 +103,11 @@ export function useSidebarMenus({
       event.preventDefault();
       event.stopPropagation();
       const reloadItem = await MenuItem.new({
-        text: "Reload threads",
+        text: t("menus.workspace.reloadThreads", { ns: "app" }),
         action: () => onReloadWorkspaceThreads(workspaceId),
       });
       const deleteItem = await MenuItem.new({
-        text: "Delete",
+        text: t("actions.delete", { ns: "common" }),
         action: () => onDeleteWorkspace(workspaceId),
       });
       const menu = await Menu.new({ items: [reloadItem, deleteItem] });
@@ -110,7 +115,7 @@ export function useSidebarMenus({
       const position = new LogicalPosition(event.clientX, event.clientY);
       await menu.popup(position, window);
     },
-    [onReloadWorkspaceThreads, onDeleteWorkspace],
+    [onReloadWorkspaceThreads, onDeleteWorkspace, t],
   );
 
   const showWorktreeMenu = useCallback(
@@ -119,11 +124,14 @@ export function useSidebarMenus({
       event.stopPropagation();
       const fileManagerLabel = fileManagerName();
       const reloadItem = await MenuItem.new({
-        text: "Reload threads",
+        text: t("menus.workspace.reloadThreads", { ns: "app" }),
         action: () => onReloadWorkspaceThreads(worktree.id),
       });
       const revealItem = await MenuItem.new({
-        text: `Show in ${fileManagerLabel}`,
+        text: t("menus.worktree.showInFileManager", {
+          ns: "app",
+          fileManager: fileManagerLabel,
+        }),
         action: async () => {
           if (!worktree.path) {
             return;
@@ -136,7 +144,10 @@ export function useSidebarMenus({
           } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
             pushErrorToast({
-              title: `Couldn't show worktree in ${fileManagerLabel}`,
+              title: t("menus.worktree.revealFailed", {
+                ns: "app",
+                fileManager: fileManagerLabel,
+              }),
               message,
             });
             console.warn("Failed to reveal worktree", {
@@ -148,7 +159,7 @@ export function useSidebarMenus({
         },
       });
       const deleteItem = await MenuItem.new({
-        text: "Delete worktree",
+        text: t("menus.worktree.deleteWorktree", { ns: "app" }),
         action: () => onDeleteWorktree(worktree.id),
       });
       const menu = await Menu.new({ items: [reloadItem, revealItem, deleteItem] });
@@ -156,7 +167,7 @@ export function useSidebarMenus({
       const position = new LogicalPosition(event.clientX, event.clientY);
       await menu.popup(position, window);
     },
-    [onReloadWorkspaceThreads, onDeleteWorktree],
+    [onReloadWorkspaceThreads, onDeleteWorktree, t],
   );
 
   const showCloneMenu = useCallback(
@@ -165,11 +176,14 @@ export function useSidebarMenus({
       event.stopPropagation();
       const fileManagerLabel = fileManagerName();
       const reloadItem = await MenuItem.new({
-        text: "Reload threads",
+        text: t("menus.workspace.reloadThreads", { ns: "app" }),
         action: () => onReloadWorkspaceThreads(clone.id),
       });
       const revealItem = await MenuItem.new({
-        text: `Show in ${fileManagerLabel}`,
+        text: t("menus.worktree.showInFileManager", {
+          ns: "app",
+          fileManager: fileManagerLabel,
+        }),
         action: async () => {
           if (!clone.path) {
             return;
@@ -182,7 +196,10 @@ export function useSidebarMenus({
           } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
             pushErrorToast({
-              title: `Couldn't show clone in ${fileManagerLabel}`,
+              title: t("menus.clone.revealFailed", {
+                ns: "app",
+                fileManager: fileManagerLabel,
+              }),
               message,
             });
             console.warn("Failed to reveal clone", {
@@ -194,7 +211,7 @@ export function useSidebarMenus({
         },
       });
       const deleteItem = await MenuItem.new({
-        text: "Delete clone",
+        text: t("menus.clone.deleteClone", { ns: "app" }),
         action: () => onDeleteWorkspace(clone.id),
       });
       const menu = await Menu.new({ items: [reloadItem, revealItem, deleteItem] });
@@ -202,7 +219,7 @@ export function useSidebarMenus({
       const position = new LogicalPosition(event.clientX, event.clientY);
       await menu.popup(position, window);
     },
-    [onReloadWorkspaceThreads, onDeleteWorkspace],
+    [onReloadWorkspaceThreads, onDeleteWorkspace, t],
   );
 
   return { showThreadMenu, showWorkspaceMenu, showWorktreeMenu, showCloneMenu };

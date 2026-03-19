@@ -1,0 +1,235 @@
+{
+  "resetAt": "{{relative}} 重置",
+  "credits": {
+    "available": "可用额度：{{value}}",
+    "availableUnlimited": "可用额度：无限"
+  },
+  "notifications": {
+    "dismissError": "关闭错误",
+    "approvalNeeded": "需要批准",
+    "noExtraDetails": "没有更多详情。",
+    "allowCommandsThatStartWith": "允许以 {{command}} 开头的命令",
+    "agentComplete": "智能体已完成",
+    "agentError": "智能体出错",
+    "taskFinished": "您的智能体已完成任务。",
+    "errorOccurred": "发生了一个错误。",
+    "approvalTitleWithWorkspace": "需要批准 - {{workspace}}",
+    "approvalTitle": "需要批准",
+    "questionTitleWithWorkspace": "问题 - {{workspace}}",
+    "questionTitle": "问题",
+    "inputNeeded": "需要您的输入。",
+    "planReadyTitleWithWorkspace": "计划已就绪 - {{workspace}}",
+    "planReadyTitle": "计划已就绪",
+    "planReadyBody": "计划已经准备好，请打开 CodexBuddy 进行响应。"
+  },
+  "update": {
+    "whatsNew": "更新内容",
+    "updatedLoadingNotes": "更新成功，正在加载发布说明...",
+    "updatedReady": "更新成功，以下是新内容：",
+    "updatedFallback": "已更新到 v{{version}}，但无法加载发布说明。",
+    "title": "更新",
+    "checking": "正在检查更新...",
+    "available": "发现新版本。",
+    "latest": "当前已是最新版本。",
+    "downloading": "正在下载更新…",
+    "downloaded": "已下载 {{downloaded}}",
+    "installing": "正在安装更新…",
+    "restarting": "正在重启…",
+    "failed": "更新失败。"
+  },
+  "workspaces": {
+    "enterAbsoluteDirectoryPath": "请至少输入一个绝对目录路径。",
+    "added_one": "已添加 {{count}} 个工作区。",
+    "added_other": "已添加 {{count}} 个工作区。",
+    "skippedExisting_one": "跳过了 {{count}} 个已添加的工作区。",
+    "skippedExisting_other": "跳过了 {{count}} 个已添加的工作区。",
+    "skippedInvalid_one": "跳过了 {{count}} 个无效路径（不是文件夹）。",
+    "skippedInvalid_other": "跳过了 {{count}} 个无效路径（不是文件夹）。",
+    "failedToAdd_one": "有 {{count}} 个工作区添加失败。",
+    "failedToAdd_other": "有 {{count}} 个工作区添加失败。",
+    "failuresHeading": "失败项：",
+    "moreFailures_one": "- ……以及另外 {{count}} 项",
+    "moreFailures_other": "- ……以及另外 {{count}} 项",
+    "someFailedTitle": "部分工作区添加失败",
+    "someSkippedTitle": "部分工作区已跳过",
+    "workspaceFallback": "该工作区",
+    "worktreeFallback": "该工作树",
+    "deleteWorkspacePrompt": "确定要删除“{{name}}”吗？\n\n这会将该工作区从 CodexBuddy 中移除。{{detail}}",
+    "deleteWorkspaceDetail_one": "\n\n这还会删除磁盘上的 {{count}} 个工作树。",
+    "deleteWorkspaceDetail_other": "\n\n这还会删除磁盘上的 {{count}} 个工作树。",
+    "deleteWorktreePrompt": "确定要删除“{{name}}”吗？\n\n这会关闭智能体、移除其工作树，并从 CodexBuddy 中删除。",
+    "deleteWorkspaceTitle": "删除工作区",
+    "deleteWorktreeTitle": "删除工作树",
+    "deleteWorkspaceFailed": "删除工作区失败",
+    "deleteWorktreeFailed": "删除工作树失败",
+    "failedToAddWorkspace": "添加工作区失败。\n\n{{message}}",
+    "failedToAddWorkspaces": "添加工作区失败。\n\n{{message}}",
+    "failedToImportWorkspaceFromUrl": "从 URL 导入工作区失败。\n\n{{message}}"
+  },
+  "threads": {
+    "ignoredArgsTitle": "部分 codex 参数会被忽略",
+    "ignoredArgsMessage": "选中的参数不会用于线程级覆盖。",
+    "items": {
+      "planTitle": "计划",
+      "commandTitle": "命令",
+      "commandTitleWithCommand": "命令：{{command}}",
+      "fileChangesTitle": "文件变更",
+      "pendingChanges": "待处理变更",
+      "toolTitle": "工具：{{server}}{{tool}}",
+      "collabTitle": "协作：{{tool}}",
+      "collabToolCallTitle": "协作工具调用",
+      "webSearchTitle": "网页搜索",
+      "imageViewTitle": "图像查看",
+      "contextCompactionTitle": "上下文压缩",
+      "contextCompactionDetail": "正在压缩会话上下文以适应令牌限制。"
+    }
+  },
+  "toasts": {
+    "copyFailedTitle": "复制失败",
+    "clipboardUnavailable": "当前环境无法访问剪贴板，请手动复制脚本。",
+    "clipboardWriteFailed": "无法写入剪贴板，请手动复制脚本。",
+    "folderPickerTitle": "选择工作树目录",
+    "folderPickerOpenFailed": "无法打开文件夹选择器",
+    "launchScriptError": "启动脚本错误",
+    "openWorkspaceFailed": "无法打开工作区",
+    "showFileInManagerFailed": "无法在 {{fileManager}} 中显示文件",
+    "selectGitRootFirst": "请先选择 Git 根目录。"
+  },
+  "menus": {
+    "thread": {
+      "syncFromServer": "从服务端同步",
+      "copyId": "复制 ID",
+      "pin": "置顶",
+      "unpin": "取消置顶"
+    },
+    "workspace": {
+      "reloadThreads": "重新加载线程"
+    },
+    "worktree": {
+      "showInFileManager": "在 {{fileManager}} 中显示",
+      "deleteWorktree": "删除工作树",
+      "revealFailed": "无法在 {{fileManager}} 中显示工作树"
+    },
+    "clone": {
+      "deleteClone": "删除克隆",
+      "revealFailed": "无法在 {{fileManager}} 中显示克隆"
+    }
+  },
+  "controls": {
+    "window": {
+      "group": "窗口控制",
+      "minimize": "最小化窗口",
+      "restore": "还原窗口",
+      "maximize": "最大化窗口",
+      "close": "关闭窗口"
+    },
+    "sidebar": {
+      "hideThreads": "隐藏线程侧边栏",
+      "showThreads": "显示线程侧边栏",
+      "hideGit": "隐藏 Git 侧边栏",
+      "showGit": "显示 Git 侧边栏"
+    },
+    "resize": {
+      "sidebar": "调整侧边栏大小",
+      "chatDiffSplit": "调整聊天和 Diff 分栏大小",
+      "rightPanel": "调整右侧面板大小",
+      "planPanel": "调整计划面板大小",
+      "projects": "调整项目区大小"
+    },
+    "diffView": {
+      "group": "Diff 视图",
+      "split": "双栏 Diff",
+      "unified": "单栏 Diff"
+    },
+    "refreshCurrentThread": "从服务端刷新当前线程",
+    "selectEditor": "选择编辑器",
+    "panelTabList": "面板"
+  },
+  "openApp": {
+    "openInTarget": "在 {{target}} 中打开",
+    "setCommandInSettings": "请先在设置中填写命令",
+    "setAppNameInSettings": "请先在设置中填写应用名称"
+  },
+  "mainHeader": {
+    "worktreeInfo": "工作树信息",
+    "confirmRename": "确认重命名",
+    "updateUpstreamPrompt": "要把上游分支更新为 {{branch}} 吗？",
+    "updateUpstream": "更新上游",
+    "terminalRepoRoot": "终端（仓库根目录）",
+    "copyCommand": "复制命令",
+    "openWorktreeInTerminal": "在终端中打开这个工作树。",
+    "reveal": "显示位置",
+    "branchSearchPlaceholder": "搜索或创建分支",
+    "searchBranches": "搜索分支",
+    "createBranchHint": "创建分支“{{branch}}”",
+    "noBranchesFound": "未找到分支",
+    "toggleTerminal": "切换终端面板",
+    "copyThread": "复制线程"
+  },
+  "messages": {
+    "answerWithMore": "{{answer}} +{{count}}",
+    "answeredLabel": "已回答：",
+    "closeImagePreview": "关闭图片预览",
+    "codeLabel": "代码",
+    "collapseToolCalls": "收起工具调用",
+    "copied": "已复制",
+    "copy": "复制",
+    "copyCodeBlock": "复制代码块",
+    "copyMessage": "复制消息",
+    "cwd": "cwd：{{path}}",
+    "doneIn": "{{duration}} 完成",
+    "emptyNewThread": "发送一条提示词以开始新的智能体。",
+    "emptyThread": "发送一条提示词给智能体。",
+    "expandToolCalls": "展开工具调用",
+    "exportPlan": "导出 .md",
+    "exportingPlan": "导出中...",
+    "explored": "已探索",
+    "exploring": "探索中",
+    "fileEdited": "已编辑文件",
+    "filesEdited": "已编辑文件",
+    "changeSummaryWithMore": "{{name}} +{{count}}",
+    "changes": "变更",
+    "collabStatus": {
+      "waitingFor": "等待",
+      "waitedFor": "已等待",
+      "resuming": "正在恢复",
+      "resumed": "已恢复",
+      "closing": "正在关闭",
+      "closed": "已关闭",
+      "spawning": "正在派生",
+      "spawned": "已派生",
+      "sendingTo": "正在发送给",
+      "sentTo": "已发送给",
+      "subAgent": "子智能体"
+    },
+    "inputRequested": "需要输入",
+    "loading": "加载中…",
+    "messageCount_one": "{{count}} 条消息",
+    "messageCount_other": "{{count}} 条消息",
+    "moreQuestions_one": " 另有 {{count}} 项",
+    "moreQuestions_other": " 另有 {{count}} 项",
+    "newMessageFetchedIn_one": "{{count}} 秒后拉取新消息",
+    "newMessageFetchedIn_other": "{{count}} 秒后拉取新消息",
+    "noAnswerProvided": "未提供答案",
+    "noAnswerProvidedSentence": "未提供答案。",
+    "openImage": "打开图片 {{index}}",
+    "planExportFailed": "计划导出失败",
+    "questionFallback": "问题 {{index}}",
+    "quoteMessage": "引用消息",
+    "reviewBadge": "审查",
+    "reviewCompleted": "审查完成",
+    "reviewStarted": "审查开始",
+    "toggleAnsweredInputDetails": "切换已回答输入详情",
+    "toggleReasoningDetails": "切换推理详情",
+    "toggleToolDetails": "切换工具详情",
+    "toolCallCount_one": "{{count}} 次工具调用",
+    "toolCallCount_other": "{{count}} 次工具调用",
+    "unableToExportPlan": "无法导出计划。",
+    "working": "处理中…"
+  },
+  "debug": {
+    "title": "调试",
+    "resize": "调整调试面板大小",
+    "empty": "还没有调试事件。"
+  }
+}

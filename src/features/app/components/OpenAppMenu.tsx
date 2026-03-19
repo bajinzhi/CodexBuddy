@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import ChevronDown from "lucide-react/dist/esm/icons/chevron-down";
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
 import * as Sentry from "@sentry/react";
+import { useTranslation } from "react-i18next";
 import { openWorkspaceIn } from "../../../services/tauri";
 import { pushErrorToast } from "../../../services/toasts";
 import type { OpenAppTarget } from "../../../types";
@@ -39,6 +40,7 @@ export function OpenAppMenu({
   onSelectOpenAppId,
   iconById = {},
 }: OpenAppMenuProps) {
+  const { t } = useTranslation(["app", "common"]);
   const openMenu = useMenuController();
   const { isOpen: openMenuOpen, containerRef: openMenuRef } = openMenu;
   const availableTargets =
@@ -71,7 +73,7 @@ export function OpenAppMenu({
       DEFAULT_OPEN_APP_TARGETS.find((target) => target.id === DEFAULT_OPEN_APP_ID)
         ?.label ??
       DEFAULT_OPEN_APP_TARGETS[0]?.label ??
-      "Open",
+      t("actions.open", { ns: "common" }),
     icon: getKnownOpenAppIcon(DEFAULT_OPEN_APP_ID) ?? GENERIC_APP_ICON,
     target:
       DEFAULT_OPEN_APP_TARGETS.find((target) => target.id === DEFAULT_OPEN_APP_ID) ??
@@ -104,7 +106,7 @@ export function OpenAppMenu({
       },
     });
     pushErrorToast({
-      title: "Couldn’t open workspace",
+      title: t("toasts.openWorkspaceFailed", { ns: "app" }),
       message,
     });
     console.warn("Failed to open workspace in target app", {
@@ -177,10 +179,13 @@ export function OpenAppMenu({
 
   const selectedCanOpen = canOpenTarget(selectedOpenTarget);
   const openLabel = selectedCanOpen
-    ? `Open in ${selectedOpenTarget.label}`
+    ? t("openApp.openInTarget", {
+        ns: "app",
+        target: selectedOpenTarget.label,
+      })
     : selectedOpenTarget.target.kind === "command"
-      ? "Set command in Settings"
-      : "Set app name in Settings";
+      ? t("openApp.setCommandInSettings", { ns: "app" })
+      : t("openApp.setAppNameInSettings", { ns: "app" });
 
   return (
     <SplitActionMenu
@@ -194,7 +199,10 @@ export function OpenAppMenu({
           onClick={handleOpen}
           disabled={!selectedCanOpen}
           data-tauri-drag-region="false"
-          aria-label={`Open in ${selectedOpenTarget.label}`}
+          aria-label={t("openApp.openInTarget", {
+            ns: "app",
+            target: selectedOpenTarget.label,
+          })}
           title={openLabel}
           data-tooltip={openLabel}
           data-tooltip-placement="bottom"
@@ -213,9 +221,9 @@ export function OpenAppMenu({
       isOpen={openMenuOpen}
       onToggle={openMenu.toggle}
       toggleClassName="ghost main-header-action open-app-toggle ds-tooltip-trigger"
-      toggleAriaLabel="Select editor"
-      toggleTitle="Select editor"
-      toggleTooltip="Select editor"
+      toggleAriaLabel={t("controls.selectEditor", { ns: "app" })}
+      toggleTitle={t("controls.selectEditor", { ns: "app" })}
+      toggleTooltip={t("controls.selectEditor", { ns: "app" })}
       toggleTooltipPlacement="bottom"
       toggleIcon={<ChevronDown size={14} aria-hidden />}
       popoverClassName="open-app-dropdown"

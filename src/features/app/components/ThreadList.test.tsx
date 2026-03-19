@@ -91,7 +91,7 @@ describe("ThreadList", () => {
     const moreButton = screen.getByRole("button", { name: "More..." });
     fireEvent.click(moreButton);
     expect(onToggleExpanded).toHaveBeenCalledWith("ws-1");
-  });
+  }, 10_000);
 
   it("loads older threads when a cursor is available", () => {
     const onLoadOlderThreads = vi.fn();

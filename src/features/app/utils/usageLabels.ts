@@ -1,4 +1,5 @@
 import type { RateLimitSnapshot } from "../../../types";
+import { translate } from "@/i18n/translate";
 import { formatRelativeTime } from "../../../utils/time";
 
 type UsageLabels = {
@@ -18,8 +19,10 @@ function formatResetLabel(resetsAt?: number | null) {
     return null;
   }
   const resetMs = resetsAt > 1_000_000_000_000 ? resetsAt : resetsAt * 1000;
-  const relative = formatRelativeTime(resetMs).replace(/^in\s+/i, "");
-  return `Resets ${relative}`;
+  return translate("resetAt", {
+    ns: "app",
+    relative: formatRelativeTime(resetMs),
+  });
 }
 
 function formatCreditsLabel(accountRateLimits: RateLimitSnapshot | null) {
@@ -28,7 +31,7 @@ function formatCreditsLabel(accountRateLimits: RateLimitSnapshot | null) {
     return null;
   }
   if (credits.unlimited) {
-    return "Available credits: Unlimited";
+    return translate("credits.availableUnlimited", { ns: "app" });
   }
   const balance = credits.balance?.trim() ?? "";
   if (!balance) {
@@ -36,12 +39,14 @@ function formatCreditsLabel(accountRateLimits: RateLimitSnapshot | null) {
   }
   const intValue = Number.parseInt(balance, 10);
   if (Number.isFinite(intValue) && intValue > 0) {
-    return `Available credits: ${intValue}`;
+    return translate("credits.available", { ns: "app", value: intValue });
   }
   const floatValue = Number.parseFloat(balance);
   if (Number.isFinite(floatValue) && floatValue > 0) {
     const rounded = Math.round(floatValue);
-    return rounded > 0 ? `Available credits: ${rounded}` : null;
+    return rounded > 0
+      ? translate("credits.available", { ns: "app", value: rounded })
+      : null;
   }
   return null;
 }

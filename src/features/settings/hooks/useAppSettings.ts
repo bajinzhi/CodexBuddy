@@ -19,7 +19,13 @@ import { normalizeOpenAppTargets } from "@app/utils/openApp";
 import { getDefaultInterruptShortcut, isMacPlatform } from "@utils/shortcuts";
 import { isMobilePlatform } from "@utils/platformPaths";
 import { DEFAULT_COMMIT_MESSAGE_PROMPT } from "@utils/commitMessagePrompt";
+import {
+  getInitialUiLanguagePreference,
+  normalizeUiLanguagePreference,
+  persistUiLanguagePreference,
+} from "@/i18n/preferences";
 
+const allowedUiLanguages = new Set(["system", "en", "zh-CN"]);
 const allowedThemes = new Set(["system", "light", "dark", "dim"]);
 const allowedAccentColors = new Set(["blue", "green", "purple", "orange", "pink", "teal", "red"]);
 const allowedPersonality = new Set(["friendly", "pragmatic"]);
@@ -167,6 +173,7 @@ function buildDefaultSettings(): AppSettings {
     lastComposerModelId: null,
     lastComposerReasoningEffort: null,
     uiScale: UI_SCALE_DEFAULT,
+    uiLanguage: getInitialUiLanguagePreference(),
     theme: "system",
     accentColor: "blue",
     usageShowRemaining: false,
@@ -242,12 +249,17 @@ function normalizeAppSettings(settings: AppSettings): AppSettings {
   const chatHistoryScrollbackItems = normalizeChatHistoryScrollbackItems(
     settings.chatHistoryScrollbackItems,
   );
+  const uiLanguage = allowedUiLanguages.has(settings.uiLanguage)
+    ? settings.uiLanguage
+    : normalizeUiLanguagePreference(settings.uiLanguage);
+  persistUiLanguagePreference(uiLanguage);
   return {
     ...settings,
     ...remoteBackendSettings,
     codexBin: settings.codexBin?.trim() ? settings.codexBin.trim() : null,
     codexArgs: settings.codexArgs?.trim() ? settings.codexArgs.trim() : null,
     uiScale: clampUiScale(settings.uiScale),
+    uiLanguage,
     theme: allowedThemes.has(settings.theme) ? settings.theme : "system",
     accentColor: allowedAccentColors.has(settings.accentColor) ? settings.accentColor : "blue",
     uiFontFamily: normalizeFontFamily(

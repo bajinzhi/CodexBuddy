@@ -1,4 +1,5 @@
 import type { Dispatch, SetStateAction } from "react";
+import { useTranslation } from "react-i18next";
 import { SettingsSection } from "@/features/design-system/components/settings/SettingsPrimitives";
 import type { WorkspaceInfo } from "@/types";
 import { pushErrorToast } from "@services/toasts";
@@ -36,20 +37,21 @@ export function SettingsEnvironmentsSection({
   onSetWorktreesFolderDraft,
   onSaveEnvironmentSetup,
 }: SettingsEnvironmentsSectionProps) {
+  const { t } = useTranslation(["settings", "app", "common"]);
   const hasAnyChanges = environmentDirty || worktreesFolderDirty;
 
   return (
     <SettingsSection
-      title="Environments"
-      subtitle="Configure per-project setup scripts and worktree locations."
+      title={t("environments.title")}
+      subtitle={t("environments.subtitle")}
     >
       {mainWorkspaces.length === 0 ? (
-        <div className="settings-empty">No projects yet.</div>
+        <div className="settings-empty">{t("environments.noProjects")}</div>
       ) : (
         <>
           <div className="settings-field">
             <label className="settings-field-label" htmlFor="settings-environment-project">
-              Project
+              {t("environments.projectLabel")}
             </label>
             <select
               id="settings-environment-project"
@@ -70,9 +72,9 @@ export function SettingsEnvironmentsSection({
           </div>
 
           <div className="settings-field">
-            <div className="settings-field-label">Setup script</div>
+            <div className="settings-field-label">{t("environments.setupScriptLabel")}</div>
             <div className="settings-help">
-              Runs once in a dedicated terminal after each new worktree is created.
+              {t("environments.setupScriptHelp")}
             </div>
             {environmentError ? (
               <div className="settings-agents-error">{environmentError}</div>
@@ -89,28 +91,26 @@ export function SettingsEnvironmentsSection({
               <button
                 type="button"
                 className="ghost settings-button-compact"
-                onClick={() => {
+              onClick={() => {
                   const clipboard = typeof navigator === "undefined" ? null : navigator.clipboard;
                   if (!clipboard?.writeText) {
                     pushErrorToast({
-                      title: "Copy failed",
-                      message:
-                        "Clipboard access is unavailable in this environment. Copy the script manually instead.",
+                      title: t("toasts.copyFailedTitle", { ns: "app" }),
+                      message: t("toasts.clipboardUnavailable", { ns: "app" }),
                     });
                     return;
                   }
 
                   void clipboard.writeText(environmentDraftScript).catch(() => {
                     pushErrorToast({
-                      title: "Copy failed",
-                      message:
-                        "Could not write to the clipboard. Copy the script manually instead.",
+                      title: t("toasts.copyFailedTitle", { ns: "app" }),
+                      message: t("toasts.clipboardWriteFailed", { ns: "app" }),
                     });
                   });
                 }}
                 disabled={environmentSaving || environmentDraftScript.length === 0}
               >
-                Copy
+                {t("actions.copy", { ns: "common" })}
               </button>
               <button
                 type="button"
@@ -118,7 +118,7 @@ export function SettingsEnvironmentsSection({
                 onClick={() => onSetEnvironmentDraftScript(environmentSavedScript ?? "")}
                 disabled={environmentSaving || !environmentDirty}
               >
-                Reset
+                {t("actions.reset", { ns: "common" })}
               </button>
               <button
                 type="button"
@@ -128,17 +128,19 @@ export function SettingsEnvironmentsSection({
                 }}
                 disabled={environmentSaving || !hasAnyChanges}
               >
-                {environmentSaving ? "Saving..." : "Save"}
+                {environmentSaving
+                  ? t("status.saving", { ns: "common" })
+                  : t("actions.save", { ns: "common" })}
               </button>
             </div>
           </div>
 
           <div className="settings-field">
             <label className="settings-field-label" htmlFor="settings-worktrees-folder">
-              Worktrees folder
+              {t("environments.worktreesFolderLabel")}
             </label>
             <div className="settings-help">
-              Custom location for worktrees. Leave empty to use the default location.
+              {t("environments.worktreesFolderHelp")}
             </div>
             <div className="settings-field-row">
               <input
@@ -147,7 +149,7 @@ export function SettingsEnvironmentsSection({
                 className="settings-input"
                 value={worktreesFolderDraft}
                 onChange={(event) => onSetWorktreesFolderDraft(event.target.value)}
-                placeholder="/path/to/worktrees"
+                placeholder={t("environments.worktreesFolderPlaceholder")}
                 disabled={environmentSaving}
               />
               <button
@@ -159,21 +161,21 @@ export function SettingsEnvironmentsSection({
                     const selected = await open({
                       directory: true,
                       multiple: false,
-                      title: "Select worktrees folder",
+                      title: t("toasts.folderPickerTitle", { ns: "app" }),
                     });
                     if (selected && typeof selected === "string") {
                       onSetWorktreesFolderDraft(selected);
                     }
                   } catch (error) {
                     pushErrorToast({
-                      title: "Failed to open folder picker",
+                      title: t("toasts.folderPickerOpenFailed", { ns: "app" }),
                       message: error instanceof Error ? error.message : String(error),
                     });
                   }
                 }}
                 disabled={environmentSaving}
               >
-                Browse
+                {t("actions.browse", { ns: "common" })}
               </button>
             </div>
           </div>

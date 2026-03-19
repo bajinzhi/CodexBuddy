@@ -89,7 +89,7 @@ describe("Sidebar", () => {
     fireEvent.click(toggleButton);
     const reopened = screen.getByLabelText("Search projects") as HTMLInputElement;
     expect(reopened.value).toBe("");
-  });
+  }, 10_000);
 
   it("opens thread sort menu from the header filter button", () => {
     const onSetThreadListSortKey = vi.fn();

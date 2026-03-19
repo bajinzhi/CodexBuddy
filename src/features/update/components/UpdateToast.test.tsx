@@ -90,7 +90,7 @@ describe("UpdateToast", () => {
     );
     const scoped = within(container);
 
-    expect(scoped.getByText("You’re up to date.")).toBeTruthy();
+    expect(scoped.getByText("You're up to date.")).toBeTruthy();
     fireEvent.click(scoped.getByRole("button", { name: "Dismiss" }));
     expect(onDismiss).toHaveBeenCalledTimes(1);
   });

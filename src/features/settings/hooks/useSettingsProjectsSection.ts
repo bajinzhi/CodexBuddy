@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import { ask, open } from "@tauri-apps/plugin-dialog";
 import type { AppSettings, WorkspaceGroup, WorkspaceInfo } from "@/types";
+import { translate } from "@/i18n/translate";
 import type { GroupedWorkspaces } from "./settingsSectionTypes";
 
 type UseSettingsProjectsSectionArgs = {
@@ -151,14 +152,22 @@ export const useSettingsProjectsSection = ({
       groupedWorkspaces.find((entry) => entry.id === group.id)?.workspaces ?? [];
     const detail =
       groupProjects.length > 0
-        ? `\n\nProjects in this group will move to "${ungroupedLabel}".`
+        ? translate("settings:projects.deleteGroupDetail", {
+            ungroupedLabel,
+          })
         : "";
-    const confirmed = await ask(`Delete "${group.name}"?${detail}`, {
-      title: "Delete Group",
+    const confirmed = await ask(
+      translate("settings:projects.deleteGroupPrompt", {
+        name: group.name,
+        detail,
+      }),
+      {
+      title: translate("settings:projects.deleteGroupTitle"),
       kind: "warning",
-      okLabel: "Delete",
-      cancelLabel: "Cancel",
-    });
+      okLabel: translate("common:actions.delete"),
+      cancelLabel: translate("common:actions.cancel"),
+      },
+    );
     if (!confirmed) {
       return;
     }

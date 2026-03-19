@@ -1,5 +1,7 @@
 import { useMemo, useRef } from "react";
 import type { MouseEvent as ReactMouseEvent } from "react";
+import { useTranslation } from "react-i18next";
+import { formatTime } from "@/i18n/format";
 import type { DebugEntry } from "../../../types";
 
 type DebugPanelProps = {
@@ -33,6 +35,7 @@ export function DebugPanel({
   onResizeStart,
   variant = "dock",
 }: DebugPanelProps) {
+  const { t } = useTranslation(["app", "common"]);
   const isVisible = variant === "full" || isOpen;
 
   type FormattedDebugEntry = DebugEntry & {
@@ -72,7 +75,7 @@ export function DebugPanel({
 
     const nextFormatted = entries.map((entry) => ({
       ...entry,
-      timeLabel: new Date(entry.timestamp).toLocaleTimeString(),
+      timeLabel: formatTime(entry.timestamp),
       payloadText:
         entry.payload !== undefined ? formatPayload(entry.payload) : undefined,
     }));
@@ -96,25 +99,25 @@ export function DebugPanel({
           className="debug-panel-resizer"
           role="separator"
           aria-orientation="horizontal"
-          aria-label="Resize debug panel"
+          aria-label={t("app:debug.resize")}
           onMouseDown={onResizeStart}
         />
       ) : null}
       <div className="debug-header">
-        <div className="debug-title">Debug</div>
+        <div className="debug-title">{t("app:debug.title")}</div>
         <div className="debug-actions">
           <button className="ghost" onClick={onCopy}>
-            Copy
+            {t("common:actions.copy")}
           </button>
           <button className="ghost" onClick={onClear}>
-            Clear
+            {t("common:actions.clear")}
           </button>
         </div>
       </div>
       {isOpen ? (
         <div className="debug-list">
           {formattedEntries.length === 0 ? (
-            <div className="debug-empty">No debug events yet.</div>
+            <div className="debug-empty">{t("app:debug.empty")}</div>
           ) : null}
           {formattedEntries.map((entry) => (
             <div key={entry.id} className="debug-row">

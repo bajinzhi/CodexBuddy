@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type ReactNode, type MouseEvent } from "re
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { openUrl } from "@tauri-apps/plugin-opener";
+import { useTranslation } from "react-i18next";
 import {
   decodeFileLink,
   isFileLinkUrl,
@@ -591,10 +592,11 @@ function FileReferenceLink({
 }
 
 function CodeBlock({ className, value, copyUseModifier }: CodeBlockProps) {
+  const { t } = useTranslation("app");
   const [copied, setCopied] = useState(false);
   const copyTimeoutRef = useRef<number | null>(null);
   const languageTag = extractLanguageTag(className);
-  const languageLabel = languageTag ?? "Code";
+  const languageLabel = languageTag ?? t("messages.codeLabel");
   const fencedValue = `\`\`\`${languageTag ?? ""}\n${value}\n\`\`\``;
 
   useEffect(() => {
@@ -630,10 +632,10 @@ function CodeBlock({ className, value, copyUseModifier }: CodeBlockProps) {
           type="button"
           className={`ghost markdown-codeblock-copy${copied ? " is-copied" : ""}`}
           onClick={handleCopy}
-          aria-label="Copy code block"
-          title={copied ? "Copied" : "Copy"}
+          aria-label={t("messages.copyCodeBlock")}
+          title={copied ? t("messages.copied") : t("messages.copy")}
         >
-          {copied ? "Copied" : "Copy"}
+          {copied ? t("messages.copied") : t("messages.copy")}
         </button>
       </div>
       <pre>

@@ -5,6 +5,7 @@ import X from "lucide-react/dist/esm/icons/x";
 import { isTauri } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { isWindowsPlatform } from "@utils/platformPaths";
 
 function currentWindowSafe() {
@@ -16,6 +17,7 @@ function currentWindowSafe() {
 }
 
 export function WindowCaptionControls() {
+  const { t } = useTranslation("app");
   const isEnabled = isWindowsPlatform() && isTauri();
   const [isMaximized, setIsMaximized] = useState(false);
 
@@ -95,11 +97,15 @@ export function WindowCaptionControls() {
   };
 
   return (
-    <div className="window-caption-controls" role="group" aria-label="Window controls">
+    <div
+      className="window-caption-controls"
+      role="group"
+      aria-label={t("controls.window.group")}
+    >
       <button
         type="button"
         className="window-caption-control"
-        aria-label="Minimize window"
+        aria-label={t("controls.window.minimize")}
         data-tauri-drag-region="false"
         onClick={handleMinimize}
       >
@@ -108,7 +114,9 @@ export function WindowCaptionControls() {
       <button
         type="button"
         className="window-caption-control"
-        aria-label={isMaximized ? "Restore window" : "Maximize window"}
+        aria-label={t(
+          isMaximized ? "controls.window.restore" : "controls.window.maximize",
+        )}
         data-tauri-drag-region="false"
         onClick={handleToggleMaximize}
       >
@@ -117,7 +125,7 @@ export function WindowCaptionControls() {
       <button
         type="button"
         className="window-caption-control window-caption-control-close"
-        aria-label="Close window"
+        aria-label={t("controls.window.close")}
         data-tauri-drag-region="false"
         onClick={handleClose}
       >

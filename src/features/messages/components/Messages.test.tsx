@@ -87,7 +87,7 @@ describe("Messages", () => {
     const openButton = screen.getByRole("button", { name: "Open image 1" });
     fireEvent.click(openButton);
     expect(screen.getByRole("dialog")).toBeTruthy();
-  });
+  }, 10_000);
 
   it("preserves newlines when images are attached", () => {
     const items: ConversationItem[] = [

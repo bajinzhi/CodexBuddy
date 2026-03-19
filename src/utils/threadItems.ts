@@ -4,6 +4,7 @@ import type {
   ConversationItem,
 } from "../types";
 import { CHAT_SCROLLBACK_DEFAULT } from "./chatScrollback";
+import { commandTextFromTitle } from "./toolTitles";
 
 export type PrepareThreadItemsOptions = {
   maxItemsPerThread?: number | null;
@@ -576,7 +577,7 @@ function summarizeCommandExecution(item: Extract<ConversationItem, { kind: "tool
   if (isFailedStatus(item.status)) {
     return null;
   }
-  const rawCommand = item.title.replace(/^Command:\s*/i, "").trim();
+  const rawCommand = commandTextFromTitle(item.title);
   const cleaned = cleanCommandText(rawCommand);
   if (!cleaned) {
     return null;

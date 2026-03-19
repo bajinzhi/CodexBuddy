@@ -325,9 +325,10 @@ describe("useUpdater", () => {
   });
 
   it("clears stale post-update marker when version does not match current app", async () => {
+    const staleVersion = `${__APP_VERSION__}-stale`;
     window.localStorage.setItem(
       STORAGE_KEY_PENDING_POST_UPDATE_VERSION,
-      "0.0.1",
+      staleVersion,
     );
 
     const { result } = renderHook(() => useUpdater({}));

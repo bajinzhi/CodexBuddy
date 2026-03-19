@@ -4,6 +4,7 @@ export type SettingsSection =
   | "projects"
   | "display"
   | "about"
+  | "composer"
   | "dictation"
   | "shortcuts"
   | "open-apps"

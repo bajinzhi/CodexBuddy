@@ -376,6 +376,13 @@ pub(crate) struct RemoteBackendTarget {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub(crate) struct ComposerQuickCommand {
+    pub(crate) id: String,
+    pub(crate) label: String,
+    pub(crate) text: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub(crate) struct AppSettings {
     #[serde(default, rename = "codexBin")]
     pub(crate) codex_bin: Option<String>,
@@ -642,6 +649,8 @@ pub(crate) struct AppSettings {
         rename = "composerCodeBlockCopyUseModifier"
     )]
     pub(crate) composer_code_block_copy_use_modifier: bool,
+    #[serde(default = "default_quick_commands", rename = "quickCommands")]
+    pub(crate) quick_commands: Vec<ComposerQuickCommand>,
     #[serde(default = "default_workspace_groups", rename = "workspaceGroups")]
     pub(crate) workspace_groups: Vec<WorkspaceGroup>,
     #[serde(default, rename = "globalWorktreesFolder")]
@@ -1002,6 +1011,10 @@ fn default_composer_code_block_copy_use_modifier() -> bool {
     false
 }
 
+fn default_quick_commands() -> Vec<ComposerQuickCommand> {
+    Vec::new()
+}
+
 fn default_workspace_groups() -> Vec<WorkspaceGroup> {
     Vec::new()
 }
@@ -1202,6 +1215,7 @@ impl Default for AppSettings {
                 default_composer_fence_auto_wrap_paste_code_like(),
             composer_list_continuation: default_composer_list_continuation(),
             composer_code_block_copy_use_modifier: default_composer_code_block_copy_use_modifier(),
+            quick_commands: default_quick_commands(),
             workspace_groups: default_workspace_groups(),
             global_worktrees_folder: None,
             open_app_targets: default_open_app_targets(),
@@ -1364,6 +1378,7 @@ mod tests {
         assert!(!settings.composer_fence_auto_wrap_paste_code_like);
         assert!(!settings.composer_list_continuation);
         assert!(!settings.composer_code_block_copy_use_modifier);
+        assert!(settings.quick_commands.is_empty());
         assert!(settings.workspace_groups.is_empty());
         let expected_open_id = if cfg!(target_os = "windows") {
             "finder"

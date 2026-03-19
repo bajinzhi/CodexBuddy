@@ -27,6 +27,7 @@ type UseMainAppLayoutSurfacesArgs = {
     | "experimentalAppsEnabled"
     | "followUpMessageBehavior"
     | "composerFollowUpHintEnabled"
+    | "quickCommands"
     | "dictationEnabled"
     | "splitChatDiffView"
     | "gitDiffIgnoreWhitespaceChanges"
@@ -118,6 +119,7 @@ type UseMainAppLayoutSurfacesArgs = {
     dictationError: ComposerProps["dictationError"];
     dictationHint: ComposerProps["dictationHint"];
   };
+  openComposerSettings: () => void;
   openAppIconById: MainHeaderProps["openAppIconById"];
   openInitGitRepoPrompt: GitDiffPanelProps["onInitGitRepo"];
   startUncommittedReview: (workspaceId: string | null) => void;
@@ -290,6 +292,7 @@ export function useMainAppLayoutSurfaces({
   threadNavigation,
   pullRequestComposer,
   dictationUi,
+  openComposerSettings,
   openAppIconById,
   openInitGitRepoPrompt,
   startUncommittedReview,
@@ -497,6 +500,7 @@ export function useMainAppLayoutSurfaces({
             followUpMessageBehavior: appSettings.followUpMessageBehavior,
             composerFollowUpHintEnabled: appSettings.composerFollowUpHintEnabled,
             isProcessing: composerWorkspaceState.isProcessing,
+            quickCommands: appSettings.quickCommands,
             draftText: composerWorkspaceState.activeDraft,
             onDraftChange: composerWorkspaceState.handleDraftChange,
             attachedImages: composerWorkspaceState.activeImages,
@@ -549,6 +553,9 @@ export function useMainAppLayoutSurfaces({
             onToggleDictation,
             onCancelDictation,
             onOpenDictationSettings: dictationUi.onOpenDictationSettings,
+            onOpenQuickCommandsSettings: () => {
+              openComposerSettings();
+            },
             dictationTranscript: dictationUi.dictationTranscript,
             onDictationTranscriptHandled: (id) => {
               clearDictationTranscript?.(id);

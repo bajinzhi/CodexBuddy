@@ -11,8 +11,9 @@ import {
 import type {
   AppMention,
   AppOption,
-  ComposerSendIntent,
   ComposerEditorSettings,
+  ComposerQuickCommand,
+  ComposerSendIntent,
   CustomPromptOption,
   DictationTranscript,
   FollowUpMessageBehavior,
@@ -116,6 +117,8 @@ type ComposerProps = {
   onDismissDictationError?: () => void;
   dictationHint?: string | null;
   onDismissDictationHint?: () => void;
+  quickCommands?: ComposerQuickCommand[];
+  onOpenQuickCommandsSettings?: () => void;
   reviewPrompt?: ReviewPromptState;
   onReviewPromptClose?: () => void;
   onReviewPromptShowPreset?: () => void;
@@ -226,6 +229,8 @@ export const Composer = memo(function Composer({
   onDismissDictationError,
   dictationHint = null,
   onDismissDictationHint,
+  quickCommands = [],
+  onOpenQuickCommandsSettings,
   reviewPrompt,
   onReviewPromptClose,
   onReviewPromptShowPreset,
@@ -641,6 +646,26 @@ export const Composer = memo(function Composer({
     [applyTextInsertion, fenceLanguageTags, fenceWrapSelection, text],
   );
 
+  const handleApplyQuickCommand = useCallback(
+    (commandText: string) => {
+      const textarea = textareaRef.current;
+      const start = textarea?.selectionStart ?? selectionStart ?? text.length;
+      const end = textarea?.selectionEnd ?? start;
+      const nextText = `${text.slice(0, start)}${commandText}${text.slice(end)}`;
+      const nextCursor = start + commandText.length;
+      resetHistoryNavigation();
+      applyTextInsertion(nextText, nextCursor);
+      handleSelectionChange(nextCursor);
+    },
+    [
+      applyTextInsertion,
+      handleSelectionChange,
+      resetHistoryNavigation,
+      selectionStart,
+      text,
+      textareaRef,
+    ],
+  );
 
   return (
     <footer className={`composer${disabled ? " is-disabled" : ""}`}>
@@ -706,6 +731,9 @@ export const Composer = memo(function Composer({
         onDismissDictationError={onDismissDictationError}
         dictationHint={dictationHint}
         onDismissDictationHint={onDismissDictationHint}
+        quickCommands={quickCommands}
+        onApplyQuickCommand={handleApplyQuickCommand}
+        onOpenQuickCommandsSettings={onOpenQuickCommandsSettings}
         attachments={attachedImages}
         onAddAttachment={onPickImages}
         onAttachImages={onAttachImages}

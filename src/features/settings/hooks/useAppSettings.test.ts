@@ -40,6 +40,10 @@ describe("useAppSettings", () => {
         uiFontFamily: "",
         codeFontFamily: "  ",
         codeFontSize: 25,
+        quickCommands: [
+          { id: "", label: "  Quick fix  ", text: "Explain the bug\nand propose a patch." },
+          { id: "", label: 3, text: null },
+        ],
       } as unknown) as AppSettings,
     );
 
@@ -55,6 +59,12 @@ describe("useAppSettings", () => {
     expect(result.current.settings.personality).toBe("friendly");
     expect(result.current.settings.backendMode).toBe("remote");
     expect(result.current.settings.remoteBackendHost).toBe("example:1234");
+    expect(result.current.settings.quickCommands).toHaveLength(2);
+    expect(result.current.settings.quickCommands[0].id).toBeTruthy();
+    expect(result.current.settings.quickCommands[1].id).not.toBe(
+      result.current.settings.quickCommands[0].id,
+    );
+    expect(result.current.settings.quickCommands[0].text).toContain("propose a patch");
   });
 
   it("keeps defaults when getAppSettings fails", async () => {

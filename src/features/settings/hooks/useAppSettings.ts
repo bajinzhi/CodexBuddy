@@ -19,6 +19,7 @@ import { normalizeOpenAppTargets } from "@app/utils/openApp";
 import { getDefaultInterruptShortcut, isMacPlatform } from "@utils/shortcuts";
 import { isMobilePlatform } from "@utils/platformPaths";
 import { DEFAULT_COMMIT_MESSAGE_PROMPT } from "@utils/commitMessagePrompt";
+import { normalizeQuickCommands } from "@utils/quickCommands";
 
 const allowedThemes = new Set(["system", "light", "dark", "dim"]);
 const allowedAccentColors = new Set(["blue", "green", "purple", "orange", "pink", "teal", "red"]);
@@ -206,6 +207,7 @@ function buildDefaultSettings(): AppSettings {
     composerFenceAutoWrapPasteCodeLike: false,
     composerListContinuation: false,
     composerCodeBlockCopyUseModifier: false,
+    quickCommands: [],
     workspaceGroups: [],
     openAppTargets: DEFAULT_OPEN_APP_TARGETS,
     selectedOpenAppId: DEFAULT_OPEN_APP_ID,
@@ -277,6 +279,7 @@ function normalizeAppSettings(settings: AppSettings): AppSettings {
       settings.reviewDeliveryMode === "detached" ? "detached" : "inline",
     chatHistoryScrollbackItems,
     commitMessagePrompt,
+    quickCommands: normalizeQuickCommands(settings.quickCommands),
     openAppTargets: normalizedTargets,
     selectedOpenAppId,
   };

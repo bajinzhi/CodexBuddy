@@ -972,3 +972,79 @@
     font-size: 12px;
   }
 }
+.composer-quick-commands {
+  position: relative;
+}
+
+.composer-action--quick.is-active {
+  color: var(--text-stronger);
+  background: color-mix(in srgb, var(--accent-primary) 16%, transparent);
+  border-color: color-mix(in srgb, var(--accent-primary) 36%, transparent);
+}
+
+.composer-quick-commands-popover {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  width: min(320px, calc(100vw - 32px));
+  padding: 8px;
+  display: grid;
+  gap: 8px;
+  z-index: 35;
+}
+
+.composer-quick-commands-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.composer-quick-commands-list {
+  display: grid;
+  gap: 6px;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.composer-quick-commands-item {
+  border: 1px solid var(--border-subtle);
+  background: color-mix(in srgb, var(--surface-popover) 84%, transparent);
+  color: var(--text-strong);
+  border-radius: 12px;
+  padding: 10px 12px;
+  text-align: left;
+  display: grid;
+  gap: 4px;
+}
+
+.composer-quick-commands-item:hover {
+  border-color: color-mix(in srgb, var(--accent-primary) 36%, transparent);
+  background: color-mix(in srgb, var(--accent-primary) 10%, var(--surface-popover));
+}
+
+.composer-quick-commands-item-label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.composer-quick-commands-item-preview {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--text-muted);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  white-space: pre-wrap;
+}
+
+.composer-quick-commands-empty {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-muted);
+  padding: 4px 2px;
+}
+
+.composer-quick-commands-manage {
+  justify-self: start;
+}

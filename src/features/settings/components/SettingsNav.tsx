@@ -2,6 +2,7 @@ import LayoutGrid from "lucide-react/dist/esm/icons/layout-grid";
 import SlidersHorizontal from "lucide-react/dist/esm/icons/sliders-horizontal";
 import Mic from "lucide-react/dist/esm/icons/mic";
 import Keyboard from "lucide-react/dist/esm/icons/keyboard";
+import Link2 from "lucide-react/dist/esm/icons/link-2";
 import GitBranch from "lucide-react/dist/esm/icons/git-branch";
 import TerminalSquare from "lucide-react/dist/esm/icons/terminal-square";
 import FileText from "lucide-react/dist/esm/icons/file-text";
@@ -81,6 +82,15 @@ export function SettingsNav({
           onClick={() => onSelectSection("shortcuts")}
         >
           Shortcuts
+        </PanelNavItem>
+        <PanelNavItem
+          className="settings-nav"
+          icon={<Link2 aria-hidden />}
+          active={activeSection === "common-links"}
+          showDisclosure={showDisclosure}
+          onClick={() => onSelectSection("common-links")}
+        >
+          Common links
         </PanelNavItem>
         <PanelNavItem
           className="settings-nav"

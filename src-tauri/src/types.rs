@@ -363,6 +363,13 @@ pub(crate) struct OpenAppTarget {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub(crate) struct CommonLink {
+    pub(crate) id: String,
+    pub(crate) label: String,
+    pub(crate) url: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub(crate) struct RemoteBackendTarget {
     pub(crate) id: String,
     pub(crate) name: String,
@@ -650,6 +657,8 @@ pub(crate) struct AppSettings {
     pub(crate) open_app_targets: Vec<OpenAppTarget>,
     #[serde(default = "default_selected_open_app_id", rename = "selectedOpenAppId")]
     pub(crate) selected_open_app_id: String,
+    #[serde(default = "default_common_links", rename = "commonLinks")]
+    pub(crate) common_links: Vec<CommonLink>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -1126,6 +1135,10 @@ fn default_selected_open_app_id() -> String {
     }
 }
 
+fn default_common_links() -> Vec<CommonLink> {
+    Vec::new()
+}
+
 impl Default for AppSettings {
     fn default() -> Self {
         Self {
@@ -1206,6 +1219,7 @@ impl Default for AppSettings {
             global_worktrees_folder: None,
             open_app_targets: default_open_app_targets(),
             selected_open_app_id: default_selected_open_app_id(),
+            common_links: default_common_links(),
         }
     }
 }
@@ -1213,7 +1227,7 @@ impl Default for AppSettings {
 #[cfg(test)]
 mod tests {
     use super::{
-        AppSettings, BackendMode, RemoteBackendProvider, WorkspaceEntry, WorkspaceGroup,
+        AppSettings, BackendMode, CommonLink, RemoteBackendProvider, WorkspaceEntry, WorkspaceGroup,
         WorkspaceKind, WorkspaceSettings,
     };
 
@@ -1373,6 +1387,7 @@ mod tests {
         assert_eq!(settings.selected_open_app_id, expected_open_id);
         assert_eq!(settings.open_app_targets.len(), 6);
         assert_eq!(settings.open_app_targets[0].id, "vscode");
+        assert!(settings.common_links.is_empty());
     }
 
     #[test]
@@ -1400,6 +1415,22 @@ mod tests {
             decoded.workspace_groups[0].copies_folder.as_deref(),
             Some("/tmp/group-copies")
         );
+    }
+
+    #[test]
+    fn app_settings_round_trip_preserves_common_links() {
+        let mut settings = AppSettings::default();
+        settings.common_links = vec![CommonLink {
+            id: "docs".to_string(),
+            label: "Docs".to_string(),
+            url: "https://example.com/docs".to_string(),
+        }];
+
+        let json = serde_json::to_string(&settings).expect("serialize settings");
+        let decoded: AppSettings = serde_json::from_str(&json).expect("deserialize settings");
+        assert_eq!(decoded.common_links.len(), 1);
+        assert_eq!(decoded.common_links[0].label, "Docs");
+        assert_eq!(decoded.common_links[0].url, "https://example.com/docs");
     }
 
     #[test]

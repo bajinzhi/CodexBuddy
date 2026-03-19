@@ -1,5 +1,6 @@
 import type {
   AccountSnapshot,
+  CommonLink,
   RequestUserInputRequest,
   RateLimitSnapshot,
   ThreadListOrganizeMode,
@@ -84,7 +85,8 @@ type SidebarProps = {
   onSwitchAccount: () => void;
   onCancelSwitchAccount: () => void;
   accountSwitching: boolean;
-  onOpenSettings: () => void;
+  commonLinks: CommonLink[];
+  onOpenSettings: (section?: "common-links") => void;
   onOpenDebug: () => void;
   showDebugButton: boolean;
   onAddWorkspace: () => void;
@@ -145,6 +147,7 @@ export const Sidebar = memo(function Sidebar({
   onSwitchAccount,
   onCancelSwitchAccount,
   accountSwitching,
+  commonLinks,
   onOpenSettings,
   onOpenDebug,
   showDebugButton,
@@ -1194,6 +1197,7 @@ export const Sidebar = memo(function Sidebar({
         showWeekly={showWeekly}
       />
       <SidebarCornerActions
+        commonLinks={commonLinks}
         onOpenSettings={onOpenSettings}
         onOpenDebug={onOpenDebug}
         showDebugButton={showDebugButton}

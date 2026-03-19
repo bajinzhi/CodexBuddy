@@ -10,6 +10,7 @@ import type {
 import { isMacPlatform, isWindowsPlatform } from "@utils/platformPaths";
 import { useSettingsOpenAppDrafts } from "./useSettingsOpenAppDrafts";
 import { useSettingsShortcutDrafts } from "./useSettingsShortcutDrafts";
+import { useSettingsCommonLinksDrafts } from "./useSettingsCommonLinksDrafts";
 import { useSettingsCodexSection } from "./useSettingsCodexSection";
 import { useSettingsDisplaySection } from "./useSettingsDisplaySection";
 import { useSettingsEnvironmentsSection } from "./useSettingsEnvironmentsSection";
@@ -152,6 +153,18 @@ export function useSettingsViewOrchestration({
       onUpdateAppSettings,
     });
 
+  const {
+    commonLinkDrafts,
+    handleCommonLinkDraftChange,
+    handleCommitCommonLinksDrafts,
+    handleMoveCommonLink,
+    handleDeleteCommonLink,
+    handleAddCommonLink,
+  } = useSettingsCommonLinksDrafts({
+    appSettings,
+    onUpdateAppSettings,
+  });
+
   const projectsSectionProps = useSettingsProjectsSection({
     appSettings,
     workspaceGroups,
@@ -254,6 +267,14 @@ export function useSettingsViewOrchestration({
       shortcutDrafts,
       onShortcutKeyDown: handleShortcutKeyDown,
       onClearShortcut: clearShortcut,
+    },
+    commonLinksSectionProps: {
+      commonLinkDrafts,
+      onCommonLinkDraftChange: handleCommonLinkDraftChange,
+      onCommitCommonLinks: handleCommitCommonLinksDrafts,
+      onMoveCommonLink: handleMoveCommonLink,
+      onDeleteCommonLink: handleDeleteCommonLink,
+      onAddCommonLink: handleAddCommonLink,
     },
     openAppsSectionProps: {
       openAppDrafts,

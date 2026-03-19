@@ -2,7 +2,14 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createRef } from "react";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import { Sidebar } from "./Sidebar";
+
+vi.mock("@tauri-apps/plugin-opener", () => ({
+  openUrl: vi.fn(),
+}));
+
+const openUrlMock = vi.mocked(openUrl);
 
 afterEach(() => {
   if (vi.isFakeTimers()) {
@@ -37,6 +44,7 @@ const baseProps = {
   onSwitchAccount: vi.fn(),
   onCancelSwitchAccount: vi.fn(),
   accountSwitching: false,
+  commonLinks: [],
   onOpenSettings: vi.fn(),
   onOpenDebug: vi.fn(),
   showDebugButton: false,
@@ -571,5 +579,47 @@ describe("Sidebar", () => {
 
     const indicator = screen.queryByTitle("Streaming updates in progress");
     expect(indicator).toBeNull();
+  });
+
+  it("opens a valid common link from the sidebar popover", () => {
+    render(
+      <Sidebar
+        {...baseProps}
+        commonLinks={[
+          {
+            id: "docs",
+            label: "Docs",
+            url: "https://example.com/docs",
+          },
+          {
+            id: "invalid",
+            label: "Invalid",
+            url: "ftp://example.com",
+          },
+        ]}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Common links" }));
+    expect(screen.getByRole("button", { name: "Open Docs" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Open Invalid" })).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Open Docs" }));
+    expect(openUrlMock).toHaveBeenCalledWith("https://example.com/docs");
+  });
+
+  it("opens the common links settings section from the empty-state action", () => {
+    const onOpenSettings = vi.fn();
+    render(
+      <Sidebar
+        {...baseProps}
+        onOpenSettings={onOpenSettings}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Common links" }));
+    fireEvent.click(screen.getByRole("button", { name: "Add links" }));
+
+    expect(onOpenSettings).toHaveBeenCalledWith("common-links");
   });
 });

@@ -19,6 +19,7 @@ import { normalizeOpenAppTargets } from "@app/utils/openApp";
 import { getDefaultInterruptShortcut, isMacPlatform } from "@utils/shortcuts";
 import { isMobilePlatform } from "@utils/platformPaths";
 import { DEFAULT_COMMIT_MESSAGE_PROMPT } from "@utils/commitMessagePrompt";
+import { normalizeCommonLinks } from "@settings/components/settingsViewHelpers";
 
 const allowedThemes = new Set(["system", "light", "dark", "dim"]);
 const allowedAccentColors = new Set(["blue", "green", "purple", "orange", "pink", "teal", "red"]);
@@ -209,12 +210,14 @@ function buildDefaultSettings(): AppSettings {
     workspaceGroups: [],
     openAppTargets: DEFAULT_OPEN_APP_TARGETS,
     selectedOpenAppId: DEFAULT_OPEN_APP_ID,
+    commonLinks: [],
     globalWorktreesFolder: null,
   };
 }
 
 function normalizeAppSettings(settings: AppSettings): AppSettings {
   const remoteBackendSettings = normalizeRemoteBackends(settings);
+  const normalizedCommonLinks = normalizeCommonLinks(settings.commonLinks ?? []);
   const normalizedTargets =
     settings.openAppTargets && settings.openAppTargets.length
       ? normalizeOpenAppTargets(settings.openAppTargets)
@@ -279,6 +282,7 @@ function normalizeAppSettings(settings: AppSettings): AppSettings {
     commitMessagePrompt,
     openAppTargets: normalizedTargets,
     selectedOpenAppId,
+    commonLinks: normalizedCommonLinks,
   };
 }
 

@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { act, renderHook } from "@testing-library/react";
+import { StrictMode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import type { AppSettings } from "@/types";
 import { useSettingsQuickCommandDrafts } from "./useSettingsQuickCommandDrafts";
@@ -125,6 +126,61 @@ describe("useSettingsQuickCommandDrafts", () => {
             id: "quick-1",
             label: "Updated label",
             text: "Updated body",
+          },
+        ],
+      }),
+    );
+  });
+
+  it("persists add and delete actions once in StrictMode", () => {
+    const appSettings = buildAppSettings();
+    const onUpdateAppSettings = vi.fn().mockResolvedValue(undefined);
+
+    const { result } = renderHook(
+      () =>
+        useSettingsQuickCommandDrafts({
+          appSettings,
+          onUpdateAppSettings,
+        }),
+      {
+        wrapper: ({ children }) => <StrictMode>{children}</StrictMode>,
+      },
+    );
+
+    act(() => {
+      result.current.handleAddQuickCommand();
+    });
+
+    expect(onUpdateAppSettings).toHaveBeenCalledTimes(1);
+    expect(onUpdateAppSettings).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        quickCommands: expect.arrayContaining([
+          expect.objectContaining({
+            id: "quick-1",
+            label: "Initial",
+            text: "First draft",
+          }),
+        ]),
+      }),
+    );
+
+    const addedDraftId = result.current.quickCommandDrafts.find((item) => item.id !== "quick-1")?.id;
+    expect(addedDraftId).toBeTruthy();
+
+    onUpdateAppSettings.mockClear();
+
+    act(() => {
+      result.current.handleDeleteQuickCommand(addedDraftId!);
+    });
+
+    expect(onUpdateAppSettings).toHaveBeenCalledTimes(1);
+    expect(onUpdateAppSettings).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        quickCommands: [
+          {
+            id: "quick-1",
+            label: "Initial",
+            text: "First draft",
           },
         ],
       }),

@@ -166,6 +166,11 @@
     "toggleTerminal": "Toggle terminal panel",
     "copyThread": "Copy thread"
   },
+  "composer": {
+    "quickCommandsTitle": "Quick commands",
+    "quickCommandsEmpty": "No quick commands yet. Add them in Composer settings.",
+    "manageQuickCommands": "Manage quick commands"
+  },
   "messages": {
     "answerWithMore": "{{answer}} +{{count}}",
     "answeredLabel": "answered:",

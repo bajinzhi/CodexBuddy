@@ -6,6 +6,7 @@ import type {
   RefObject,
   SyntheticEvent,
 } from "react";
+import { useTranslation } from "react-i18next";
 import type { AutocompleteItem } from "../hooks/useComposerAutocomplete";
 import ImagePlus from "lucide-react/dist/esm/icons/image-plus";
 import ChevronDown from "lucide-react/dist/esm/icons/chevron-down";
@@ -201,6 +202,7 @@ export function ComposerInput({
   onReviewPromptUpdateCustomInstructions,
   onReviewPromptConfirmCustom,
 }: ComposerInputProps) {
+  const { t } = useTranslation("app");
   const suggestionListRef = useRef<HTMLDivElement | null>(null);
   const suggestionRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const mobileActionsRef = useRef<HTMLDivElement | null>(null);
@@ -216,6 +218,9 @@ export function ComposerInput({
   const usableQuickCommands = quickCommands.filter(isQuickCommandUsable);
   const showQuickCommands =
     usableQuickCommands.length > 0 || Boolean(onOpenQuickCommandsSettings);
+  const quickCommandsTitle = t("composer.quickCommandsTitle");
+  const quickCommandsEmpty = t("composer.quickCommandsEmpty");
+  const manageQuickCommands = t("composer.manageQuickCommands");
   const reviewPromptOpen = Boolean(reviewPrompt);
   const {
     dropTargetRef,
@@ -760,14 +765,14 @@ export function ComposerInput({
             disabled={disabled}
             aria-expanded={quickCommandsOpen}
             aria-haspopup="dialog"
-            aria-label="Quick commands"
-            title="Quick commands"
+            aria-label={quickCommandsTitle}
+            title={quickCommandsTitle}
           >
             <ScrollText aria-hidden />
           </button>
           {quickCommandsOpen && (
             <PopoverSurface className="composer-quick-commands-popover" role="dialog">
-              <div className="composer-quick-commands-title">Quick commands</div>
+              <div className="composer-quick-commands-title">{quickCommandsTitle}</div>
               {usableQuickCommands.length > 0 ? (
                 <div className="composer-quick-commands-list">
                   {usableQuickCommands.map((command) => (
@@ -787,9 +792,7 @@ export function ComposerInput({
                   ))}
                 </div>
               ) : (
-                <div className="composer-quick-commands-empty">
-                  No quick commands yet. Add them in Composer settings.
-                </div>
+                <div className="composer-quick-commands-empty">{quickCommandsEmpty}</div>
               )}
               {onOpenQuickCommandsSettings && (
                 <button
@@ -797,7 +800,7 @@ export function ComposerInput({
                   className="ghost composer-quick-commands-manage"
                   onClick={handleOpenQuickCommandsSettings}
                 >
-                  Manage quick commands
+                  {manageQuickCommands}
                 </button>
               )}
             </PopoverSurface>

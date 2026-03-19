@@ -1,7 +1,8 @@
 /** @vitest-environment jsdom */
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { useRef, useState } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import i18n from "../../../i18n";
 import { isMobilePlatform } from "../../../utils/platformPaths";
 import { Composer } from "./Composer";
 import type {
@@ -43,6 +44,7 @@ type HarnessProps = {
   steerAvailable?: boolean;
   selectedServiceTier?: "fast" | "flex" | null;
   quickCommands?: ComposerQuickCommand[];
+  onOpenQuickCommandsSettings?: () => void;
 };
 
 function ComposerHarness({
@@ -53,6 +55,7 @@ function ComposerHarness({
   steerAvailable = false,
   selectedServiceTier = null,
   quickCommands = [],
+  onOpenQuickCommandsSettings,
 }: HarnessProps) {
   const [draftText, setDraftText] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -89,6 +92,7 @@ function ComposerHarness({
       textareaRef={textareaRef}
       dictationEnabled={false}
       quickCommands={quickCommands}
+      onOpenQuickCommandsSettings={onOpenQuickCommandsSettings}
     />
   );
 }
@@ -161,6 +165,30 @@ describe("Composer send triggers", () => {
     fireEvent.click(screen.getByRole("button", { name: /Bug triage/i }));
 
     expect(textarea.value).toBe("Start: Summarize the issue, identify root cause, and suggest a fix.");
+  });
+
+  it("localizes the quick commands popover in Chinese", async () => {
+    await act(async () => {
+      await i18n.changeLanguage("zh-CN");
+    });
+
+    const onSend = vi.fn();
+    const onOpenQuickCommandsSettings = vi.fn();
+    render(
+      <ComposerHarness
+        onSend={onSend}
+        onOpenQuickCommandsSettings={onOpenQuickCommandsSettings}
+      />,
+    );
+
+    fireEvent.click(screen.getByLabelText("快速指令"));
+
+    expect(screen.getByText("快速指令")).toBeTruthy();
+    expect(screen.getByText("尚无快速指令。请在编辑器设置中添加。")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "管理快速指令" }));
+
+    expect(onOpenQuickCommandsSettings).toHaveBeenCalledTimes(1);
   });
 
   it("blurs the textarea after Enter send on mobile", () => {

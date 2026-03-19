@@ -166,6 +166,11 @@
     "toggleTerminal": "切换终端面板",
     "copyThread": "复制线程"
   },
+  "composer": {
+    "quickCommandsTitle": "快速指令",
+    "quickCommandsEmpty": "尚无快速指令。请在编辑器设置中添加。",
+    "manageQuickCommands": "管理快速指令"
+  },
   "messages": {
     "answerWithMore": "{{answer}} +{{count}}",
     "answeredLabel": "已回答：",

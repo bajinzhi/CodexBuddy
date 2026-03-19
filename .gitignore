@@ -28,6 +28,7 @@ src-tauri/tauri.ios.local.conf.json
 /release-artifacts
 CodexMonitor.zip
 .codex-worktrees/
+.npm-cache/
 .codexmonitor/
 .agent/
 .agents/

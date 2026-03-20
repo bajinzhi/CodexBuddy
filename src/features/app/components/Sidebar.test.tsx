@@ -181,7 +181,9 @@ describe("Sidebar", () => {
     );
 
     const usageValue = screen.getByText("18%");
+    const sessionBar = screen.getByRole("progressbar", { name: "Session" });
     expect(usageValue.className).toContain("is-danger");
+    expect(sessionBar.getAttribute("aria-valuenow")).toBe("18");
   });
 
   it("renders threads-only mode as a global chronological list", () => {

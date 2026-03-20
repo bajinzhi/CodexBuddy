@@ -235,7 +235,13 @@
   "composer": {
     "quickCommandsTitle": "Quick commands",
     "quickCommandsEmpty": "No quick commands yet. Add them in Composer settings.",
-    "manageQuickCommands": "Manage quick commands"
+    "manageQuickCommands": "Manage quick commands",
+    "context": {
+      "title": "Context",
+      "unavailable": "Context unavailable",
+      "remaining": "{{percent}}% free",
+      "tooltip": "{{percent}}% free · {{used}} / {{total}} tokens"
+    }
   },
   "commonLinks": {
     "title": "Common links",

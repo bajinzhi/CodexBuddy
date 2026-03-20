@@ -1353,77 +1353,145 @@
 .sidebar-footer {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  border: 1px solid var(--border-subtle);
-  background: var(--surface-card);
-  color: var(--text-muted);
+  gap: 8px;
+  padding: 10px 0 0;
+  border-top: 1px solid color-mix(in srgb, var(--border-subtle) 78%, transparent);
+  color: var(--text-faint);
   font-size: 11px;
   -webkit-app-region: no-drag;
 }
 
 .usage-bars {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+  display: grid;
+  gap: 0;
   color: var(--text-stronger);
 }
 
 .usage-block {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 5px;
+  padding: 0 0 9px;
+  border: 0;
+  background: transparent;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.usage-block + .usage-block {
+  padding-top: 9px;
+  border-top: 1px solid color-mix(in srgb, var(--border-subtle) 72%, transparent);
 }
 
 .usage-label {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-weight: 600;
-  letter-spacing: 0.01em;
-  color: var(--text-stronger);
+  font-weight: 500;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
 }
 
 .usage-title {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
+  min-width: 0;
 }
 
 .usage-reset {
-  font-size: 10px;
-  font-weight: 500;
-  color: var(--text-muted);
+  font-size: 9px;
+  font-weight: 400;
+  color: var(--text-faint);
 }
 
 .usage-value {
   color: var(--text-muted);
-  font-weight: 600;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.usage-value.is-warning {
+  color: var(--text-muted);
 }
 
 .usage-value.is-danger {
-  color: var(--text-danger);
+  color: var(--text-muted);
 }
 
 .usage-bar {
   position: relative;
+  --usage-fill: 0;
+  --usage-hue: 0deg;
   height: 6px;
   border-radius: 999px;
-  background: var(--surface-card-muted);
+  border: 1px solid color-mix(
+    in srgb,
+    hsl(var(--usage-hue) 38% 74%) 28%,
+    var(--border-subtle)
+  );
+  background: color-mix(
+    in srgb,
+    hsl(var(--usage-hue) 46% 84%) 18%,
+    var(--surface-card-muted)
+  );
   overflow: hidden;
 }
 
 .usage-bar-fill {
   display: block;
+  position: relative;
+  width: calc(var(--usage-fill) * 1%);
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(135deg, rgba(120, 235, 190, 0.9), rgba(100, 200, 255, 0.9));
-  box-shadow: 0 0 10px rgba(92, 168, 255, 0.25);
+  background: hsl(var(--usage-hue) 64% 52%);
+  transition: width 180ms ease;
+}
+
+.usage-block[data-state="healthy"] .usage-bar {
+  border-color: color-mix(in srgb, hsl(136deg 34% 72%) 30%, var(--border-subtle));
+}
+
+.usage-block[data-state="warning"] .usage-bar {
+  border-color: color-mix(in srgb, hsl(58deg 44% 72%) 34%, var(--border-subtle));
+}
+
+.usage-block[data-state="critical"] .usage-bar {
+  border-color: color-mix(in srgb, hsl(8deg 50% 72%) 38%, var(--border-subtle));
+}
+
+.usage-block[data-state="warning"] .usage-value {
+  color: color-mix(in srgb, hsl(46deg 82% 42%) 34%, var(--text-muted));
+}
+
+.usage-block[data-state="critical"] .usage-value {
+  color: color-mix(in srgb, hsl(8deg 62% 46%) 42%, var(--text-muted));
+  font-weight: 600;
+}
+
+.usage-block[data-state="unknown"] .usage-value {
+  color: var(--text-faint);
+}
+
+.usage-block[data-state="unknown"] .usage-bar {
+  background: color-mix(in srgb, var(--surface-card-muted) 94%, white 6%);
+  border-color: color-mix(in srgb, var(--border-subtle) 60%, transparent);
+}
+
+.usage-block[data-state="unknown"] .usage-bar-fill {
+  width: 0;
+  background: transparent;
 }
 
 .usage-meta {
-  color: var(--text-subtle);
+  padding-top: 8px;
+  border-top: 1px solid color-mix(in srgb, var(--border-subtle) 68%, transparent);
+  color: var(--text-faint);
+  font-size: 10px;
+  line-height: 1.4;
 }
 
 .sidebar-account-menu {

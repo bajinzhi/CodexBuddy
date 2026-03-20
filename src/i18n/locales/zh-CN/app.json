@@ -235,7 +235,13 @@
   "composer": {
     "quickCommandsTitle": "快速指令",
     "quickCommandsEmpty": "尚无快速指令。请在编辑器设置中添加。",
-    "manageQuickCommands": "管理快速指令"
+    "manageQuickCommands": "管理快速指令",
+    "context": {
+      "title": "上下文",
+      "unavailable": "上下文不可用",
+      "remaining": "剩余 {{percent}}%",
+      "tooltip": "剩余 {{percent}}% · {{used}} / {{total}} 个令牌"
+    }
   },
   "commonLinks": {
     "title": "常用链接",

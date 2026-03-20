@@ -1,7 +1,46 @@
 import type { CSSProperties } from "react";
 import { BrainCog, SlidersHorizontal, Zap } from "lucide-react";
+import { useTranslation } from "react-i18next";
+import { formatNumber } from "@/i18n/format";
 import type { AccessMode, ServiceTier, ThreadTokenUsage } from "../../../types";
 import type { CodexArgsOption } from "../../threads/utils/codexArgsProfiles";
+
+const CONTEXT_WARNING_THRESHOLD = 50;
+const CONTEXT_CRITICAL_THRESHOLD = 25;
+
+function clampPercent(value: number) {
+  return Math.min(Math.max(value, 0), 100);
+}
+
+function getContextState(contextRemainingPercent: number | null) {
+  if (contextRemainingPercent === null) {
+    return "unknown";
+  }
+  if (contextRemainingPercent <= CONTEXT_CRITICAL_THRESHOLD) {
+    return "critical";
+  }
+  if (contextRemainingPercent <= CONTEXT_WARNING_THRESHOLD) {
+    return "warning";
+  }
+  return "healthy";
+}
+
+function getContextHue(contextRemainingPercent: number | null) {
+  if (contextRemainingPercent === null) {
+    return 0;
+  }
+  if (contextRemainingPercent <= CONTEXT_WARNING_THRESHOLD) {
+    return Math.round(
+      8 + (Math.max(contextRemainingPercent, 0) / CONTEXT_WARNING_THRESHOLD) * 50,
+    );
+  }
+  return Math.round(
+    58 +
+      ((Math.min(contextRemainingPercent, 100) - CONTEXT_WARNING_THRESHOLD) /
+        (100 - CONTEXT_WARNING_THRESHOLD)) *
+        80,
+  );
+}
 
 type ComposerMetaBarProps = {
   disabled: boolean;
@@ -44,18 +83,36 @@ export function ComposerMetaBar({
   onSelectCodexArgsOverride,
   contextUsage = null,
 }: ComposerMetaBarProps) {
+  const { t } = useTranslation("app");
   const contextWindow = contextUsage?.modelContextWindow ?? null;
   const lastTokens = contextUsage?.last.totalTokens ?? 0;
   const totalTokens = contextUsage?.total.totalTokens ?? 0;
   const usedTokens = lastTokens > 0 ? lastTokens : totalTokens;
-  const contextFreePercent =
-    contextWindow && contextWindow > 0 && usedTokens > 0
-      ? Math.max(
-          0,
-          100 -
-            Math.min(Math.max((usedTokens / contextWindow) * 100, 0), 100),
-        )
+  const contextRemainingPercent =
+    contextWindow !== null && contextWindow > 0
+      ? 100 - clampPercent((usedTokens / contextWindow) * 100)
       : null;
+  const contextState = getContextState(contextRemainingPercent);
+  const contextPercentageLabel =
+    contextRemainingPercent === null
+      ? null
+      : formatNumber(Math.round(contextRemainingPercent));
+  const contextReadout =
+    contextPercentageLabel === null
+      ? t("composer.context.unavailable")
+      : t("composer.context.remaining", { percent: contextPercentageLabel });
+  const contextTooltip =
+    contextPercentageLabel === null || contextWindow === null
+      ? t("composer.context.unavailable")
+      : t("composer.context.tooltip", {
+          percent: contextPercentageLabel,
+          used: formatNumber(Math.max(0, usedTokens)),
+          total: formatNumber(contextWindow),
+        });
+  const contextStyle = {
+    "--context-remaining": contextRemainingPercent ?? 0,
+    "--context-hue": `${getContextHue(contextRemainingPercent)}deg`,
+  } as CSSProperties;
   const planMode =
     collaborationModes.find((mode) => mode.id === "plan") ?? null;
   const defaultMode =
@@ -105,17 +162,17 @@ export function ComposerMetaBar({
             </div>
           ) : (
             <div className="composer-select-wrap">
-            <span className="composer-icon" aria-hidden>
-              <svg viewBox="0 0 24 24" fill="none">
-                <path
-                  d="m6.5 7.5 1 1 2-2M6.5 12.5l1 1 2-2M6.5 17.5l1 1 2-2M11 7.5h7M11 12.5h7M11 17.5h7"
-                  stroke="currentColor"
-                  strokeWidth="1.4"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </span>
+              <span className="composer-icon" aria-hidden>
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="m6.5 7.5 1 1 2-2M6.5 12.5l1 1 2-2M6.5 17.5l1 1 2-2M11 7.5h7M11 12.5h7M11 17.5h7"
+                    stroke="currentColor"
+                    strokeWidth="1.4"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </span>
               <select
                 className="composer-select composer-select--model composer-select--collab"
                 aria-label="Collaboration mode"
@@ -264,26 +321,31 @@ export function ComposerMetaBar({
           </select>
         </div>
       </div>
-      <div className="composer-context">
-        <div
-          className="composer-context-ring"
-          data-tooltip={
-            contextFreePercent === null
-              ? "Context free --"
-              : `Context free ${Math.round(contextFreePercent)}%`
-          }
-          aria-label={
-            contextFreePercent === null
-              ? "Context free --"
-              : `Context free ${Math.round(contextFreePercent)}%`
-          }
-          style={
-            {
-              "--context-free": contextFreePercent ?? 0,
-            } as CSSProperties
-          }
-        >
-          <span className="composer-context-value">●</span>
+      <div className="composer-bar-row">
+        <div className="composer-context" data-state={contextState}>
+          <div className="composer-context-header">
+            <span className="composer-context-title">
+              {t("composer.context.title")}
+            </span>
+            <span className="composer-context-readout">{contextReadout}</span>
+          </div>
+          <div
+            className="composer-context-track"
+            role="progressbar"
+            aria-label={t("composer.context.title")}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={
+              contextRemainingPercent === null
+                ? undefined
+                : Math.round(contextRemainingPercent)
+            }
+            aria-valuetext={contextReadout}
+            title={contextTooltip}
+            style={contextStyle}
+          >
+            <span className="composer-context-fill" aria-hidden />
+          </div>
         </div>
       </div>
     </div>

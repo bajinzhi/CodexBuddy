@@ -648,76 +648,121 @@
 
 .composer-bar {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   padding-top: 6px;
-  border-top: 1px solid var(--border-muted);
+  border-top: 1px solid color-mix(in srgb, var(--border-muted) 72%, transparent);
+  gap: 7px;
+}
+
+.composer-bar-row {
+  display: flex;
+  align-items: center;
   gap: 12px;
+  flex-wrap: wrap;
+  min-width: 0;
 }
 
 .composer-meta {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+  min-width: 0;
 }
 
 .composer-context {
-  margin-left: auto;
   display: grid;
-  grid-template-columns: auto;
-  align-items: center;
-  gap: 8px;
+  gap: 5px;
+  min-width: 0;
+  width: 100%;
+}
+
+.composer-context-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.composer-context-title {
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+.composer-context-readout {
   font-size: 11px;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
   color: var(--text-muted);
-}
-
-.composer-context-ring {
-  --context-free: 0;
-  width: 20px;
-  height: 20px;
-  border-radius: 999px;
-  display: grid;
-  place-items: center;
-  position: relative;
-  background:
-    radial-gradient(circle, var(--surface-context-core) 54%, transparent 56%),
-    conic-gradient(
-      from 180deg,
-      hsl(calc(120deg * var(--context-free) / 100), 80%, 55%)
-        calc(var(--context-free) * 1%),
-      var(--border-strong) 0
-    );
-  transition: background 0.2s ease;
-}
-
-.composer-context-ring::after {
-  content: attr(data-tooltip);
-  position: absolute;
-  right: 0;
-  bottom: calc(100% + 6px);
-  transform: translateY(4px);
-  padding: 4px 8px;
-  border-radius: 999px;
-  background: var(--surface-command);
-  color: var(--text-emphasis);
-  font-size: 10px;
   white-space: nowrap;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.15s ease, transform 0.15s ease;
-  border: 1px solid var(--border-subtle);
 }
 
-.composer-context-ring:hover::after {
-  opacity: 1;
-  transform: translateY(0);
+.composer-context-track {
+  --context-remaining: 0;
+  --context-hue: 0deg;
+  position: relative;
+  height: 6px;
+  border-radius: 999px;
+  border: 1px solid color-mix(
+    in srgb,
+    hsl(var(--context-hue) 38% 74%) 28%,
+    var(--border-subtle)
+  );
+  background: color-mix(
+    in srgb,
+    hsl(var(--context-hue) 46% 84%) 18%,
+    var(--surface-card-muted)
+  );
+  overflow: hidden;
 }
 
-.composer-context-value {
-  font-weight: 600;
-  font-size: 6px;
-  color: var(--text-quiet);
+.composer-context-fill {
+  position: relative;
+  display: block;
+  width: calc(var(--context-remaining) * 1%);
+  height: 100%;
+  border-radius: inherit;
+  background: hsl(var(--context-hue) 64% 52%);
+  transition: width 180ms ease;
 }
 
+.composer-context[data-state="healthy"] .composer-context-track {
+  border-color: color-mix(in srgb, hsl(136deg 34% 72%) 30%, var(--border-subtle));
+}
+
+.composer-context[data-state="warning"] .composer-context-track {
+  border-color: color-mix(in srgb, hsl(58deg 44% 72%) 34%, var(--border-subtle));
+}
+
+.composer-context[data-state="critical"] .composer-context-track {
+  border-color: color-mix(in srgb, hsl(8deg 50% 72%) 38%, var(--border-subtle));
+}
+
+.composer-context[data-state="critical"] .composer-context-readout {
+  color: color-mix(in srgb, hsl(8deg 62% 46%) 42%, var(--text-muted));
+}
+
+.composer-context[data-state="warning"] .composer-context-readout {
+  color: color-mix(in srgb, hsl(46deg 82% 42%) 34%, var(--text-muted));
+}
+
+.composer-context[data-state="unknown"] .composer-context-readout {
+  color: var(--text-faint);
+}
+
+.composer-context[data-state="unknown"] .composer-context-track {
+  background: color-mix(in srgb, var(--surface-card-muted) 94%, white 6%);
+  border-color: color-mix(in srgb, var(--border-subtle) 60%, transparent);
+}
+
+.composer-context[data-state="unknown"] .composer-context-fill {
+  width: 0;
+  background: transparent;
+}
 
 .composer-select-wrap {
   display: inline-flex;
@@ -953,6 +998,10 @@
     gap: 6px;
     padding-bottom: 2px;
     scrollbar-width: thin;
+  }
+
+  .app.layout-phone .composer-bar-row {
+    display: none;
   }
 
   .app.layout-phone .composer-context {

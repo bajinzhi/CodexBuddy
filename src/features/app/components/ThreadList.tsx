@@ -1,4 +1,5 @@
 import { useMemo, useState, type MouseEvent } from "react";
+import { useTranslation } from "react-i18next";
 
 import type { ThreadSummary } from "../../../types";
 import type { ThreadStatusById } from "../../../utils/threadStatus";
@@ -60,6 +61,7 @@ export function ThreadList({
   onSelectThread,
   onShowThreadMenu,
 }: ThreadListProps) {
+  const { t } = useTranslation("app");
   const indentUnit = nested ? 10 : 14;
   const [collapsedThreadKeys, setCollapsedThreadKeys] = useState<Set<string>>(new Set());
 
@@ -147,8 +149,8 @@ export function ThreadList({
             event.stopPropagation();
             onToggleExpanded(workspaceId);
           }}
-        >
-          {isExpanded ? "Show less" : "More..."}
+          >
+          {isExpanded ? t("sidebar.showLess") : t("sidebar.more")}
         </button>
       )}
       {showLoadOlder && nextCursor && (isExpanded || totalThreadRoots <= 3) && (
@@ -161,10 +163,10 @@ export function ThreadList({
           disabled={isPaging}
         >
           {isPaging
-            ? "Loading..."
+            ? t("sidebar.loading")
             : totalThreadRoots === 0
-              ? "Search older..."
-              : "Load older..."}
+              ? t("sidebar.searchOlder")
+              : t("sidebar.loadOlder")}
         </button>
       )}
     </div>

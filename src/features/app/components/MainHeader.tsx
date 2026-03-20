@@ -141,6 +141,20 @@ export function MainHeader({
     [trimmedQuery],
   );
   const resolvedWorktreePath = worktreePath ?? workspace.path;
+  const resolvedWorktreeLabel = useMemo(() => {
+    const trimmedBranchName = branchName.trim();
+    const trimmedWorktreeLabel = worktreeLabel?.trim();
+    if (!trimmedWorktreeLabel) {
+      return branchName;
+    }
+    if (!trimmedBranchName || trimmedBranchName === "unknown") {
+      return trimmedWorktreeLabel;
+    }
+    if (trimmedWorktreeLabel === trimmedBranchName) {
+      return trimmedWorktreeLabel;
+    }
+    return `${trimmedWorktreeLabel} · ${trimmedBranchName}`;
+  }, [branchName, worktreeLabel]);
   const relativeWorktreePath = useMemo(() => {
     if (!parentPath) {
       return resolvedWorktreePath;
@@ -206,7 +220,7 @@ export function MainHeader({
                 data-tauri-drag-region="false"
                 title={t("mainHeader.worktreeInfo", { ns: "app" })}
               >
-                {worktreeLabel || branchName}
+                {resolvedWorktreeLabel}
               </MenuTrigger>
               {infoOpen && (
                 <PopoverSurface className="worktree-info-popover" role="dialog">

@@ -93,16 +93,16 @@ export function SidebarCornerActions({
             popupRole="dialog"
             className="ghost sidebar-corner-button ds-tooltip-trigger"
             onClick={toggleAccountMenu}
-            aria-label="Account"
-            title="Account"
-            data-tooltip="Account"
+            aria-label={t("sidebar.account.title")}
+            title={t("sidebar.account.title")}
+            data-tooltip={t("sidebar.account.title")}
             data-tooltip-align="start"
           >
             <User size={14} aria-hidden />
           </MenuTrigger>
           {accountMenuOpen && (
             <PopoverSurface className="sidebar-account-popover" role="dialog">
-              <div className="sidebar-account-title">Account</div>
+              <div className="sidebar-account-title">{t("sidebar.account.title")}</div>
               <div className="sidebar-account-value">{accountLabel}</div>
               <div className="sidebar-account-actions-row">
                 <button
@@ -125,8 +125,8 @@ export function SidebarCornerActions({
                     className="secondary sidebar-account-cancel"
                     onClick={onCancelSwitchAccount}
                     disabled={accountCancelDisabled}
-                    aria-label="Cancel account switch"
-                    title="Cancel"
+                    aria-label={t("sidebar.account.cancelSwitch")}
+                    title={t("actions.cancel", { ns: "common" })}
                   >
                     <X size={12} aria-hidden />
                   </button>
@@ -140,9 +140,9 @@ export function SidebarCornerActions({
         className="ghost sidebar-corner-button ds-tooltip-trigger"
         type="button"
         onClick={() => onOpenSettings()}
-        aria-label="Open settings"
-        title="Settings"
-        data-tooltip="Settings"
+        aria-label={t("sidebar.openSettings")}
+        title={t("sidebar.settings")}
+        data-tooltip={t("sidebar.settings")}
         data-tooltip-align="start"
       >
         <Settings size={14} aria-hidden />
@@ -202,9 +202,9 @@ export function SidebarCornerActions({
           className="ghost sidebar-corner-button ds-tooltip-trigger"
           type="button"
           onClick={onOpenDebug}
-          aria-label="Open debug log"
-          title="Debug log"
-          data-tooltip="Debug log"
+          aria-label={t("sidebar.openDebugLog")}
+          title={t("sidebar.debugLog")}
+          data-tooltip={t("sidebar.debugLog")}
           data-tooltip-align="start"
         >
           <ScrollText size={14} aria-hidden />

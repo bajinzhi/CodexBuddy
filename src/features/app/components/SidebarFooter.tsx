@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+
 type SidebarFooterProps = {
   sessionPercent: number | null;
   weeklyPercent: number | null;
@@ -15,13 +17,14 @@ export function SidebarFooter({
   creditsLabel,
   showWeekly,
 }: SidebarFooterProps) {
+  const { t } = useTranslation("app");
   return (
     <div className="sidebar-footer">
       <div className="usage-bars">
         <div className="usage-block">
           <div className="usage-label">
             <span className="usage-title">
-              <span>Session</span>
+              <span>{t("sidebar.session")}</span>
               {sessionResetLabel && (
                 <span className="usage-reset">· {sessionResetLabel}</span>
               )}
@@ -41,7 +44,7 @@ export function SidebarFooter({
           <div className="usage-block">
             <div className="usage-label">
               <span className="usage-title">
-                <span>Weekly</span>
+                <span>{t("sidebar.weekly")}</span>
                 {weeklyResetLabel && (
                   <span className="usage-reset">· {weeklyResetLabel}</span>
                 )}

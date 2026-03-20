@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import GitBranch from "lucide-react/dist/esm/icons/git-branch";
 import MessagesSquare from "lucide-react/dist/esm/icons/messages-square";
 import TerminalSquare from "lucide-react/dist/esm/icons/terminal-square";
+import { useTranslation } from "react-i18next";
 
 type TabletNavTab = "codex" | "git" | "log";
 
@@ -17,8 +18,9 @@ const tabs: { id: TabletNavTab; label: string; icon: ReactNode }[] = [
 ];
 
 export function TabletNav({ activeTab, onSelect }: TabletNavProps) {
+  const { t } = useTranslation("app");
   return (
-    <nav className="tablet-nav" aria-label="Workspace">
+    <nav className="tablet-nav" aria-label={t("sidebar.tabletNav.workspace")}>
       <div className="tablet-nav-group">
         {tabs.map((tab) => (
           <button
@@ -29,7 +31,13 @@ export function TabletNav({ activeTab, onSelect }: TabletNavProps) {
             aria-current={activeTab === tab.id ? "page" : undefined}
           >
             {tab.icon}
-            <span className="tablet-nav-label">{tab.label}</span>
+            <span className="tablet-nav-label">
+              {tab.id === "codex"
+                ? t("sidebar.tabletNav.codex")
+                : tab.id === "git"
+                  ? t("sidebar.tabletNav.git")
+                  : t("sidebar.tabletNav.log")}
+            </span>
           </button>
         ))}
       </div>

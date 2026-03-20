@@ -138,7 +138,7 @@ export function SettingsNav({
           showDisclosure={showDisclosure}
           onClick={() => onSelectSection("codex")}
         >
-          Codex
+          {t("nav.codex")}
         </PanelNavItem>
         <PanelNavItem
           className="settings-nav"

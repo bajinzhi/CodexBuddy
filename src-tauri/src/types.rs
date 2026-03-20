@@ -750,7 +750,7 @@ fn default_chat_history_scrollback_items() -> Option<u32> {
 }
 
 fn default_automatic_app_update_checks_enabled() -> bool {
-    true
+    false
 }
 
 fn default_ui_font_family() -> String {
@@ -1199,7 +1199,7 @@ impl Default for AppSettings {
             show_message_file_path: default_show_message_file_path(),
             chat_history_scrollback_items: default_chat_history_scrollback_items(),
             thread_title_autogeneration_enabled: false,
-            automatic_app_update_checks_enabled: true,
+            automatic_app_update_checks_enabled: false,
             ui_font_family: default_ui_font_family(),
             code_font_family: default_code_font_family(),
             code_font_size: default_code_font_size(),
@@ -1368,7 +1368,7 @@ mod tests {
         assert!(settings.show_message_file_path);
         assert_eq!(settings.chat_history_scrollback_items, Some(200));
         assert!(!settings.thread_title_autogeneration_enabled);
-        assert!(settings.automatic_app_update_checks_enabled);
+        assert!(!settings.automatic_app_update_checks_enabled);
         assert!(settings.ui_font_family.contains("system-ui"));
         assert!(settings.code_font_family.contains("ui-monospace"));
         assert_eq!(settings.code_font_size, 11);

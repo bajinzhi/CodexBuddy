@@ -182,7 +182,7 @@ function buildDefaultSettings(): AppSettings {
     showMessageFilePath: true,
     chatHistoryScrollbackItems: CHAT_SCROLLBACK_DEFAULT,
     threadTitleAutogenerationEnabled: false,
-    automaticAppUpdateChecksEnabled: true,
+    automaticAppUpdateChecksEnabled: false,
     uiFontFamily: DEFAULT_UI_FONT_FAMILY,
     codeFontFamily: DEFAULT_CODE_FONT_FAMILY,
     codeFontSize: CODE_FONT_SIZE_DEFAULT,

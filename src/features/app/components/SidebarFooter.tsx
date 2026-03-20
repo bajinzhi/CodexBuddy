@@ -7,7 +7,19 @@ type SidebarFooterProps = {
   weeklyResetLabel: string | null;
   creditsLabel: string | null;
   showWeekly: boolean;
+  showRemaining: boolean;
 };
+
+const LOW_REMAINING_THRESHOLD = 25;
+
+function isLowRemaining(percent: number | null, showRemaining: boolean) {
+  if (percent === null) {
+    return false;
+  }
+
+  const remainingPercent = showRemaining ? percent : 100 - percent;
+  return remainingPercent < LOW_REMAINING_THRESHOLD;
+}
 
 export function SidebarFooter({
   sessionPercent,
@@ -16,6 +28,7 @@ export function SidebarFooter({
   weeklyResetLabel,
   creditsLabel,
   showWeekly,
+  showRemaining,
 }: SidebarFooterProps) {
   const { t } = useTranslation("app");
   return (
@@ -29,7 +42,9 @@ export function SidebarFooter({
                 <span className="usage-reset">· {sessionResetLabel}</span>
               )}
             </span>
-            <span className="usage-value">
+            <span
+              className={`usage-value${isLowRemaining(sessionPercent, showRemaining) ? " is-danger" : ""}`}
+            >
               {sessionPercent === null ? "--" : `${sessionPercent}%`}
             </span>
           </div>
@@ -49,7 +64,9 @@ export function SidebarFooter({
                   <span className="usage-reset">· {weeklyResetLabel}</span>
                 )}
               </span>
-              <span className="usage-value">
+              <span
+                className={`usage-value${isLowRemaining(weeklyPercent, showRemaining) ? " is-danger" : ""}`}
+              >
                 {weeklyPercent === null ? "--" : `${weeklyPercent}%`}
               </span>
             </div>

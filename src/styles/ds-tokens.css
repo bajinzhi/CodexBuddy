@@ -11,6 +11,8 @@
   --ds-text-strong: var(--text-strong);
   --ds-text-subtle: var(--text-subtle);
   --ds-text-faint: var(--text-faint);
+  --text-danger: var(--status-error, #ff6e6e);
+  --accent-danger: var(--status-error, #ff6e6e);
 
   --ds-modal-backdrop: rgba(6, 8, 12, 0.55);
   --ds-modal-card-bg: var(--ds-surface-card);

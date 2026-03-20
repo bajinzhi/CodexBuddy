@@ -1199,6 +1199,7 @@ export const Sidebar = memo(function Sidebar({
         weeklyResetLabel={weeklyResetLabel}
         creditsLabel={creditsLabel}
         showWeekly={showWeekly}
+        showRemaining={usageShowRemaining}
       />
       <SidebarCornerActions
         commonLinks={commonLinks}

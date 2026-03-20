@@ -162,6 +162,28 @@ describe("Sidebar", () => {
     expect(creditsLabel.textContent ?? "").toContain("120");
   });
 
+  it("marks low remaining usage as dangerous", () => {
+    render(
+      <Sidebar
+        {...baseProps}
+        usageShowRemaining={true}
+        accountRateLimits={{
+          primary: {
+            usedPercent: 82,
+            windowDurationMins: 300,
+            resetsAt: Math.round(Date.now() / 1000) + 3600,
+          },
+          secondary: null,
+          credits: null,
+          planType: "pro",
+        }}
+      />,
+    );
+
+    const usageValue = screen.getByText("18%");
+    expect(usageValue.className).toContain("is-danger");
+  });
+
   it("renders threads-only mode as a global chronological list", () => {
     const older = Date.now() - 10_000;
     const newer = Date.now();

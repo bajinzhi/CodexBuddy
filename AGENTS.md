@@ -145,6 +145,14 @@ Release build:
 npm run tauri:build
 ```
 
+Windows release packaging in this repo should skip signing unless the user explicitly asks for a signed release and provides valid signing material.
+
+- Preferred local commands:
+  - `npx tauri build --config src-tauri/tauri.windows.conf.json --bundles msi --no-sign`
+  - `npx tauri build --config src-tauri/tauri.windows.conf.json --bundles nsis --no-sign`
+- Do not attempt a signed Windows bundle by default.
+- If a signed release is required, confirm that the signing keys and release process are configured before removing `--no-sign`.
+
 Focused test runs:
 
 ```bash

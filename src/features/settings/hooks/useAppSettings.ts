@@ -178,7 +178,7 @@ function buildDefaultSettings(): AppSettings {
     uiLanguage: getInitialUiLanguagePreference(),
     theme: "system",
     accentColor: "blue",
-    usageShowRemaining: false,
+    usageShowRemaining: true,
     showMessageFilePath: true,
     chatHistoryScrollbackItems: CHAT_SCROLLBACK_DEFAULT,
     threadTitleAutogenerationEnabled: false,

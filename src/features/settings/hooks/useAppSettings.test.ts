@@ -61,6 +61,7 @@ describe("useAppSettings", () => {
     expect(result.current.settings.codeFontFamily).toContain("ui-monospace");
     expect(result.current.settings.codeFontSize).toBe(16);
     expect(result.current.settings.personality).toBe("friendly");
+    expect(result.current.settings.usageShowRemaining).toBe(true);
     expect(result.current.settings.automaticAppUpdateChecksEnabled).toBe(false);
     expect(result.current.settings.backendMode).toBe("remote");
     expect(result.current.settings.remoteBackendHost).toBe("example:1234");
@@ -90,6 +91,7 @@ describe("useAppSettings", () => {
     expect(result.current.settings.dictationModelId).toBe("base");
     expect(result.current.settings.interruptShortcut).toBeTruthy();
     expect(result.current.settings.commonLinks).toEqual([]);
+    expect(result.current.settings.usageShowRemaining).toBe(true);
     expect(result.current.settings.automaticAppUpdateChecksEnabled).toBe(false);
   });
 

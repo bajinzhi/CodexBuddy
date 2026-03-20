@@ -1402,6 +1402,10 @@
   font-weight: 600;
 }
 
+.usage-value.is-danger {
+  color: var(--text-danger);
+}
+
 .usage-bar {
   position: relative;
   height: 6px;

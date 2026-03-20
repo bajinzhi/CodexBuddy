@@ -738,7 +738,7 @@ fn default_accent_color() -> String {
 }
 
 fn default_usage_show_remaining() -> bool {
-    false
+    true
 }
 
 fn default_show_message_file_path() -> bool {
@@ -1364,7 +1364,7 @@ mod tests {
         assert!((settings.ui_scale - 1.0).abs() < f64::EPSILON);
         assert_eq!(settings.ui_language, "system");
         assert_eq!(settings.theme, "system");
-        assert!(!settings.usage_show_remaining);
+        assert!(settings.usage_show_remaining);
         assert!(settings.show_message_file_path);
         assert_eq!(settings.chat_history_scrollback_items, Some(200));
         assert!(!settings.thread_title_autogeneration_enabled);

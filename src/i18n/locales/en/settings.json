@@ -11,6 +11,7 @@
     "composer": "Composer",
     "dictation": "Dictation",
     "shortcuts": "Shortcuts",
+    "common-links": "Common links",
     "open-apps": "Open in",
     "git": "Git",
     "server": "Server",
@@ -234,6 +235,20 @@
     "listsTitle": "Lists",
     "continueListsTitle": "Continue lists on Shift+Enter",
     "continueListsSubtitle": "Continues numbered and bulleted lists when the line has content."
+  },
+  "commonLinks": {
+    "title": "Common links",
+    "subtitle": "Manage reusable links shown in the sidebar popover.",
+    "labelAria": "Common link label {{index}}",
+    "urlAria": "Common link URL {{index}}",
+    "labelRequired": "Label required",
+    "urlRequired": "URL required",
+    "invalidUrl": "Use http:// or https://",
+    "invalid": "Invalid",
+    "addLink": "Add link",
+    "removeLink": "Remove link",
+    "help": "Links appear in the sidebar popover after both label and URL are valid.",
+    "newLinkLabel": "New link"
   },
   "dictation": {
     "title": "Dictation",

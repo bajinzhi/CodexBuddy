@@ -10,11 +10,13 @@ import {
 type UseSettingsCommonLinksDraftsParams = {
   appSettings: AppSettings;
   onUpdateAppSettings: (next: AppSettings) => Promise<void>;
+  newLinkLabel: string;
 };
 
 export const useSettingsCommonLinksDrafts = ({
   appSettings,
   onUpdateAppSettings,
+  newLinkLabel,
 }: UseSettingsCommonLinksDraftsParams) => {
   const [commonLinkDrafts, setCommonLinkDrafts] = useState<CommonLinkDraft[]>(() =>
     buildCommonLinkDrafts(appSettings.commonLinks),
@@ -72,7 +74,7 @@ export const useSettingsCommonLinksDrafts = ({
   const handleAddCommonLink = () => {
     const newLink: CommonLinkDraft = {
       id: createCommonLinkId(),
-      label: "New link",
+      label: newLinkLabel,
       url: "",
     };
     const next = [...commonLinkDrafts, newLink];

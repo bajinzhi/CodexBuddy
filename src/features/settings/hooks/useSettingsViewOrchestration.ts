@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import type {
   AppSettings,
   CodexDoctorResult,
@@ -100,6 +101,7 @@ export function useSettingsViewOrchestration({
   onCancelDictationDownload,
   onRemoveDictationModel,
 }: UseSettingsViewOrchestrationArgs) {
+  const { t } = useTranslation("settings");
   const projects = useMemo(
     () => groupedWorkspaces.flatMap((group) => group.workspaces),
     [groupedWorkspaces],
@@ -175,6 +177,7 @@ export function useSettingsViewOrchestration({
   } = useSettingsCommonLinksDrafts({
     appSettings,
     onUpdateAppSettings,
+    newLinkLabel: t("commonLinks.newLinkLabel"),
   });
 
   const projectsSectionProps = useSettingsProjectsSection({

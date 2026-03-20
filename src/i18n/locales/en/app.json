@@ -171,6 +171,13 @@
     "quickCommandsEmpty": "No quick commands yet. Add them in Composer settings.",
     "manageQuickCommands": "Manage quick commands"
   },
+  "commonLinks": {
+    "title": "Common links",
+    "empty": "No common links yet.",
+    "manage": "Manage links",
+    "add": "Add links",
+    "open": "Open {{label}}"
+  },
   "messages": {
     "answerWithMore": "{{answer}} +{{count}}",
     "answeredLabel": "answered:",

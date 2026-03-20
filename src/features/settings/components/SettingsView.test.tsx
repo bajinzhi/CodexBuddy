@@ -1882,6 +1882,31 @@ describe("SettingsView Common links", () => {
       },
     ]);
   });
+
+  it("localizes the common links section and new item label in Chinese", async () => {
+    await act(async () => {
+      await i18n.changeLanguage("zh-CN");
+    });
+
+    const onUpdateAppSettings = vi.fn().mockResolvedValue(undefined);
+    renderCommonLinksSection({
+      appSettings: {
+        commonLinks: [],
+      },
+      onUpdateAppSettings,
+    });
+
+    expect(
+      screen.getByText("管理在侧边栏弹出菜单中显示的可复用链接。"),
+    ).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "添加链接" }));
+
+    expect(screen.getByDisplayValue("新链接")).toBeTruthy();
+    expect(
+      screen.getByText("当标签和网址都有效后，链接会显示在侧边栏弹出菜单中。"),
+    ).toBeTruthy();
+  });
 });
 
 describe("SettingsView Shortcuts", () => {

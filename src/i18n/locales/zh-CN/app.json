@@ -171,6 +171,13 @@
     "quickCommandsEmpty": "尚无快速指令。请在编辑器设置中添加。",
     "manageQuickCommands": "管理快速指令"
   },
+  "commonLinks": {
+    "title": "常用链接",
+    "empty": "尚无常用链接。",
+    "manage": "管理链接",
+    "add": "添加链接",
+    "open": "打开 {{label}}"
+  },
   "messages": {
     "answerWithMore": "{{answer}} +{{count}}",
     "answeredLabel": "已回答：",

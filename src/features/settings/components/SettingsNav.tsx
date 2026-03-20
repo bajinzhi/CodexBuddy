@@ -93,7 +93,7 @@ export function SettingsNav({
           showDisclosure={showDisclosure}
           onClick={() => onSelectSection("common-links")}
         >
-          Common links
+          {t("nav.common-links")}
         </PanelNavItem>
         <PanelNavItem
           className="settings-nav"

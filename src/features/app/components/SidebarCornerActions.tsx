@@ -8,6 +8,7 @@ import Settings from "lucide-react/dist/esm/icons/settings";
 import User from "lucide-react/dist/esm/icons/user";
 import X from "lucide-react/dist/esm/icons/x";
 import { useEffect, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import {
   MenuTrigger,
   PopoverSurface,
@@ -43,6 +44,7 @@ export function SidebarCornerActions({
   onSwitchAccount,
   onCancelSwitchAccount,
 }: SidebarCornerActionsProps) {
+  const { t } = useTranslation("app");
   const accountMenu = useMenuController();
   const commonLinksMenu = useMenuController();
   const {
@@ -77,6 +79,10 @@ export function SidebarCornerActions({
     closeCommonLinksMenu();
     onOpenSettings("common-links");
   };
+  const commonLinksTitle = t("commonLinks.title");
+  const commonLinksEmpty = t("commonLinks.empty");
+  const commonLinksAction =
+    usableCommonLinks.length > 0 ? t("commonLinks.manage") : t("commonLinks.add");
 
   return (
     <div className="sidebar-corner-actions">
@@ -147,16 +153,16 @@ export function SidebarCornerActions({
           popupRole="dialog"
           className="ghost sidebar-corner-button ds-tooltip-trigger"
           onClick={toggleCommonLinksMenu}
-          aria-label="Common links"
-          title="Common links"
-          data-tooltip="Common links"
+          aria-label={commonLinksTitle}
+          title={commonLinksTitle}
+          data-tooltip={commonLinksTitle}
           data-tooltip-align="start"
         >
           <Link2 size={14} aria-hidden />
         </MenuTrigger>
         {commonLinksMenuOpen && (
           <PopoverSurface className="sidebar-common-links-popover" role="dialog">
-            <div className="sidebar-common-links-title">Common links</div>
+            <div className="sidebar-common-links-title">{commonLinksTitle}</div>
             {usableCommonLinks.length > 0 ? (
               <div className="sidebar-common-links-list">
                 {usableCommonLinks.map((link) => (
@@ -165,7 +171,7 @@ export function SidebarCornerActions({
                     type="button"
                     className="ghost sidebar-common-link-item"
                     onClick={() => handleOpenCommonLink(link.url)}
-                    aria-label={`Open ${link.label}`}
+                    aria-label={t("commonLinks.open", { label: link.label })}
                     title={link.url}
                   >
                     <span className="sidebar-common-link-copy">
@@ -178,7 +184,7 @@ export function SidebarCornerActions({
               </div>
             ) : (
               <div className="sidebar-common-links-empty">
-                No common links yet.
+                {commonLinksEmpty}
               </div>
             )}
             <button
@@ -186,7 +192,7 @@ export function SidebarCornerActions({
               className="secondary sidebar-common-links-manage"
               onClick={handleManageCommonLinks}
             >
-              {usableCommonLinks.length > 0 ? "Manage links" : "Add links"}
+              {commonLinksAction}
             </button>
           </PopoverSurface>
         )}

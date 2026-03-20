@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createRef } from "react";
+import i18n from "@/i18n";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { Sidebar } from "./Sidebar";
 
@@ -620,6 +621,26 @@ describe("Sidebar", () => {
     fireEvent.click(screen.getByRole("button", { name: "Common links" }));
     fireEvent.click(screen.getByRole("button", { name: "Add links" }));
 
+    expect(onOpenSettings).toHaveBeenCalledWith("common-links");
+  });
+
+  it("localizes the common links popover in Chinese", async () => {
+    await act(async () => {
+      await i18n.changeLanguage("zh-CN");
+    });
+
+    const onOpenSettings = vi.fn();
+    render(
+      <Sidebar
+        {...baseProps}
+        onOpenSettings={onOpenSettings}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "常用链接" }));
+    expect(screen.getByText("尚无常用链接。")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "添加链接" }));
     expect(onOpenSettings).toHaveBeenCalledWith("common-links");
   });
 });

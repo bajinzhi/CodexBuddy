@@ -11,6 +11,7 @@
     "composer": "编辑器",
     "dictation": "语音输入",
     "shortcuts": "快捷键",
+    "common-links": "常用链接",
     "open-apps": "打开方式",
     "git": "Git",
     "server": "服务端",
@@ -234,6 +235,20 @@
     "listsTitle": "列表",
     "continueListsTitle": "Shift+Enter 延续列表",
     "continueListsSubtitle": "当前行有内容时，继续编号列表和无序列表。"
+  },
+  "commonLinks": {
+    "title": "常用链接",
+    "subtitle": "管理在侧边栏弹出菜单中显示的可复用链接。",
+    "labelAria": "常用链接标签 {{index}}",
+    "urlAria": "常用链接网址 {{index}}",
+    "labelRequired": "必须填写标签",
+    "urlRequired": "必须填写网址",
+    "invalidUrl": "请使用 http:// 或 https://",
+    "invalid": "无效",
+    "addLink": "添加链接",
+    "removeLink": "删除链接",
+    "help": "当标签和网址都有效后，链接会显示在侧边栏弹出菜单中。",
+    "newLinkLabel": "新链接"
   },
   "dictation": {
     "title": "语音输入",

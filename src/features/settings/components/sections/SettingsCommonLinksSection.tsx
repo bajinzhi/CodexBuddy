@@ -1,6 +1,7 @@
 import ChevronDown from "lucide-react/dist/esm/icons/chevron-down";
 import ChevronUp from "lucide-react/dist/esm/icons/chevron-up";
 import Trash2 from "lucide-react/dist/esm/icons/trash-2";
+import { useTranslation } from "react-i18next";
 import { SettingsSection } from "@/features/design-system/components/settings/SettingsPrimitives";
 import type { CommonLinkDraft } from "@settings/components/settingsTypes";
 import {
@@ -17,19 +18,6 @@ type SettingsCommonLinksSectionProps = {
   onAddCommonLink: () => void;
 };
 
-const getCommonLinkHint = (link: CommonLinkDraft) => {
-  if (!link.label.trim()) {
-    return "Label required";
-  }
-  if (!link.url.trim()) {
-    return "URL required";
-  }
-  if (!isCommonLinkUrlValid(link.url.trim())) {
-    return "Use http:// or https://";
-  }
-  return null;
-};
-
 export function SettingsCommonLinksSection({
   commonLinkDrafts,
   onCommonLinkDraftChange,
@@ -38,10 +26,25 @@ export function SettingsCommonLinksSection({
   onDeleteCommonLink,
   onAddCommonLink,
 }: SettingsCommonLinksSectionProps) {
+  const { t } = useTranslation(["settings", "common"]);
+
+  const getCommonLinkHint = (link: CommonLinkDraft) => {
+    if (!link.label.trim()) {
+      return t("commonLinks.labelRequired");
+    }
+    if (!link.url.trim()) {
+      return t("commonLinks.urlRequired");
+    }
+    if (!isCommonLinkUrlValid(link.url.trim())) {
+      return t("commonLinks.invalidUrl");
+    }
+    return null;
+  };
+
   return (
     <SettingsSection
-      title="Common links"
-      subtitle="Manage the quick links shown next to the sidebar settings button."
+      title={t("commonLinks.title")}
+      subtitle={t("commonLinks.subtitle")}
     >
       <div className="settings-common-links">
         {commonLinkDrafts.map((link, index) => {
@@ -58,34 +61,38 @@ export function SettingsCommonLinksSection({
             >
               <div className="settings-common-link-fields">
                 <label className="settings-common-link-field settings-common-link-field--label">
-                  <span className="settings-visually-hidden">Label</span>
+                  <span className="settings-visually-hidden">
+                    {t("labels.label", { ns: "common" })}
+                  </span>
                   <input
                     className="settings-input settings-input--compact settings-common-link-input settings-common-link-input--label"
                     value={link.label}
-                    placeholder="Label"
+                    placeholder={t("labels.label", { ns: "common" })}
                     onChange={(event) =>
                       onCommonLinkDraftChange(index, {
                         label: event.target.value,
                       })
                     }
                     onBlur={onCommitCommonLinks}
-                    aria-label={`Common link label ${index + 1}`}
+                    aria-label={t("commonLinks.labelAria", { index: index + 1 })}
                     data-invalid={!link.label.trim() || undefined}
                   />
                 </label>
                 <label className="settings-common-link-field settings-common-link-field--url">
-                  <span className="settings-visually-hidden">URL</span>
+                  <span className="settings-visually-hidden">
+                    {t("labels.url", { ns: "common" })}
+                  </span>
                   <input
                     className="settings-input settings-input--compact settings-common-link-input settings-common-link-input--url"
                     value={link.url}
-                    placeholder="https://example.com"
+                    placeholder={t("labels.url", { ns: "common" })}
                     onChange={(event) =>
                       onCommonLinkDraftChange(index, {
                         url: event.target.value,
                       })
                     }
                     onBlur={onCommitCommonLinks}
-                    aria-label={`Common link URL ${index + 1}`}
+                    aria-label={t("commonLinks.urlAria", { index: index + 1 })}
                     data-invalid={(!isComplete || !isUrlValid) ? true : undefined}
                   />
                 </label>
@@ -97,7 +104,7 @@ export function SettingsCommonLinksSection({
                     title={statusHint}
                     aria-label={statusHint}
                   >
-                    Invalid
+                    {t("commonLinks.invalid")}
                   </span>
                 )}
                 <div className="settings-common-link-order">
@@ -106,7 +113,7 @@ export function SettingsCommonLinksSection({
                     className="ghost icon-button"
                     onClick={() => onMoveCommonLink(index, "up")}
                     disabled={index === 0}
-                    aria-label="Move up"
+                    aria-label={t("actions.moveUp", { ns: "common" })}
                   >
                     <ChevronUp aria-hidden />
                   </button>
@@ -115,7 +122,7 @@ export function SettingsCommonLinksSection({
                     className="ghost icon-button"
                     onClick={() => onMoveCommonLink(index, "down")}
                     disabled={index === commonLinkDrafts.length - 1}
-                    aria-label="Move down"
+                    aria-label={t("actions.moveDown", { ns: "common" })}
                   >
                     <ChevronDown aria-hidden />
                   </button>
@@ -124,8 +131,8 @@ export function SettingsCommonLinksSection({
                   type="button"
                   className="ghost icon-button"
                   onClick={() => onDeleteCommonLink(index)}
-                  aria-label="Remove link"
-                  title="Remove link"
+                  aria-label={t("commonLinks.removeLink")}
+                  title={t("commonLinks.removeLink")}
                 >
                   <Trash2 aria-hidden />
                 </button>
@@ -136,10 +143,10 @@ export function SettingsCommonLinksSection({
       </div>
       <div className="settings-common-link-footer">
         <button type="button" className="ghost" onClick={onAddCommonLink}>
-          Add link
+          {t("commonLinks.addLink")}
         </button>
         <div className="settings-help">
-          Links appear in the sidebar popover after both label and URL are valid.
+          {t("commonLinks.help")}
         </div>
       </div>
     </SettingsSection>

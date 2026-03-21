@@ -53,8 +53,8 @@ targets:
           - UIInterfaceOrientationLandscapeRight
         UIBackgroundModes:
           - fetch
-        CFBundleShortVersionString: 0.0.1
-        CFBundleVersion: "0.0.1"
+        CFBundleShortVersionString: 0.0.2
+        CFBundleVersion: "0.0.2"
     entitlements:
       path: codex-buddy_iOS/codex-buddy_iOS.entitlements
     scheme:

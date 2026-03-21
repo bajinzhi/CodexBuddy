@@ -61,6 +61,11 @@ async fn stop_managed_daemons_for_exit(app_handle: tauri::AppHandle) {
     let _ = tailscale::tailscale_daemon_stop(state).await;
 }
 
+#[cfg(desktop)]
+fn load_default_window_icon() -> tauri::Result<tauri::image::Image<'static>> {
+    tauri::image::Image::from_bytes(include_bytes!("../../icon.png")).map(|icon| icon.to_owned())
+}
+
 #[tauri::command]
 fn is_mobile_runtime() -> bool {
     cfg!(any(target_os = "ios", target_os = "android"))
@@ -116,18 +121,29 @@ pub fn run() {
         .setup(|app| {
             let state = state::AppState::load(&app.handle());
             app.manage(state);
+            #[cfg(desktop)]
+            {
+                match load_default_window_icon() {
+                    Ok(icon) => {
+                        if let Some(main_window) = app.get_webview_window("main") {
+                            let _ = main_window.set_icon(icon);
+                            #[cfg(target_os = "windows")]
+                            {
+                                let _ = main_window.set_decorations(false);
+                                // Keep menu accelerators wired while suppressing a visible native menu bar.
+                                let _ = main_window.hide_menu();
+                            }
+                        }
+                    }
+                    Err(err) => {
+                        eprintln!("failed to load default window icon: {err}");
+                    }
+                }
+            }
             #[cfg(target_os = "macos")]
             {
                 let tray_state = app.state::<tray::TrayState>();
                 tray::initialize(&app.handle(), tray_state.inner())?;
-            }
-            #[cfg(target_os = "windows")]
-            {
-                if let Some(main_window) = app.get_webview_window("main") {
-                    let _ = main_window.set_decorations(false);
-                    // Keep menu accelerators wired while suppressing a visible native menu bar.
-                    let _ = main_window.hide_menu();
-                }
             }
             #[cfg(desktop)]
             {

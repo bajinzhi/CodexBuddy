@@ -605,7 +605,7 @@ dependencies = [
 
 [[package]]
 name = "codex-buddy"
-version = "0.0.1"
+version = "0.0.2"
 dependencies = [
  "base64 0.22.1",
  "block2",

@@ -9,8 +9,9 @@
   gap: 6px;
   -webkit-app-region: no-drag;
   min-height: 0;
-  overflow: hidden;
+  overflow: visible;
   position: relative;
+  z-index: 1;
   transition: opacity 200ms ease, transform 200ms ease, padding-top 180ms ease;
 }
 
@@ -1517,8 +1518,8 @@
   position: absolute;
   left: 0;
   bottom: 42px;
-  min-width: 260px;
-  max-width: 300px;
+  width: min(252px, calc(var(--sidebar-width, 280px) - 28px));
+  max-width: calc(100vw - 32px);
   max-height: min(420px, calc(100vh - 96px));
   padding: 10px 12px;
   display: grid;

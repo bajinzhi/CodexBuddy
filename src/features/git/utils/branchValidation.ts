@@ -1,35 +1,46 @@
-export function validateBranchName(name: string): string | null {
+export type BranchValidationErrorKey =
+  | "git.branchValidation.dotOrDotDot"
+  | "git.branchValidation.spaces"
+  | "git.branchValidation.leadingOrTrailingSlash"
+  | "git.branchValidation.doubleSlash"
+  | "git.branchValidation.lockSuffix"
+  | "git.branchValidation.doubleDot"
+  | "git.branchValidation.atBrace"
+  | "git.branchValidation.invalidCharacters"
+  | "git.branchValidation.trailingDot";
+
+export function validateBranchName(name: string): BranchValidationErrorKey | null {
   const trimmed = name.trim();
   if (trimmed.length === 0) {
     return null;
   }
   if (trimmed === "." || trimmed === "..") {
-    return "Branch name cannot be '.' or '..'.";
+    return "git.branchValidation.dotOrDotDot";
   }
   if (/\s/.test(trimmed)) {
-    return "Branch name cannot contain spaces.";
+    return "git.branchValidation.spaces";
   }
   if (trimmed.startsWith("/") || trimmed.endsWith("/")) {
-    return "Branch name cannot start or end with '/'.";
+    return "git.branchValidation.leadingOrTrailingSlash";
   }
   if (trimmed.includes("//")) {
-    return "Branch name cannot contain '//'.";
+    return "git.branchValidation.doubleSlash";
   }
   if (trimmed.endsWith(".lock")) {
-    return "Branch name cannot end with '.lock'.";
+    return "git.branchValidation.lockSuffix";
   }
   if (trimmed.includes("..")) {
-    return "Branch name cannot contain '..'.";
+    return "git.branchValidation.doubleDot";
   }
   if (trimmed.includes("@{")) {
-    return "Branch name cannot contain '@{'.";
+    return "git.branchValidation.atBrace";
   }
   const invalidChars = ["~", "^", ":", "?", "*", "[", "\\"];
   if (invalidChars.some((char) => trimmed.includes(char))) {
-    return "Branch name contains invalid characters.";
+    return "git.branchValidation.invalidCharacters";
   }
   if (trimmed.endsWith(".")) {
-    return "Branch name cannot end with '.'.";
+    return "git.branchValidation.trailingDot";
   }
   return null;
 }

@@ -397,10 +397,10 @@ export const MessageRow = memo(function MessageRow({
         if (!src) {
           return null;
         }
-        return { src, label: `Image ${index + 1}` };
+        return { src, label: t("messages.imageAlt", { index: index + 1 }) };
       })
       .filter(Boolean) as MessageImage[];
-  }, [item.images]);
+  }, [item.images, t]);
 
   const getSelectedMessageText = useCallback(() => {
     const bubble = bubbleRef.current;

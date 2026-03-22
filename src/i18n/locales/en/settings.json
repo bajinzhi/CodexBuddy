@@ -116,6 +116,32 @@
     "backendModeLocal": "Local (default)",
     "backendModeRemote": "Remote (daemon)",
     "backendModeHelp": "Local keeps desktop requests in-process. Remote routes desktop requests through the same TCP transport path used by mobile clients.",
+    "transportTcp": "TCP",
+    "primaryRemoteName": "Primary remote",
+    "remoteNamePrefix": "Remote",
+    "hostRequired": "Host is required.",
+    "hostFormat": "Use host:port (for example `macbook.tailnet.ts.net:4732`).",
+    "portRange": "Port must be between 1 and 65535.",
+    "nameRequired": "Name is required.",
+    "nameExists": "A remote named \"{{name}}\" already exists.",
+    "tokenRequired": "Remote backend token is required.",
+    "remoteHostSaved": "Remote host saved.",
+    "remoteNameSaved": "Saved remote name \"{{name}}\".",
+    "remoteTokenSaved": "Remote token saved.",
+    "activeRemoteSet": "Active remote set to \"{{name}}\".",
+    "movedUp": "Moved \"{{name}}\" up.",
+    "movedDown": "Moved \"{{name}}\" down.",
+    "deletedRemote": "Deleted \"{{name}}\".",
+    "needAtLeastOneRemote": "You need at least one remote.",
+    "addedAndConnected_one": "Added \"{{name}}\" and connected. {{count}} workspace reachable on the remote backend.",
+    "addedAndConnected_other": "Added \"{{name}}\" and connected. {{count}} workspaces reachable on the remote backend.",
+    "connected_one": "Connected. {{count}} workspace reachable on the remote backend.",
+    "connected_other": "Connected. {{count}} workspaces reachable on the remote backend.",
+    "unableToConnectNewRemote": "Unable to connect to the new remote backend.",
+    "unableToConnectRemote": "Unable to connect to remote backend.",
+    "unableToLoadTailscaleStatus": "Unable to load Tailscale status.",
+    "unableToBuildTailscaleDaemonCommand": "Unable to build Tailscale daemon command.",
+    "unableToUpdateMobileAccessDaemonStatus": "Unable to update mobile access daemon status.",
     "savedRemotesLabel": "Saved remotes",
     "savedRemotesAria": "Saved remotes",
     "activeBadge": "Active",
@@ -166,7 +192,7 @@
     "suggestedRemoteHostLabel": "Suggested remote host",
     "tailnetLabel": "Tailnet",
     "commandTemplateLabel": "Command template (manual fallback) for starting the daemon:",
-    "tokenRequired": "Remote backend token is empty. Set one before exposing daemon access.",
+    "daemonTokenRequired": "Remote backend token is empty. Set one before exposing daemon access.",
     "footerMobile": "Use your own infrastructure only. On iOS, get the Tailscale hostname and token from your desktop CodexBuddy setup.",
     "footerDesktop": "Mobile access should stay scoped to your own infrastructure (tailnet). CodexBuddy does not provide hosted backend services.",
     "addRemoteModalTitle": "Add remote",
@@ -236,6 +262,16 @@
     "continueListsTitle": "Continue lists on Shift+Enter",
     "continueListsSubtitle": "Continues numbered and bulleted lists when the line has content."
   },
+  "keyboardKeys": {
+    "alt": "Alt",
+    "command": "Command",
+    "commandShort": "Cmd",
+    "ctrlShort": "Ctrl",
+    "meta": "Meta",
+    "option": "Option",
+    "shift": "Shift",
+    "windows": "Windows"
+  },
   "commonLinks": {
     "title": "Common links",
     "subtitle": "Manage reusable links shown in the sidebar popover.",
@@ -262,7 +298,9 @@
     "holdKeyLabel": "Hold-to-dictate key",
     "holdKeyHelp": "Hold the key to start dictation, release to stop and process.",
     "holdKeyOptions": {
-      "off": "Off"
+      "control": "Control",
+      "off": "Off",
+      "shift": "Shift"
     },
     "modelStatusLabel": "Model status ({{model}})",
     "status": {
@@ -324,6 +362,7 @@
     "noProjects": "No projects yet.",
     "projectLabel": "Project",
     "setupScriptLabel": "Setup script",
+    "setupScriptPlaceholder": "pnpm install",
     "setupScriptHelp": "Runs once in a dedicated terminal after each new worktree is created.",
     "worktreesFolderLabel": "Worktrees folder",
     "worktreesFolderHelp": "Custom location for worktrees. Leave empty to use the default location.",
@@ -367,6 +406,7 @@
     },
     "removeApp": "Remove app",
     "addApp": "Add app",
+    "newAppLabel": "New App",
     "commandHelp": "Commands receive the selected path as the final argument.",
     "platformHelp": {
       "mac": "Apps open via `open -a` with optional args.",
@@ -536,15 +576,22 @@
       "personality": "Enable personality selection.",
       "responses_websockets": "Use Responses API WebSocket transport for OpenAI by default.",
       "responses_websockets_v2": "Enable Responses API WebSocket v2 mode."
+    },
+    "errors": {
+      "openConfig": "Unable to open config.",
+      "loadFlags": "Unable to load Codex feature flags.",
+      "updateFeature": "Unable to update feature \"{{name}}\"."
     }
   },
   "codex": {
     "title": "Codex",
     "subtitle": "Configure the Codex CLI used by CodexBuddy and validate the install.",
     "defaultPathLabel": "Default Codex path",
+    "defaultPathPlaceholder": "codex",
     "usePath": "Use PATH",
     "pathHelp": "Leave empty to use the system PATH resolution.",
     "defaultArgsLabel": "Default Codex args",
+    "defaultArgsPlaceholder": "--profile personal",
     "argsHelp": "Extra flags passed before app-server. Use quotes for values with spaces.",
     "sharedServerHelp": "These settings apply to the shared Codex app-server used across all connected workspaces.",
     "ignoredFlagsHelp": {
@@ -589,10 +636,18 @@
       "detached": "Detached (new review thread)"
     },
     "reviewModeHelp": "Choose whether /review runs in the current thread or a detached review thread.",
+    "nodeLabel": "Node",
+    "pathLabel": "PATH",
+    "configModelDisplayName": "{{configModel}} (config)",
+    "configModelDescription": "Configured in CODEX_HOME/config.toml",
     "globalAgentsTitle": "Global AGENTS.md",
     "globalAgentsPlaceholder": "Add global instructions for Codex agents…",
+    "globalAgentsReadErrorTitle": "Couldn't load global AGENTS.md",
+    "globalAgentsWriteErrorTitle": "Couldn't save global AGENTS.md",
     "globalConfigTitle": "Global config.toml",
     "globalConfigPlaceholder": "Edit the global Codex config.toml…",
+    "globalConfigReadErrorTitle": "Couldn't load global config.toml",
+    "globalConfigWriteErrorTitle": "Couldn't save global config.toml",
     "storedAt": "Stored at",
     "editorMeta": {
       "truncated": "Truncated"

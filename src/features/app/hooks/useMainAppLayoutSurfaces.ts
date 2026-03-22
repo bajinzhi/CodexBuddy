@@ -1,4 +1,5 @@
 import type { RefObject } from "react";
+import { useTranslation } from "react-i18next";
 import type { AppSettings, ComposerEditorSettings, WorkspaceInfo } from "@/types";
 import type { ThreadState } from "@/features/threads/hooks/useThreadsReducer";
 import type { WorkspaceLaunchScriptsState } from "@app/hooks/useWorkspaceLaunchScripts";
@@ -391,6 +392,7 @@ export function useMainAppLayoutSurfaces({
   showDebugButton,
   handleDebugClick,
 }: UseMainAppLayoutSurfacesArgs): LayoutNodesOptions {
+  const { t } = useTranslation(["app", "common"]);
   const sidebarRateLimits = activeWorkspace ? activeRateLimits : homeRateLimits;
   const sidebarAccount = activeWorkspace ? activeAccount : homeAccount;
 
@@ -497,7 +499,7 @@ export function useMainAppLayoutSurfaces({
             contextUsage: activeTokenUsage,
             queuedMessages: composerWorkspaceState.activeQueue,
             queuePausedReason: composerWorkspaceState.queuePausedReason,
-            sendLabel: pullRequestComposer.composerSendLabel ?? "Send",
+            sendLabel: pullRequestComposer.composerSendLabel ?? t("actions.send", { ns: "common" }),
             steerAvailable: composerWorkspaceState.steerAvailable,
             followUpMessageBehavior: appSettings.followUpMessageBehavior,
             composerFollowUpHintEnabled: appSettings.composerFollowUpHintEnabled,
@@ -645,7 +647,7 @@ export function useMainAppLayoutSurfaces({
             openAppIconById,
             selectedOpenAppId: appSettings.selectedOpenAppId,
             onSelectOpenAppId: handleSelectOpenAppId,
-            branchName: gitState.gitStatus.branchName || "unknown",
+            branchName: gitState.gitStatus.branchName || t("labels.unknown", { ns: "common" }),
             branches: gitState.branches,
             onCheckoutBranch: gitState.handleCheckoutBranch,
             onCreateBranch: gitState.handleCreateBranch,
@@ -739,10 +741,13 @@ export function useMainAppLayoutSurfaces({
         onModeChange: gitState.handleGitPanelModeChange,
         filePanelMode: gitState.filePanelMode,
         onFilePanelModeChange: gitState.setFilePanelMode,
-        worktreeApplyLabel: "apply",
+        worktreeApplyLabel: t("gitDiff.applyWorktreeChanges", { ns: "app" }),
         worktreeApplyTitle: worktreeState.activeParentWorkspace?.name
-          ? `Apply changes to ${worktreeState.activeParentWorkspace.name}`
-          : "Apply changes to parent workspace",
+          ? t("gitDiff.applyChangesToWorkspace", {
+              ns: "app",
+              workspace: worktreeState.activeParentWorkspace.name,
+            })
+          : t("gitDiff.applyChangesToParentWorkspace", { ns: "app" }),
         worktreeApplyLoading: worktreeState.isWorktreeWorkspace
           ? gitState.worktreeApplyLoading
           : false,
@@ -755,7 +760,7 @@ export function useMainAppLayoutSurfaces({
         onApplyWorktreeChanges: worktreeState.isWorktreeWorkspace
           ? gitState.handleApplyWorktreeChanges
           : undefined,
-        branchName: gitState.gitStatus.branchName || "unknown",
+        branchName: gitState.gitStatus.branchName || t("labels.unknown", { ns: "common" }),
         totalAdditions: gitState.gitStatus.totalAdditions,
         totalDeletions: gitState.gitStatus.totalDeletions,
         fileStatus: gitState.fileStatus,

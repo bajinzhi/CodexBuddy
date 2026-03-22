@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import type { Dispatch, MutableRefObject, SetStateAction } from "react";
 import * as Sentry from "@sentry/react";
 import type { DebugEntry, WorkspaceInfo, WorkspaceSettings } from "../../../types";
+import { translate } from "@/i18n/translate";
 import {
   addWorkspace as addWorkspaceService,
   addWorkspaceFromGitUrl as addWorkspaceFromGitUrlService,
@@ -166,10 +167,18 @@ export function useWorkspaceCrud({
       const trimmedDestination = destinationPath.trim();
       const trimmedFolderName = targetFolderName?.trim() || null;
       if (!trimmedUrl) {
-        throw new Error("Remote Git URL is required.");
+        throw new Error(
+          translate("workspaces.fromUrlPrompt.errors.remoteGitUrlRequired", {
+            ns: "app",
+          }),
+        );
       }
       if (!trimmedDestination) {
-        throw new Error("Destination folder is required.");
+        throw new Error(
+          translate("workspaces.fromUrlPrompt.errors.destinationFolderRequired", {
+            ns: "app",
+          }),
+        );
       }
       const shouldActivate = options?.activate !== false;
       onDebug?.({
@@ -372,7 +381,9 @@ export function useWorkspaceCrud({
       const currentSettings =
         workspaceSettingsRef.current.get(workspaceId) ?? currentWorkspace?.settings ?? null;
       if (!currentWorkspace || !currentSettings) {
-        throw new Error("workspace not found");
+        throw new Error(
+          translate("workspaces.errors.workspaceNotFound", { ns: "app" }),
+        );
       }
       const previousSettings = currentSettings;
       const nextSettings = { ...currentSettings, ...patch };

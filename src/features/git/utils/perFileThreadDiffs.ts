@@ -3,7 +3,7 @@ import type { ConversationItem } from "../../../types";
 export type PerFileDiffEdit = {
   id: string;
   path: string;
-  label: string;
+  sequence: number;
   status: string;
   diff: string;
   sourceItemId: string;
@@ -132,7 +132,7 @@ export function buildPerFileThreadDiffs(items: ConversationItem[]): {
       const edit: PerFileDiffEdit = {
         id,
         path,
-        label: `Edit ${nextCount}`,
+        sequence: nextCount,
         status: mapChangeKindToStatus(change.kind),
         diff,
         sourceItemId: item.id,

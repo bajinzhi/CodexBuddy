@@ -61,7 +61,7 @@ describe("Home", () => {
     expect(within(card).getByText("Frontend")).toBeTruthy();
     fireEvent.click(card);
     expect(onSelectThread).toHaveBeenCalledWith("workspace-1", "thread-1");
-    expect(screen.getByText("Running")).toBeTruthy();
+    expect(screen.getByText("Running...")).toBeTruthy();
   });
 
   it("shows the empty state when there are no latest runs", () => {

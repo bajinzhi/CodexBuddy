@@ -37,6 +37,15 @@
     "restarting": "正在重启…",
     "failed": "更新失败。"
   },
+  "about": {
+    "iconAlt": "CodexBuddy 图标",
+    "version": "版本 {{version}}",
+    "versionFallback": "版本 —",
+    "tagline": "监控 Codex 智能体的运行状态",
+    "github": "GitHub",
+    "twitter": "Twitter",
+    "footer": "由 Codex 与 bajinzhi 用心打造"
+  },
   "workspaces": {
     "enterAbsoluteDirectoryPath": "请至少输入一个绝对目录路径。",
     "added_one": "已添加 {{count}} 个工作区。",
@@ -64,11 +73,180 @@
     "deleteWorktreeFailed": "删除工作树失败",
     "failedToAddWorkspace": "添加工作区失败。\n\n{{message}}",
     "failedToAddWorkspaces": "添加工作区失败。\n\n{{message}}",
-    "failedToImportWorkspaceFromUrl": "从 URL 导入工作区失败。\n\n{{message}}"
+    "failedToImportWorkspaceFromUrl": "从 URL 导入工作区失败。\n\n{{message}}",
+    "fromUrlPrompt": {
+      "ariaLabel": "从 URL 添加工作区",
+      "title": "从 URL 添加工作区",
+      "remoteGitUrlLabel": "远程 Git URL",
+      "remoteGitUrlPlaceholder": "https://github.com/org/repo.git",
+      "targetFolderNameLabel": "目标文件夹名称（可选）",
+      "targetFolderNamePlaceholder": "默认为仓库名称",
+      "destinationParentFolderLabel": "目标父文件夹",
+      "destinationNotSet": "未设置",
+      "cloneAndAdd": "克隆并添加",
+      "cloning": "正在克隆…",
+      "errors": {
+        "remoteGitUrlRequired": "必须填写远程 Git URL。",
+        "destinationFolderRequired": "必须填写目标文件夹。"
+      }
+    },
+    "clonePrompt": {
+      "ariaLabel": "新克隆智能体",
+      "title": "新克隆智能体",
+      "subtitle": "为“{{workspaceName}}”创建新的工作副本。",
+      "copyNameLabel": "副本名称",
+      "copiesFolderLabel": "副本目录",
+      "copiesFolderNotSet": "未设置",
+      "chooseCopiesFolder": "浏览",
+      "suggestedLabel": "建议",
+      "suggestedCopiesFolderAriaLabel": "建议的副本目录",
+      "useSuggestedCopiesFolder": "使用建议值",
+      "errors": {
+        "copyNameRequired": "必须填写副本名称。",
+        "copiesFolderRequired": "必须填写副本目录。"
+      }
+    },
+    "worktreePrompt": {
+      "ariaLabel": "新工作树智能体",
+      "title": "新工作树智能体",
+      "subtitle": "在“{{workspaceName}}”下创建工作树。",
+      "nameLabel": "名称",
+      "namePlaceholder": "（可选）",
+      "branchNameLabel": "分支名称",
+      "noMatchingBranches": "没有匹配的分支",
+      "noBranchesFound": "未找到分支",
+      "copyAgentsMd": "将 <code>AGENTS.md</code> 复制到工作树中",
+      "environmentSetupScriptTitle": "环境初始化脚本",
+      "environmentSetupScriptHelp": "保存在项目的“设置 → 环境”中，并在每次创建新工作树后于独立终端中运行一次。",
+      "setupScriptPlaceholder": "pnpm install"
+    },
+    "mobileRemotePrompt": {
+      "ariaLabel": "添加远程工作区路径",
+      "title": "添加项目目录",
+      "subtitle": "请输入已连接服务器上的目录。",
+      "pathsLabel": "路径",
+      "pathsPlaceholder": "/home/vlad/dev/project-one\n/home/vlad/dev/project-two",
+      "hint": "每行一个路径。逗号和分号分隔也可以。你可以使用 <code>~/...</code>。",
+      "recentlyAdded": "最近添加"
+    },
+    "renameWorktreePrompt": {
+      "branchNameRequired": "必须填写分支名称。",
+      "branchAlreadyExists": "分支已存在，已重命名为“{{branch}}”。",
+      "worktreeRenamed": "工作树已重命名。",
+      "upstreamBranchUpdated": "上游分支已更新。"
+    },
+    "errors": {
+      "workspaceNotFound": "未找到工作区。"
+    }
+  },
+  "launchScript": {
+    "title": "启动脚本",
+    "newTitle": "新启动脚本",
+    "new": "新建",
+    "scriptPlaceholder": "例如：npm run dev",
+    "labelPlaceholder": "可选标签",
+    "runAria": "运行启动脚本",
+    "setAria": "设置启动脚本"
+  },
+  "requestUserInput": {
+    "ariaLabel": "需要用户输入",
+    "requestCount_one": "第 {{count}} 个请求",
+    "requestCount_other": "第 {{count}} 个请求",
+    "typeAnswerOptional": "请输入答案（可选）",
+    "addNotesOptional": "添加备注（可选）",
+    "noQuestionsProvided": "没有提供问题。",
+    "submit": "提交"
+  },
+  "planReadyFollowup": {
+    "copy": "可以直接基于此计划开始执行，也可以描述要对计划做哪些修改。",
+    "placeholder": "描述您想如何修改计划...",
+    "sendChanges": "发送修改",
+    "implementThisPlan": "执行这个计划",
+    "acceptMessage": "执行这个计划。",
+    "changesMessagePrefix": "请根据以下修改更新计划："
+  },
+  "planPanel": {
+    "waiting": "正在等待计划...",
+    "noActive": "当前没有活动计划。"
+  },
+  "terminal": {
+    "resizePanel": "调整终端面板大小",
+    "tabs": "终端标签页",
+    "newTerminal": "新建终端",
+    "closeTab": "关闭 {{title}}"
+  },
+  "tabBar": {
+    "primaryAria": "主导航",
+    "home": "首页",
+    "projects": "项目",
+    "codex": "Codex",
+    "git": "Git",
+    "log": "日志"
+  },
+  "layout": {
+    "backToChat": "返回聊天",
+    "noWorkspaceSelectedTitle": "未选择工作区",
+    "chooseProjectToChat": "请选择一个项目开始聊天。",
+    "selectProjectToDiff": "请选择一个项目查看差异。",
+    "goToProjects": "前往项目",
+    "files": "文件",
+    "diff": "Diff"
+  },
+  "git": {
+    "branchValidation": {
+      "dotOrDotDot": "分支名称不能是“.”或“..”。",
+      "spaces": "分支名称不能包含空格。",
+      "leadingOrTrailingSlash": "分支名称不能以“/”开头或结尾。",
+      "doubleSlash": "分支名称不能包含“//”。",
+      "lockSuffix": "分支名称不能以“.lock”结尾。",
+      "doubleDot": "分支名称不能包含“..”。",
+      "atBrace": "分支名称不能包含“@{”。",
+      "invalidCharacters": "分支名称包含无效字符。",
+      "trailingDot": "分支名称不能以“.”结尾。"
+    },
+    "initPrompt": {
+      "ariaLabel": "初始化 Git",
+      "title": "初始化 Git",
+      "subtitle": "在“{{workspaceName}}”下创建一个新仓库，并生成初始提交。",
+      "initialBranchLabel": "初始分支",
+      "initialBranchPlaceholder": "main",
+      "createGitHubRepo": "创建 GitHub 仓库并配置 <code>origin</code>",
+      "githubRepoLabel": "GitHub 仓库",
+      "githubRepoPlaceholder": "owner/repo 或 repo",
+      "privateRepo": "私有仓库",
+      "initializing": "初始化中...",
+      "initialize": "初始化",
+      "confirmMessage_one": "要在这个文件夹中初始化 Git 吗？\n\n这会创建一个 .git 目录，将初始分支设为“{{branch}}”，并创建一个初始提交。\n\n这个文件夹中已有 {{count}} 个项目。",
+      "confirmMessage_other": "要在这个文件夹中初始化 Git 吗？\n\n这会创建一个 .git 目录，将初始分支设为“{{branch}}”，并创建一个初始提交。\n\n这个文件夹中已有 {{count}} 个项目。",
+      "errors": {
+        "branchNameRequired": "必须填写分支名称。",
+        "repoNameRequired": "必须填写仓库名称。",
+        "repoNameNoSpaces": "仓库名称不能包含空格。",
+        "failedToInitialize": "初始化 Git 仓库失败。"
+      }
+    },
+    "branchSwitcherPrompt": {
+      "ariaLabel": "切换分支",
+      "currentLabel": "当前",
+      "worktreeLabel": "工作树"
+    }
+  },
+  "renameThreadPrompt": {
+    "ariaLabel": "重命名线程",
+    "title": "重命名线程",
+    "currentName": "当前名称：{{name}}",
+    "newName": "新名称"
   },
   "threads": {
     "ignoredArgsTitle": "部分 codex 参数会被忽略",
     "ignoredArgsMessage": "选中的参数不会用于线程级覆盖。",
+    "reviewTitles": {
+      "branch": "审查 {{branch}}",
+      "commit": "审查提交",
+      "commitWithSha": "审查 {{sha}}",
+      "commitWithTitle": "审查 {{sha}}：{{title}}",
+      "workingTree": "审查工作树"
+    },
     "items": {
       "planTitle": "计划",
       "commandTitle": "命令",
@@ -232,16 +410,326 @@
     "toggleTerminal": "切换终端面板",
     "copyThread": "复制线程"
   },
+  "workspaceHome": {
+    "git": {
+      "setup": "Git 设置",
+      "notInitialized": "此项目尚未初始化 Git。",
+      "initialize": "初始化 Git"
+    },
+    "runMode": {
+      "select": "选择运行模式",
+      "toggle": "切换运行模式菜单",
+      "local": "本地",
+      "worktree": "工作树"
+    },
+    "models": {
+      "select": "选择模型",
+      "toggle": "切换模型菜单",
+      "connectToLoad": "连接此工作区以加载可用模型。",
+      "defaultModel": "默认模型",
+      "multipleSummary": "{{modelCount}} 个模型 · {{runCount}} 次运行"
+    },
+    "reasoning": {
+      "label": "思考模式"
+    },
+    "collaborationMode": {
+      "label": "协作模式"
+    },
+    "agentMd": {
+      "warning": "仅显示大文件的前半部分。",
+      "title": "AGENTS.md",
+      "placeholder": "为智能体添加工作区说明…",
+      "truncated": "已截断",
+      "readErrorTitle": "无法加载 AGENTS.md",
+      "writeErrorTitle": "无法保存 AGENTS.md"
+    },
+    "history": {
+      "recentRunsTitle": "最近运行",
+      "runsEmpty": "启动一次运行后，这里的实例会显示出来。",
+      "instanceCount_one": "{{count}} 个实例",
+      "instanceCount_other": "{{count}} 个实例",
+      "statusRunning": "运行中",
+      "statusReviewing": "审查中",
+      "statusIdle": "空闲",
+      "failedSuffix": "失败",
+      "partialSuffix": "部分完成",
+      "noInstancesStarted": "没有启动任何实例。",
+      "instancesPreparing": "实例正在准备中...",
+      "recentThreadsTitle": "最近线程",
+      "threadsEmpty": "侧边栏中的线程会显示在这里。",
+      "agentsActivity": "智能体活动",
+      "threadCount_one": "{{count}} 个线程",
+      "threadCount_other": "{{count}} 个线程",
+      "moreErrors_one": "+另外 {{count}} 项",
+      "moreErrors_other": "+另外 {{count}} 项",
+      "untitledThread": "未命名线程"
+    },
+    "errors": {
+      "selectAtLeastOneModel": "请至少选择一个模型才能以工作树模式运行。",
+      "failedToStartLocalThread": "无法启动本地线程。",
+      "failedToCreateWorktree": "无法创建工作树。",
+      "failedToStartWorktreeThread": "无法启动工作树线程。"
+    },
+    "runs": {
+      "newRun": "新运行"
+    }
+  },
   "composer": {
     "quickCommandsTitle": "快速指令",
     "quickCommandsEmpty": "尚无快速指令。请在编辑器设置中添加。",
     "manageQuickCommands": "管理快速指令",
+    "autocomplete": {
+      "groups": {
+        "files": "文件",
+        "skills": "技能",
+        "apps": "Apps",
+        "prompts": "提示词",
+        "slash": "斜杠命令"
+      },
+      "slash": {
+        "apps": "列出可用 Apps",
+        "compact": "压缩当前线程上下文",
+        "fast": "切换后续轮次的 Fast 模式",
+        "fork": "分叉到一个新线程",
+        "mcp": "列出已配置的 MCP 工具",
+        "new": "开始一个新的聊天",
+        "resume": "刷新当前线程",
+        "review": "开始代码审查",
+        "status": "显示会话状态"
+      }
+    },
+    "followUpBehaviorTitle": "后续行为",
+    "followUpBehaviorQueue": "排队",
+    "followUpBehaviorSteer": "引导",
+    "followUpBehaviorDefaultQueue": "默认：排队",
+    "followUpBehaviorSteerUnavailable": "（引导不可用）。",
+    "followUpBehaviorEnterAndShortcutQueue": "Enter 和 {{shortcut}} 都会把这条消息加入队列。",
+    "followUpBehaviorDefaultMode": "默认：{{mode}}。",
+    "followUpBehaviorPressToAction": "按 {{shortcut}} {{action}} 这条消息。",
+    "reviewTools": "审查工具",
+    "meta": {
+      "planModeAria": "计划模式",
+      "collaborationModeAria": "协作模式",
+      "modelAria": "模型",
+      "fastModeEnabled": "快速模式已启用",
+      "thinkingModeAria": "思考模式",
+      "argsProfileAria": "Codex 参数配置",
+      "agentAccessAria": "智能体访问权限",
+      "accessReadOnly": "只读",
+      "accessOnRequest": "按需",
+      "accessFull": "完全访问"
+    },
+    "input": {
+      "addImage": "添加图片",
+      "moreActions": "更多操作",
+      "expandInput": "展开输入框",
+      "collapseInput": "收起输入框",
+      "openDictationSettings": "打开语音听写设置",
+      "dictationDisabledOpenSettings": "语音听写已禁用。打开设置",
+      "cancelTranscription": "取消转写",
+      "stopDictation": "停止听写",
+      "startDictation": "开始听写",
+      "reviewInProgressPlaceholder": "审查正在进行中。完成后聊天会重新启用。",
+      "askCodexPlaceholder": "让 Codex 帮你做点什么..."
+    },
+    "queue": {
+      "title": "排队中",
+      "imageCount_one": "{{count}} 张图片",
+      "imageCount_other": "{{count}} 张图片",
+      "itemMenuAria": "排队项菜单"
+    },
     "context": {
       "title": "上下文",
       "unavailable": "上下文不可用",
       "remaining": "剩余 {{percent}}%",
       "tooltip": "剩余 {{percent}}% · {{used}} / {{total}} 个令牌"
+    },
+    "reviewInlinePrompt": {
+      "presetTitleBaseBranch": "针对基准分支审查",
+      "presetSubtitleBaseBranch": "（PR 风格）",
+      "presetTitleUncommitted": "审查未提交的变更",
+      "presetTitleCommit": "审查某个提交",
+      "presetTitleCustom": "自定义审查指令",
+      "titleBaseBranch": "选择基准分支",
+      "titleCommit": "选择要审查的提交",
+      "titleCustom": "自定义审查指令",
+      "titlePreset": "选择审查预设",
+      "back": "返回",
+      "startReview": "开始审查",
+      "pickRecentLocalBranch": "请选择最近的本地分支：",
+      "selectRecentCommit": "请选择最近的提交：",
+      "loadingBranches": "正在加载分支…",
+      "loadingCommits": "正在加载提交…",
+      "noBranchesFound": "未找到分支。",
+      "noCommitsFound": "未找到提交。",
+      "instructionsLabel": "指令",
+      "instructionsPlaceholder": "关注正确性、边界情况和遗漏的测试。",
+      "close": "关闭"
     }
+  },
+  "dictation": {
+    "processing": "处理中..."
+  },
+  "files": {
+    "selectionRange": "第 {{start}}-{{end}} 行",
+    "imagePreview": "图片预览",
+    "noSelection": "未选择",
+    "truncated": "已截断",
+    "closePreview": "关闭预览",
+    "loadingFile": "正在加载文件...",
+    "imagePreviewUnavailable": "图片预览不可用。",
+    "selectionHints": "选区提示",
+    "clearSelection": "清空",
+    "addToChat": "添加到聊天",
+    "mentionInChat": "在聊天中提及",
+    "mentionFileInChat": "在聊天中提及 {{name}}",
+    "filterPlaceholder": "筛选文件和文件夹",
+    "filterAria": "筛选文件和文件夹",
+    "loadingFiles": "正在加载文件",
+    "noModified": "无修改",
+    "noFiles": "无文件",
+    "matchCount_one": "{{count}} 个匹配",
+    "matchCount_other": "{{count}} 个匹配",
+    "modifiedCount_one": "{{count}} 个已修改",
+    "modifiedCount_other": "{{count}} 个已修改",
+    "fileCount_one": "{{count}} 个文件",
+    "fileCount_other": "{{count}} 个文件",
+    "noModifiedFilesMatchFilter": "没有已修改文件符合筛选条件。",
+    "noMatchesFound": "未找到匹配项。",
+    "noModifiedFiles": "没有已修改文件。",
+    "noFilesAvailable": "没有可用文件。",
+    "expandAllFolders": "展开所有文件夹",
+    "collapseAllFolders": "折叠所有文件夹",
+    "showAllFiles": "显示所有文件",
+    "showModifiedFilesOnly": "仅显示已修改文件",
+    "revealInFinder": "在 Finder 中显示",
+    "showInExplorer": "在资源管理器中显示",
+    "revealInFileManager": "在文件管理器中显示",
+    "openInFinder": "在 Finder 中打开",
+    "openInExplorer": "在资源管理器中打开",
+    "openInFileManager": "在文件管理器中打开"
+  },
+  "prompts": {
+    "count_one": "{{count}} 个提示词",
+    "count_other": "{{count}} 个提示词",
+    "noPrompts": "无提示词",
+    "filterPlaceholder": "筛选提示词",
+    "filterAria": "筛选提示词",
+    "workspaceSectionTitle": "工作区提示词",
+    "generalSectionTitle": "通用提示词",
+    "addWorkspace": "添加工作区提示词",
+    "addGeneral": "添加通用提示词",
+    "workspaceEmptyTitle": "尚无工作区提示词",
+    "workspaceEmptyPrefix": "在这里创建一个，或者将 .md 文件放入",
+    "generalEmptyTitle": "尚无通用提示词",
+    "generalEmptyPrefix": "在这里创建一个，或者将 .md 文件放入",
+    "workspaceFolderLink": "工作区提示词文件夹",
+    "workspaceEmptySuffix": "。",
+    "generalEmptySuffix": "。",
+    "nameLabel": "名称",
+    "namePlaceholder": "提示词名称",
+    "scopeLabel": "作用域",
+    "workspaceScope": "工作区",
+    "generalScope": "通用",
+    "descriptionLabel": "说明",
+    "descriptionPlaceholder": "可选说明",
+    "argumentHintLabel": "参数提示",
+    "argumentHintPlaceholder": "可选参数提示",
+    "contentLabel": "内容",
+    "contentPlaceholder": "提示词内容",
+    "argumentsPlaceholder": "参数",
+    "argumentsAria": "{{name}} 的参数",
+    "sendCurrentAgent": "发送给当前智能体",
+    "sendNewAgent": "发送给新的智能体",
+    "newAgentButton": "新的智能体",
+    "actionsAria": "提示词操作",
+    "deletePromptConfirm": "删除此提示词？",
+    "moveToWorkspace": "移动到工作区",
+    "moveToGeneral": "移动到通用",
+    "nameRequired": "必须填写名称。",
+    "nameNoWhitespace": "名称中不能包含空白字符。"
+  },
+  "gitDiff": {
+    "enterCommitMessage": "请输入提交信息",
+    "noChangesToCommit": "没有可提交的更改",
+    "commitStagedChanges": "提交已暂存的更改",
+    "commitAllUnstagedChanges": "提交所有未暂存的更改",
+    "committing": "提交中...",
+    "commit": "提交",
+    "dismissError": "关闭错误",
+    "fileActions": "文件操作",
+    "stageChanges": "暂存更改",
+    "unstageChanges": "取消暂存更改",
+    "discardChanges": "放弃更改",
+    "applyWorktreeChanges": "应用工作树更改",
+    "stageAllChanges": "暂存所有更改",
+    "unstageAllChanges": "取消暂存所有更改",
+    "discardAllChanges": "放弃所有更改",
+    "loadingDiff": "正在加载 diff...",
+    "noNonWhitespaceChanges": "没有非空白更改。",
+    "diffUnavailable": "Diff 不可用。",
+    "discardChangesInThisFile": "放弃此文件的更改",
+    "prSelectionActions": "PR 选区操作",
+    "applyChangesToParentWorkspace": "应用变更到父工作区",
+    "applyChangesToWorkspace": "应用变更到 {{workspace}}",
+    "lastReviewThread": "上一个审查线程：{{id}}",
+    "reviewActions": {
+      "askPullRequest": "提问 PR",
+      "forPullRequest": "{{action}} · PR #{{number}}",
+      "reviewCommit": "审查提交",
+      "reviewCommitTitle": "审查提交 {{sha}}",
+      "reviewFailed": "PR 审查失败",
+      "reviewPr": "审查 PR",
+      "riskScan": "风险扫描",
+      "summarize": "总结",
+      "testPlan": "测试计划"
+    },
+    "askForChangesOnHoveredLine": "对悬停行提出修改建议",
+    "askForChangesOnThisLine": "对这一行提出修改建议",
+    "pullRequestSummary": "拉取请求摘要",
+    "jumpToFirstFile": "跳到第一个文件",
+    "checkoutBranch": "检出分支",
+    "checkoutBranchAria": "检出 PR #{{number}} 分支",
+    "checkingOut": "正在检出...",
+    "draft": "草稿",
+    "noDescriptionProvided": "未提供描述。",
+    "activity": "活动",
+    "commentCount_one": "{{count}} 条评论",
+    "commentCount_other": "{{count}} 条评论",
+    "showAll": "显示全部",
+    "collapse": "收起",
+    "loadingComments": "正在加载评论…",
+    "noCommentsYet": "暂无评论。",
+    "earlierComment_one": "{{count}} 条更早的评论",
+    "earlierComment_other": "{{count}} 条更早的评论",
+    "noCommentBody": "没有评论内容。",
+    "noMessage": "没有消息",
+    "imagePreviewUnavailable": "图片预览不可用。",
+    "previousVersion": "上一版本",
+    "currentVersion": "当前版本",
+    "newImage": "新图片",
+    "deletedImage": "已删除的图片"
+  },
+  "mobileSetup": {
+    "ariaLabel": "移动端服务器设置",
+    "closeAria": "关闭移动端设置",
+    "kicker": "需要移动端设置",
+    "primaryRemoteName": "主远程端",
+    "title": "连接到桌面后端",
+    "subtitle": "在使用应用前完成这项设置。请使用桌面版 CodexBuddy 服务端设置中配置的同一组连接信息。",
+    "hostLabel": "Tailscale 主机",
+    "hostPlaceholder": "macbook.your-tailnet.ts.net:4732",
+    "tokenLabel": "远程后端令牌",
+    "tokenPlaceholder": "令牌",
+    "defaultMessage": "输入桌面端的 Tailscale 主机和令牌，然后点击“连接并测试”。",
+    "connected_one": "已连接。您的桌面后端可用 {{count}} 个工作区。",
+    "connected_other": "已连接。您的桌面后端可用 {{count}} 个工作区。",
+    "unableToReachRemoteBackend": "无法连接到远程后端。",
+    "unableToSaveRemoteBackendSettings": "无法保存远程后端设置。",
+    "checking": "检查中...",
+    "connecting": "连接中...",
+    "connectAndTest": "连接并测试",
+    "hint": "请使用桌面端服务端设置里的 Tailscale 主机，并保持桌面守护进程运行。"
   },
   "commonLinks": {
     "title": "常用链接",
@@ -296,6 +784,12 @@
     "newMessageFetchedIn_other": "{{count}} 秒后拉取新消息",
     "noAnswerProvided": "未提供答案",
     "noAnswerProvidedSentence": "未提供答案。",
+    "imageAlt": "图片 {{index}}",
+    "fileLink": {
+      "copyLink": "复制链接",
+      "downloadLinkedFile": "下载链接文件",
+      "openFailed": "无法打开文件"
+    },
     "openImage": "打开图片 {{index}}",
     "planExportFailed": "计划导出失败",
     "questionFallback": "问题 {{index}}",

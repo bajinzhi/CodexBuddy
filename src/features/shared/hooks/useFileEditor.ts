@@ -7,12 +7,14 @@ export type FileEditorResponse = {
   truncated: boolean;
 };
 
+type FileEditorErrorTitle = string | (() => string);
+
 type UseFileEditorOptions = {
   key: string | null;
   read: () => Promise<FileEditorResponse>;
   write: (content: string) => Promise<void>;
-  readErrorTitle: string;
-  writeErrorTitle: string;
+  readErrorTitle: FileEditorErrorTitle;
+  writeErrorTitle: FileEditorErrorTitle;
 };
 
 type FileEditorState = {
@@ -45,10 +47,24 @@ export function useFileEditor({
   const requestIdRef = useRef(0);
   const inFlightRef = useRef(false);
   const latestKeyRef = useRef<string | null>(key);
+  const readErrorTitleRef = useRef<FileEditorErrorTitle>(readErrorTitle);
+  const writeErrorTitleRef = useRef<FileEditorErrorTitle>(writeErrorTitle);
 
   useEffect(() => {
     latestKeyRef.current = key;
   }, [key]);
+
+  useEffect(() => {
+    readErrorTitleRef.current = readErrorTitle;
+  }, [readErrorTitle]);
+
+  useEffect(() => {
+    writeErrorTitleRef.current = writeErrorTitle;
+  }, [writeErrorTitle]);
+
+  const resolveErrorTitle = useCallback((value: FileEditorErrorTitle) => {
+    return typeof value === "function" ? value() : value;
+  }, []);
 
   const refresh = useCallback(async () => {
     if (!latestKeyRef.current) {
@@ -83,13 +99,13 @@ export function useFileEditor({
       const message = error instanceof Error ? error.message : String(error);
       setState((prev) => ({ ...prev, isLoading: false, error: message }));
       pushErrorToast({
-        title: readErrorTitle,
+        title: resolveErrorTitle(readErrorTitleRef.current),
         message,
       });
     } finally {
       inFlightRef.current = false;
     }
-  }, [read, readErrorTitle]);
+  }, [read, resolveErrorTitle]);
 
   const save = useCallback(async () => {
     if (!latestKeyRef.current) {
@@ -121,12 +137,12 @@ export function useFileEditor({
       const message = error instanceof Error ? error.message : String(error);
       setState((prev) => ({ ...prev, isSaving: false, error: message }));
       pushErrorToast({
-        title: writeErrorTitle,
+        title: resolveErrorTitle(writeErrorTitleRef.current),
         message,
       });
       return false;
     }
-  }, [state.content, write, writeErrorTitle]);
+  }, [resolveErrorTitle, state.content, write]);
 
   const setContent = useCallback((value: string) => {
     setState((prev) => ({ ...prev, content: value }));

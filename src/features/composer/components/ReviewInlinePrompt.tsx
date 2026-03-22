@@ -1,4 +1,5 @@
 import { memo, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import type {
   ReviewPromptState,
   ReviewPromptStep,
@@ -40,6 +41,7 @@ const PresetStep = memo(function PresetStep({
   highlightedPresetIndex: number;
   onHighlightPreset: (index: number) => void;
 }) {
+  const { t } = useTranslation(["app", "common"]);
   const optionClass = (index: number) =>
     `review-inline-option${index === highlightedPresetIndex ? " is-selected" : ""}`;
   return (
@@ -51,8 +53,12 @@ const PresetStep = memo(function PresetStep({
         onMouseEnter={() => onHighlightPreset(0)}
         disabled={isSubmitting}
       >
-        <span className="review-inline-option-title">Review against a base branch</span>
-        <span className="review-inline-option-subtitle">(PR Style)</span>
+        <span className="review-inline-option-title">
+          {t("composer.reviewInlinePrompt.presetTitleBaseBranch", { ns: "app" })}
+        </span>
+        <span className="review-inline-option-subtitle">
+          {t("composer.reviewInlinePrompt.presetSubtitleBaseBranch", { ns: "app" })}
+        </span>
       </button>
       <button
         type="button"
@@ -61,7 +67,9 @@ const PresetStep = memo(function PresetStep({
         onMouseEnter={() => onHighlightPreset(1)}
         disabled={isSubmitting}
       >
-        <span className="review-inline-option-title">Review uncommitted changes</span>
+        <span className="review-inline-option-title">
+          {t("composer.reviewInlinePrompt.presetTitleUncommitted", { ns: "app" })}
+        </span>
       </button>
       <button
         type="button"
@@ -70,7 +78,9 @@ const PresetStep = memo(function PresetStep({
         onMouseEnter={() => onHighlightPreset(2)}
         disabled={isSubmitting}
       >
-        <span className="review-inline-option-title">Review a commit</span>
+        <span className="review-inline-option-title">
+          {t("composer.reviewInlinePrompt.presetTitleCommit", { ns: "app" })}
+        </span>
       </button>
       <button
         type="button"
@@ -79,7 +89,9 @@ const PresetStep = memo(function PresetStep({
         onMouseEnter={() => onHighlightPreset(3)}
         disabled={isSubmitting}
       >
-        <span className="review-inline-option-title">Custom review instructions</span>
+        <span className="review-inline-option-title">
+          {t("composer.reviewInlinePrompt.presetTitleCustom", { ns: "app" })}
+        </span>
       </button>
     </div>
   );
@@ -102,6 +114,7 @@ const BaseBranchStep = memo(function BaseBranchStep({
   highlightedBranchIndex: number;
   onHighlightBranch: (index: number) => void;
 }) {
+  const { t } = useTranslation(["app", "common"]);
   const branches = reviewPrompt.branches;
   return (
     <div className="review-inline-section">
@@ -112,7 +125,7 @@ const BaseBranchStep = memo(function BaseBranchStep({
           onClick={onShowPreset}
           disabled={reviewPrompt.isSubmitting}
         >
-          Back
+          {t("composer.reviewInlinePrompt.back", { ns: "app" })}
         </button>
         <button
           type="button"
@@ -120,15 +133,25 @@ const BaseBranchStep = memo(function BaseBranchStep({
           onClick={() => void onConfirmBranch()}
           disabled={reviewPrompt.isSubmitting || !reviewPrompt.selectedBranch.trim()}
         >
-          Start review
+          {t("composer.reviewInlinePrompt.startReview", { ns: "app" })}
         </button>
       </div>
-      <div className="review-inline-hint">Pick a recent local branch:</div>
-      <div className="review-inline-list" role="listbox" aria-label="Base branches">
+      <div className="review-inline-hint">
+        {t("composer.reviewInlinePrompt.pickRecentLocalBranch", { ns: "app" })}
+      </div>
+      <div
+        className="review-inline-list"
+        role="listbox"
+        aria-label={t("composer.reviewInlinePrompt.titleBaseBranch", { ns: "app" })}
+      >
         {reviewPrompt.isLoadingBranches ? (
-          <div className="review-inline-empty">Loading branches…</div>
+          <div className="review-inline-empty">
+            {t("composer.reviewInlinePrompt.loadingBranches", { ns: "app" })}
+          </div>
         ) : branches.length === 0 ? (
-          <div className="review-inline-empty">No branches found.</div>
+          <div className="review-inline-empty">
+            {t("composer.reviewInlinePrompt.noBranchesFound", { ns: "app" })}
+          </div>
         ) : (
           branches.map((branch, index) => {
             const selected = index === highlightedBranchIndex;
@@ -173,6 +196,7 @@ const CommitStep = memo(function CommitStep({
   highlightedCommitIndex: number;
   onHighlightCommit: (index: number) => void;
 }) {
+  const { t } = useTranslation(["app", "common"]);
   const commits = reviewPrompt.commits;
   return (
     <div className="review-inline-section">
@@ -183,7 +207,7 @@ const CommitStep = memo(function CommitStep({
           onClick={onShowPreset}
           disabled={reviewPrompt.isSubmitting}
         >
-          Back
+          {t("composer.reviewInlinePrompt.back", { ns: "app" })}
         </button>
         <button
           type="button"
@@ -191,15 +215,25 @@ const CommitStep = memo(function CommitStep({
           onClick={() => void onConfirmCommit()}
           disabled={reviewPrompt.isSubmitting || !reviewPrompt.selectedCommitSha}
         >
-          Start review
+          {t("composer.reviewInlinePrompt.startReview", { ns: "app" })}
         </button>
       </div>
-      <div className="review-inline-hint">Select a recent commit:</div>
-      <div className="review-inline-list" role="listbox" aria-label="Commits">
+      <div className="review-inline-hint">
+        {t("composer.reviewInlinePrompt.selectRecentCommit", { ns: "app" })}
+      </div>
+      <div
+        className="review-inline-list"
+        role="listbox"
+        aria-label={t("composer.reviewInlinePrompt.titleCommit", { ns: "app" })}
+      >
         {reviewPrompt.isLoadingCommits ? (
-          <div className="review-inline-empty">Loading commits…</div>
+          <div className="review-inline-empty">
+            {t("composer.reviewInlinePrompt.loadingCommits", { ns: "app" })}
+          </div>
         ) : commits.length === 0 ? (
-          <div className="review-inline-empty">No commits found.</div>
+          <div className="review-inline-empty">
+            {t("composer.reviewInlinePrompt.noCommitsFound", { ns: "app" })}
+          </div>
         ) : (
           commits.map((commit, index) => {
             const title = commit.summary || commit.sha;
@@ -242,6 +276,7 @@ const CustomStep = memo(function CustomStep({
   onUpdateCustomInstructions: (value: string) => void;
   onConfirmCustom: () => Promise<void>;
 }) {
+  const { t } = useTranslation(["app", "common"]);
   const canSubmit = reviewPrompt.customInstructions.trim().length > 0;
   return (
     <div className="review-inline-section">
@@ -252,7 +287,7 @@ const CustomStep = memo(function CustomStep({
           onClick={onShowPreset}
           disabled={reviewPrompt.isSubmitting}
         >
-          Back
+          {t("composer.reviewInlinePrompt.back", { ns: "app" })}
         </button>
         <button
           type="button"
@@ -260,18 +295,18 @@ const CustomStep = memo(function CustomStep({
           onClick={() => void onConfirmCustom()}
           disabled={reviewPrompt.isSubmitting || !canSubmit}
         >
-          Start review
+          {t("composer.reviewInlinePrompt.startReview", { ns: "app" })}
         </button>
       </div>
       <label className="review-inline-label" htmlFor="review-inline-custom-instructions">
-        Instructions
+        {t("composer.reviewInlinePrompt.instructionsLabel", { ns: "app" })}
       </label>
       <textarea
         id="review-inline-custom-instructions"
         className="review-inline-textarea"
         value={reviewPrompt.customInstructions}
         onChange={(event) => onUpdateCustomInstructions(event.target.value)}
-        placeholder="Focus on correctness, edge cases, and missing tests."
+        placeholder={t("composer.reviewInlinePrompt.instructionsPlaceholder", { ns: "app" })}
         autoFocus
         rows={6}
       />
@@ -299,21 +334,22 @@ export const ReviewInlinePrompt = memo(function ReviewInlinePrompt({
   onUpdateCustomInstructions,
   onConfirmCustom,
 }: ReviewInlinePromptProps) {
+  const { t } = useTranslation(["app", "common"]);
   const { step, error, isSubmitting } = reviewPrompt;
 
   const title = useMemo(() => {
     switch (step) {
       case "baseBranch":
-        return "Select a base branch";
+        return t("composer.reviewInlinePrompt.titleBaseBranch", { ns: "app" });
       case "commit":
-        return "Select a commit to review";
+        return t("composer.reviewInlinePrompt.titleCommit", { ns: "app" });
       case "custom":
-        return "Custom review instructions";
+        return t("composer.reviewInlinePrompt.titleCustom", { ns: "app" });
       case "preset":
       default:
-        return "Select a review preset";
+        return t("composer.reviewInlinePrompt.titlePreset", { ns: "app" });
     }
-  }, [step]);
+  }, [step, t]);
 
   return (
     <div className="review-inline" role="dialog" aria-label={title}>
@@ -362,7 +398,7 @@ export const ReviewInlinePrompt = memo(function ReviewInlinePrompt({
 
       <div className="review-inline-actions">
         <button type="button" className="ghost review-inline-button" onClick={onClose}>
-          Close
+          {t("actions.close", { ns: "common" })}
         </button>
       </div>
     </div>

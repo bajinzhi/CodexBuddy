@@ -4,6 +4,7 @@ import GitBranch from "lucide-react/dist/esm/icons/git-branch";
 import House from "lucide-react/dist/esm/icons/house";
 import MessagesSquare from "lucide-react/dist/esm/icons/messages-square";
 import TerminalSquare from "lucide-react/dist/esm/icons/terminal-square";
+import { useTranslation } from "react-i18next";
 
 type TabKey = "home" | "projects" | "codex" | "git" | "log";
 
@@ -21,8 +22,9 @@ const tabs: { id: TabKey; label: string; icon: ReactNode }[] = [
 ];
 
 export function TabBar({ activeTab, onSelect }: TabBarProps) {
+  const { t } = useTranslation("app");
   return (
-    <nav className="tabbar" aria-label="Primary">
+    <nav className="tabbar" aria-label={t("tabBar.primaryAria", { ns: "app" })}>
       {tabs.map((tab) => (
         <button
           key={tab.id}
@@ -32,7 +34,7 @@ export function TabBar({ activeTab, onSelect }: TabBarProps) {
           aria-current={activeTab === tab.id ? "page" : undefined}
         >
           {tab.icon}
-          <span className="tabbar-label">{tab.label}</span>
+          <span className="tabbar-label">{t(`tabBar.${tab.id}`, { ns: "app" })}</span>
         </button>
       ))}
     </nav>

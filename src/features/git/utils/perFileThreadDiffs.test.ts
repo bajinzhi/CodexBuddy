@@ -34,15 +34,15 @@ describe("buildPerFileThreadDiffs", () => {
     expect(result.groups[0]?.path).toBe("src/a.ts");
     expect(result.groups[1]?.path).toBe("src/b.ts");
 
-    expect(result.groups[0]?.edits.map((edit) => edit.label)).toEqual([
-      "Edit 1",
-      "Edit 2",
+    expect(result.groups[0]?.edits.map((edit) => edit.sequence)).toEqual([
+      1,
+      2,
     ]);
     expect(result.groups[0]?.edits.map((edit) => edit.diff)).toEqual([
       "diff-a-1",
       "diff-a-2",
     ]);
-    expect(result.groups[1]?.edits[0]?.label).toBe("Edit 1");
+    expect(result.groups[1]?.edits[0]?.sequence).toBe(1);
 
     expect(result.viewerEntries.map((entry) => entry.path)).toEqual([
       "src/a.ts@@item-change-1@@change-0",

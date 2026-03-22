@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ask } from "@tauri-apps/plugin-dialog";
+import { translate } from "@/i18n/translate";
 import {
   applyWorktreeChanges as applyWorktreeChangesService,
   createGitHubRepo as createGitHubRepoService,
@@ -207,14 +208,17 @@ export function useGitActions({
 
       if (response.status === "needs_confirmation") {
         const entryCount = response.entryCount ?? 0;
-        const plural = entryCount === 1 ? "" : "s";
         const confirmed = await ask(
-          `Initialize Git in this folder?\n\nThis will create a .git directory, set the initial branch to "${branch}", and create an initial commit.\n\nThis folder contains ${entryCount} existing item${plural}.`,
+          translate("git.initPrompt.confirmMessage", {
+            ns: "app",
+            count: entryCount,
+            branch,
+          }),
           {
-            title: "Initialize Git",
+            title: translate("git.initPrompt.title", { ns: "app" }),
             kind: "warning",
-            okLabel: "Initialize",
-            cancelLabel: "Cancel",
+            okLabel: translate("git.initPrompt.initialize", { ns: "app" }),
+            cancelLabel: translate("actions.cancel", { ns: "common" }),
           },
         );
         if (!confirmed) {

@@ -308,7 +308,7 @@ describe("GitDiffPanel", () => {
               {
                 id: "src/main.ts@@item-change-1@@change-0",
                 path: "src/main.ts",
-                label: "Edit 1",
+                sequence: 1,
                 status: "M",
                 diff: "diff --git a/src/main.ts b/src/main.ts",
                 sourceItemId: "change-1",

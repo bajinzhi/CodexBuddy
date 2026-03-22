@@ -189,7 +189,7 @@ describe("useGitPanelController preload behavior", () => {
     expect(result.current.diffSource).toBe("perFile");
     expect(result.current.perFileDiffGroups).toHaveLength(1);
     expect(result.current.perFileDiffGroups[0]?.path).toBe("src/main.ts");
-    expect(result.current.perFileDiffGroups[0]?.edits[0]?.label).toBe("Edit 1");
+    expect(result.current.perFileDiffGroups[0]?.edits[0]?.sequence).toBe(1);
     expect(result.current.activeDiffs[0]?.path).toBe(
       "src/main.ts@@item-change-1@@change-0",
     );

@@ -116,6 +116,32 @@
     "backendModeLocal": "本地（默认）",
     "backendModeRemote": "远程（守护进程）",
     "backendModeHelp": "本地模式会在桌面端进程内处理请求。远程模式会让桌面端走与移动端相同的 TCP 传输链路。",
+    "transportTcp": "TCP",
+    "primaryRemoteName": "主远程端",
+    "remoteNamePrefix": "远程端",
+    "hostRequired": "必须填写主机。",
+    "hostFormat": "请使用 主机:端口 格式（例如 `macbook.tailnet.ts.net:4732`）。",
+    "portRange": "端口必须介于 1 到 65535 之间。",
+    "nameRequired": "必须填写名称。",
+    "nameExists": "名为“{{name}}”的远程端已存在。",
+    "tokenRequired": "必须填写远程后端令牌。",
+    "remoteHostSaved": "远程主机已保存。",
+    "remoteNameSaved": "远程端名称已保存：“{{name}}”。",
+    "remoteTokenSaved": "远程端令牌已保存。",
+    "activeRemoteSet": "当前远程端已切换为“{{name}}”。",
+    "movedUp": "已将“{{name}}”上移。",
+    "movedDown": "已将“{{name}}”下移。",
+    "deletedRemote": "已删除“{{name}}”。",
+    "needAtLeastOneRemote": "至少需要保留一个远程端。",
+    "addedAndConnected_one": "已添加“{{name}}”并连接。远程后端可访问 {{count}} 个工作区。",
+    "addedAndConnected_other": "已添加“{{name}}”并连接。远程后端可访问 {{count}} 个工作区。",
+    "connected_one": "已连接。远程后端可访问 {{count}} 个工作区。",
+    "connected_other": "已连接。远程后端可访问 {{count}} 个工作区。",
+    "unableToConnectNewRemote": "无法连接到新远程后端。",
+    "unableToConnectRemote": "无法连接到远程后端。",
+    "unableToLoadTailscaleStatus": "无法加载 Tailscale 状态。",
+    "unableToBuildTailscaleDaemonCommand": "无法生成 Tailscale 守护进程命令。",
+    "unableToUpdateMobileAccessDaemonStatus": "无法更新移动访问守护进程状态。",
     "savedRemotesLabel": "已保存的远程端",
     "savedRemotesAria": "已保存的远程端",
     "activeBadge": "当前",
@@ -166,7 +192,7 @@
     "suggestedRemoteHostLabel": "建议的远程主机",
     "tailnetLabel": "Tailnet",
     "commandTemplateLabel": "启动守护进程的命令模板（手动兜底）：",
-    "tokenRequired": "远程后端令牌为空。暴露守护进程访问前请先设置令牌。",
+    "daemonTokenRequired": "远程后端令牌为空。暴露守护进程访问前请先设置令牌。",
     "footerMobile": "请仅使用您自己的基础设施。在 iOS 上，请从桌面版 CodexBuddy 配置里获取 Tailscale 主机名和令牌。",
     "footerDesktop": "移动访问应始终限定在您自己的基础设施（tailnet）内。CodexBuddy 不提供托管后端服务。",
     "addRemoteModalTitle": "添加远程端",
@@ -190,13 +216,13 @@
     "followUpBehaviorLabel": "追问行为",
     "followUpBehaviorHelp": "选择任务运行中的默认行为。按 {{shortcut}} 可对单条消息使用相反行为。",
     "behaviors": {
-      "queue": "Queue",
-      "steer": "Steer"
+      "queue": "排队",
+      "steer": "引导"
     },
     "showFollowUpHintTitle": "处理中显示追问提示",
     "showFollowUpHintSubtitle": "在编辑器上方显示 queue/steer 快捷提示。",
-    "steerUnavailable": "当前 Codex 配置不支持 Steer。",
-    "steerUnavailableHelp": "当前 Codex 配置不支持 Steer，后续消息会进入队列。",
+    "steerUnavailable": "当前 Codex 配置不支持引导。",
+    "steerUnavailableHelp": "当前 Codex 配置不支持引导，后续消息会进入队列。",
     "quickCommandsTitle": "快速指令",
     "quickCommandsSubtitle": "添加可重复使用的提示词，可从编辑器工具栏插入。",
     "quickCommandsUntitled": "未命名指令",
@@ -236,6 +262,16 @@
     "continueListsTitle": "Shift+Enter 延续列表",
     "continueListsSubtitle": "当前行有内容时，继续编号列表和无序列表。"
   },
+  "keyboardKeys": {
+    "alt": "Alt",
+    "command": "Command",
+    "commandShort": "Cmd",
+    "ctrlShort": "Ctrl",
+    "meta": "Meta",
+    "option": "Option",
+    "shift": "Shift",
+    "windows": "Windows"
+  },
   "commonLinks": {
     "title": "常用链接",
     "subtitle": "管理在侧边栏弹出菜单中显示的可复用链接。",
@@ -262,7 +298,9 @@
     "holdKeyLabel": "按住说话按键",
     "holdKeyHelp": "按住按键开始语音输入，松开后停止并处理。",
     "holdKeyOptions": {
-      "off": "关闭"
+      "control": "Control",
+      "off": "关闭",
+      "shift": "Shift"
     },
     "modelStatusLabel": "模型状态（{{model}}）",
     "status": {
@@ -324,6 +362,7 @@
     "noProjects": "还没有项目。",
     "projectLabel": "项目",
     "setupScriptLabel": "初始化脚本",
+    "setupScriptPlaceholder": "pnpm install",
     "setupScriptHelp": "每次创建新工作树后，会在独立终端中运行一次。",
     "worktreesFolderLabel": "工作树目录",
     "worktreesFolderHelp": "为工作树指定自定义目录。留空则使用默认位置。",
@@ -367,6 +406,7 @@
     },
     "removeApp": "移除应用",
     "addApp": "添加应用",
+    "newAppLabel": "新应用",
     "commandHelp": "命令会把选中的路径作为最后一个参数传入。",
     "platformHelp": {
       "mac": "应用会通过 `open -a` 启动，并可附带可选参数。",
@@ -499,7 +539,7 @@
       "apps_mcp_gateway": "Apps MCP 网关",
       "skill_mcp_dependency_install": "Skill MCP 依赖安装",
       "skill_env_var_dependency_prompt": "Skill 环境变量依赖提示",
-      "steer": "Steer",
+      "steer": "引导",
       "collaboration_modes": "协作模式",
       "personality": "人格风格",
       "responses_websockets": "Responses WebSockets",
@@ -536,15 +576,22 @@
       "personality": "启用人格风格选择。",
       "responses_websockets": "默认对 OpenAI 使用 Responses API WebSocket 传输。",
       "responses_websockets_v2": "启用 Responses API WebSocket v2 模式。"
+    },
+    "errors": {
+      "openConfig": "无法打开配置。",
+      "loadFlags": "无法加载 Codex 功能开关。",
+      "updateFeature": "无法更新功能“{{name}}”。"
     }
   },
   "codex": {
     "title": "Codex",
     "subtitle": "配置 CodexBuddy 使用的 Codex CLI，并校验安装状态。",
     "defaultPathLabel": "默认 Codex 路径",
+    "defaultPathPlaceholder": "codex",
     "usePath": "使用 PATH",
     "pathHelp": "留空则使用系统 PATH 解析。",
     "defaultArgsLabel": "默认 Codex 参数",
+    "defaultArgsPlaceholder": "--profile personal",
     "argsHelp": "在 app-server 前附加的额外参数。带空格的值请使用引号。",
     "sharedServerHelp": "这些设置会应用到所有已连接工作区共用的 Codex app-server。",
     "ignoredFlagsHelp": {
@@ -589,10 +636,18 @@
       "detached": "分离（新建审查线程）"
     },
     "reviewModeHelp": "选择 /review 在当前线程运行，还是在独立审查线程中运行。",
+    "nodeLabel": "Node",
+    "pathLabel": "PATH",
+    "configModelDisplayName": "{{configModel}}（配置）",
+    "configModelDescription": "在 CODEX_HOME/config.toml 中配置",
     "globalAgentsTitle": "全局 AGENTS.md",
     "globalAgentsPlaceholder": "为 Codex 智能体添加全局指令…",
+    "globalAgentsReadErrorTitle": "无法加载全局 AGENTS.md",
+    "globalAgentsWriteErrorTitle": "无法保存全局 AGENTS.md",
     "globalConfigTitle": "全局 config.toml",
     "globalConfigPlaceholder": "编辑全局 Codex config.toml…",
+    "globalConfigReadErrorTitle": "无法加载全局 config.toml",
+    "globalConfigWriteErrorTitle": "无法保存全局 config.toml",
     "storedAt": "存储位置",
     "editorMeta": {
       "truncated": "已截断"

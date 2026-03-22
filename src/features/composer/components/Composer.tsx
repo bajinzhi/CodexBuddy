@@ -41,6 +41,7 @@ import {
   normalizePastedText,
 } from "../../../utils/composerText";
 import { getCaretPosition } from "../../../utils/caretPosition";
+import { useTranslation } from "react-i18next";
 import { useComposerAutocompleteState } from "../hooks/useComposerAutocompleteState";
 import { usePromptHistory } from "../hooks/usePromptHistory";
 import { ComposerInput } from "./ComposerInput";
@@ -253,6 +254,7 @@ export const Composer = memo(function Composer({
   onFileAutocompleteActiveChange,
   contextActions = [],
 }: ComposerProps) {
+  const { t } = useTranslation("app");
   const [text, setText] = useState(draftText);
   const [selectionStart, setSelectionStart] = useState<number | null>(null);
   const [appMentionBindings, setAppMentionBindings] = useState<AppMentionBinding[]>([]);
@@ -280,8 +282,8 @@ export const Composer = memo(function Composer({
     : "default";
   const effectiveSendLabel = isProcessing
     ? effectiveFollowUpBehavior === "steer"
-      ? "Steer"
-      : "Queue"
+      ? t("composer.followUpBehaviorSteer")
+      : t("composer.followUpBehaviorQueue")
     : sendLabel;
   const {
     expandFenceOnSpace,
@@ -677,25 +679,47 @@ export const Composer = memo(function Composer({
       />
       {isProcessing && composerFollowUpHintEnabled && (
         <div className="composer-followup-hint" role="status" aria-live="polite">
-          <div className="composer-followup-title">Follow-up behavior</div>
+          <div className="composer-followup-title">
+            {t("composer.followUpBehaviorTitle")}
+          </div>
           <div className="composer-followup-copy">
             {oppositeFallsBackToQueue ? (
               <>
-                Default: Queue (Steer unavailable). Both Enter and {followUpShortcutLabel} will
-                queue this message.
+                {t("composer.followUpBehaviorDefaultQueue")}
+                {" "}
+                {t("composer.followUpBehaviorSteerUnavailable")}
+                {" "}
+                {t("composer.followUpBehaviorEnterAndShortcutQueue", {
+                  shortcut: followUpShortcutLabel,
+                })}
               </>
             ) : (
               <>
-                Default: {effectiveFollowUpBehavior === "steer" ? "Steer" : "Queue"}. Press{" "}
-                {followUpShortcutLabel} to{" "}
-                {oppositeFollowUpIntent === "steer" ? "steer" : "queue"} this message.
+                {t("composer.followUpBehaviorDefaultMode", {
+                  mode:
+                    effectiveFollowUpBehavior === "steer"
+                      ? t("composer.followUpBehaviorSteer")
+                      : t("composer.followUpBehaviorQueue"),
+                })}
+                {" "}
+                {t("composer.followUpBehaviorPressToAction", {
+                  shortcut: followUpShortcutLabel,
+                  action:
+                    oppositeFollowUpIntent === "steer"
+                      ? t("composer.followUpBehaviorSteer")
+                      : t("composer.followUpBehaviorQueue"),
+                })}
               </>
             )}
           </div>
         </div>
       )}
       {contextActions.length > 0 ? (
-        <div className="composer-context-actions" role="toolbar" aria-label="Review tools">
+        <div
+          className="composer-context-actions"
+          role="toolbar"
+          aria-label={t("composer.reviewTools")}
+        >
           {contextActions.map((action) => (
             <button
               key={action.id}

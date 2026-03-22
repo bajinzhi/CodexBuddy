@@ -1,3 +1,5 @@
+import { translate } from "@/i18n/translate";
+
 const PLAN_READY_TAG_PREFIX = "[[cm_plan_ready:";
 
 export function isPlanReadyTaggedMessage(text: string) {
@@ -5,10 +7,14 @@ export function isPlanReadyTaggedMessage(text: string) {
 }
 
 export function makePlanReadyAcceptMessage() {
-  return `${PLAN_READY_TAG_PREFIX}accept]] Implement this plan.`;
+  return `${PLAN_READY_TAG_PREFIX}accept]] ${translate("planReadyFollowup.acceptMessage", {
+    ns: "app",
+  })}`;
 }
 
 export function makePlanReadyChangesMessage(changes: string) {
   const trimmed = changes.trim();
-  return `${PLAN_READY_TAG_PREFIX}changes]] Update the plan with these changes:\n\n${trimmed}`;
+  return `${PLAN_READY_TAG_PREFIX}changes]] ${translate("planReadyFollowup.changesMessagePrefix", {
+    ns: "app",
+  })}\n\n${trimmed}`;
 }

@@ -115,15 +115,17 @@ export function useSettingsViewOrchestration({
     [projects],
   );
 
-  const optionKeyLabel = isMacPlatform() ? "Option" : "Alt";
+  const optionKeyLabel = isMacPlatform()
+    ? t("keyboardKeys.option")
+    : t("keyboardKeys.alt");
   const metaKeyLabel = isMacPlatform()
-    ? "Command"
+    ? t("keyboardKeys.command")
     : isWindowsPlatform()
-      ? "Windows"
-      : "Meta";
+      ? t("keyboardKeys.windows")
+      : t("keyboardKeys.meta");
   const followUpShortcutLabel = isMacPlatform()
-    ? "Shift+Cmd+Enter"
-    : "Shift+Ctrl+Enter";
+    ? `${t("keyboardKeys.shift")}+${t("keyboardKeys.commandShort")}+Enter`
+    : `${t("keyboardKeys.shift")}+${t("keyboardKeys.ctrlShort")}+Enter`;
 
   const selectedDictationModel = useMemo(() => {
     return (
@@ -159,6 +161,7 @@ export function useSettingsViewOrchestration({
   } = useSettingsOpenAppDrafts({
     appSettings,
     onUpdateAppSettings,
+    newAppLabel: t("openApps.newAppLabel"),
   });
 
   const { shortcutDrafts, handleShortcutKeyDown, clearShortcut } =

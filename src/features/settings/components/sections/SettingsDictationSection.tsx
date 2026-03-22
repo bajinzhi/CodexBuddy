@@ -67,8 +67,8 @@ export function SettingsDictationSection({
   const holdKeyOptions = [
     { value: "", label: t("dictation.holdKeyOptions.off") },
     { value: "alt", label: optionKeyLabel },
-    { value: "shift", label: "Shift" },
-    { value: "control", label: "Control" },
+    { value: "shift", label: t("dictation.holdKeyOptions.shift") },
+    { value: "control", label: t("dictation.holdKeyOptions.control") },
     { value: "meta", label: metaKeyLabel },
   ];
 

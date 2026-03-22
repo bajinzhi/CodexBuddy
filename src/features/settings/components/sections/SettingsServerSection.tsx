@@ -251,7 +251,9 @@ export function SettingsServerSection({
                             </span>
                           )}
                         </div>
-                        <div className="settings-mobile-remote-meta">TCP · {entry.host}</div>
+                        <div className="settings-mobile-remote-meta">
+                          {t("settings:server.transportTcp")} · {entry.host}
+                        </div>
                         <div className="settings-mobile-remote-last">
                           {t("settings:server.lastConnectedLabel")}:{" "}
                           {typeof entry.lastConnectedAtMs === "number"
@@ -577,7 +579,7 @@ export function SettingsServerSection({
                 </pre>
                 {!tailscaleCommandPreview.tokenConfigured && (
                   <div className="settings-help settings-help-error">
-                    {t("settings:server.tokenRequired")}
+                    {t("settings:server.daemonTokenRequired")}
                   </div>
                 )}
               </>

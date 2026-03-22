@@ -92,9 +92,19 @@ describe("codexArgsProfiles", () => {
     const options = buildCodexArgsOptions({
       appCodexArgs: null,
       additionalCodexArgs: ["--profile thread-active"],
+      defaultLabel: "Default",
     });
 
     expect(options.map((option) => option.value)).toEqual(["", "--profile thread-active"]);
+  });
+
+  it("uses the caller-provided default label", () => {
+    const options = buildCodexArgsOptions({
+      appCodexArgs: null,
+      defaultLabel: "默认",
+    });
+
+    expect(options[0]?.label).toBe("默认");
   });
 
   it("returns null effective badge for ignored-only overrides", () => {

@@ -1,4 +1,5 @@
 import { useMemo, type RefObject } from "react";
+import { useTranslation } from "react-i18next";
 import type {
   AppSettings,
   ConversationItem,
@@ -100,6 +101,7 @@ export function useMainAppComposerWorkspaceState({
   refs,
   actions,
 }: UseMainAppComposerWorkspaceStateArgs) {
+  const { t } = useTranslation(["app", "common"]);
   const {
     centerMode,
     isCompact,
@@ -293,14 +295,14 @@ export function useMainAppComposerWorkspaceState({
       workspaceId: activeWorkspaceId,
       threadId: thread.id,
       modelId: null,
-      modelLabel: thread.name?.trim() || "Untitled thread",
+      modelLabel: thread.name?.trim() || t("workspaceHome.history.untitledThread"),
       sequence: index + 1,
     }));
     return {
       recentThreadInstances: instances,
       recentThreadsUpdatedAt: updatedAt > 0 ? updatedAt : null,
     };
-  }, [activeWorkspaceId, threadsByWorkspace]);
+  }, [activeWorkspaceId, t, threadsByWorkspace]);
 
   const agentMdState = useWorkspaceAgentMd({
     activeWorkspace,

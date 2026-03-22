@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
 import type { AppSettings, CodexFeature, CodexFeatureStage } from "@/types";
+import { translate } from "@/i18n/translate";
 import {
   getCodexConfigPath,
   getExperimentalFeatureList,
@@ -155,7 +156,9 @@ export const useSettingsFeaturesSection = ({
       await revealItemInDir(configPath);
     } catch (error) {
       setOpenConfigError(
-        error instanceof Error ? error.message : "Unable to open config.",
+        error instanceof Error
+          ? error.message
+          : translate("features.errors.openConfig", { ns: "settings" }),
       );
     }
   }, []);
@@ -206,11 +209,11 @@ export const useSettingsFeaturesSection = ({
         if (!active) {
           return;
         }
-        setFeatures([]);
+        setFeatures([]); 
         setFeatureError(
           error instanceof Error
             ? error.message
-            : "Unable to load Codex feature flags.",
+            : translate("features.errors.loadFlags", { ns: "settings" }),
         );
       } finally {
         if (active) {
@@ -270,7 +273,10 @@ export const useSettingsFeaturesSection = ({
           setFeatureError(
             error instanceof Error
               ? error.message
-              : `Unable to update feature "${feature.name}".`,
+              : translate("features.errors.updateFeature", {
+                  ns: "settings",
+                  name: feature.name,
+                }),
           );
         } finally {
           setFeatureUpdatingKey((current) =>

@@ -24,6 +24,7 @@ type FileEditorCardProps = {
   disabled?: boolean;
   refreshDisabled?: boolean;
   saveDisabled?: boolean;
+  refreshLabel: string;
   saveLabel: string;
   onChange: (value: string) => void;
   onRefresh: () => void;
@@ -41,12 +42,16 @@ export function FileEditorCard({
   disabled,
   refreshDisabled,
   saveDisabled,
+  refreshLabel,
   saveLabel,
   onChange,
   onRefresh,
   onSave,
   classNames,
 }: FileEditorCardProps) {
+  const refreshAriaLabel = `${refreshLabel} ${title}`.trim();
+  const saveAriaLabel = `${saveLabel} ${title}`.trim();
+
   return (
     <div className={classNames.container}>
       <div className={classNames.header}>
@@ -58,8 +63,8 @@ export function FileEditorCard({
             className={classNames.iconButton}
             onClick={onRefresh}
             disabled={refreshDisabled}
-            aria-label={`Refresh ${title}`}
-            title="Refresh"
+            aria-label={refreshAriaLabel}
+            title={refreshAriaLabel}
           >
             <RefreshCw aria-hidden />
           </button>
@@ -68,8 +73,8 @@ export function FileEditorCard({
             className={classNames.iconButton}
             onClick={onSave}
             disabled={saveDisabled}
-            aria-label={saveLabel === "Create" ? `Create ${title}` : `Save ${title}`}
-            title={saveLabel}
+            aria-label={saveAriaLabel}
+            title={saveAriaLabel}
           >
             <Save aria-hidden />
           </button>

@@ -20,7 +20,7 @@ describe("useSyncSelectedDiffPath", () => {
               {
                 id: "src/main.ts@@item-change-1@@change-0",
                 path: "src/main.ts",
-                label: "Edit 1",
+                sequence: 1,
                 status: "M",
                 diff: "diff-a",
                 sourceItemId: "change-1",
@@ -56,7 +56,7 @@ describe("useSyncSelectedDiffPath", () => {
               {
                 id: "src/main.ts@@item-change-2@@change-0",
                 path: "src/main.ts",
-                label: "Edit 1",
+                sequence: 1,
                 status: "M",
                 diff: "diff-a",
                 sourceItemId: "change-2",
@@ -92,7 +92,7 @@ describe("useSyncSelectedDiffPath", () => {
               {
                 id: "src/main.ts@@item-change-1@@change-0",
                 path: "src/main.ts",
-                label: "Edit 1",
+                sequence: 1,
                 status: "M",
                 diff: "diff-a",
                 sourceItemId: "change-1",

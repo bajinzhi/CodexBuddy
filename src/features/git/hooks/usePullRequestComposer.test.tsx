@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { act, renderHook } from "@testing-library/react";
+import i18n from "@/i18n";
 import { describe, expect, it, vi } from "vitest";
 import type {
   GitLogEntry,
@@ -263,5 +264,25 @@ describe("usePullRequestComposer", () => {
       "/review commit abcdef1234567890 Tighten sidebar commit selection",
     );
     expect(options.runPullRequestReview).not.toHaveBeenCalled();
+  });
+
+  it("updates PR composer labels after switching languages", async () => {
+    const options = makeOptions({ selectedPullRequest: pullRequest });
+    const { result, rerender } = renderHook(() => usePullRequestComposer(options));
+
+    expect(result.current.composerSendLabel).toBe("Ask PR");
+    expect(result.current.composerContextActions[0]?.title).toBe("Review PR for PR #12");
+
+    await act(async () => {
+      await i18n.changeLanguage("zh-CN");
+    });
+    rerender();
+
+    expect(result.current.composerSendLabel).toBe("提问 PR");
+    expect(result.current.composerContextActions[0]?.title).toBe("审查 PR · PR #12");
+
+    await act(async () => {
+      await i18n.changeLanguage("en");
+    });
   });
 });

@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { act, renderHook } from "@testing-library/react";
+import i18n from "@/i18n";
 import { describe, expect, it, vi } from "vitest";
 import type {
   GitHubPullRequest,
@@ -151,5 +152,32 @@ describe("usePullRequestReviewActions", () => {
       expect.any(String),
       [],
     );
+  });
+
+  it("rebuilds review action labels when the UI language changes", async () => {
+    const { result, rerender } = renderActions();
+
+    expect(result.current.reviewActions.map((action) => action.label)).toEqual([
+      "Review PR",
+      "Risk Scan",
+      "Test Plan",
+      "Summarize",
+    ]);
+
+    await act(async () => {
+      await i18n.changeLanguage("zh-CN");
+    });
+    rerender();
+
+    expect(result.current.reviewActions.map((action) => action.label)).toEqual([
+      "审查 PR",
+      "风险扫描",
+      "测试计划",
+      "总结",
+    ]);
+
+    await act(async () => {
+      await i18n.changeLanguage("en");
+    });
   });
 });

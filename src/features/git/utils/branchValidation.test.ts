@@ -8,10 +8,10 @@ describe("validateBranchName", () => {
   });
 
   it("rejects invalid names", () => {
-    expect(validateBranchName(".")).toContain("cannot be '.' or '..'");
-    expect(validateBranchName("hello world")).toContain("cannot contain spaces");
-    expect(validateBranchName("feature//oops")).toContain("cannot contain '//'");
-    expect(validateBranchName("feature..oops")).toContain("cannot contain '..'");
-    expect(validateBranchName("topic@{x")).toContain("cannot contain '@{'");
+    expect(validateBranchName(".")).toBe("git.branchValidation.dotOrDotDot");
+    expect(validateBranchName("hello world")).toBe("git.branchValidation.spaces");
+    expect(validateBranchName("feature//oops")).toBe("git.branchValidation.doubleSlash");
+    expect(validateBranchName("feature..oops")).toBe("git.branchValidation.doubleDot");
+    expect(validateBranchName("topic@{x")).toBe("git.branchValidation.atBrace");
   });
 });

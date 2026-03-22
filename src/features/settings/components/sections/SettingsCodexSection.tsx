@@ -243,7 +243,7 @@ export function SettingsCodexSection({
             id="codex-path"
             className="settings-input"
             value={codexPathDraft}
-            placeholder="codex"
+            placeholder={t("codex.defaultPathPlaceholder")}
             onChange={(event) => onSetCodexPathDraft(event.target.value)}
           />
           <button
@@ -272,7 +272,7 @@ export function SettingsCodexSection({
             id="codex-args"
             className="settings-input"
             value={codexArgsDraft}
-            placeholder="--profile personal"
+            placeholder={t("codex.defaultArgsPlaceholder")}
             onChange={(event) => onSetCodexArgsDraft(event.target.value)}
           />
           <button
@@ -350,7 +350,7 @@ export function SettingsCodexSection({
                 {doctorState.result.appServerOk ? t("codex.statusOk") : t("codex.statusFailed")}
               </div>
               <div>
-                Node:{" "}
+                {t("codex.nodeLabel")}:{" "}
                 {doctorState.result.nodeOk
                   ? t("codex.nodeOk", {
                       version: doctorState.result.nodeVersion ?? t("common:labels.unknown"),
@@ -360,7 +360,9 @@ export function SettingsCodexSection({
               {doctorState.result.details && <div>{doctorState.result.details}</div>}
               {doctorState.result.nodeDetails && <div>{doctorState.result.nodeDetails}</div>}
               {doctorState.result.path && (
-                <div className="settings-doctor-path">PATH: {doctorState.result.path}</div>
+                <div className="settings-doctor-path">
+                  {t("codex.pathLabel")}: {doctorState.result.path}
+                </div>
               )}
             </div>
           </div>
@@ -541,6 +543,7 @@ export function SettingsCodexSection({
         placeholder={t("codex.globalAgentsPlaceholder")}
         disabled={globalAgentsLoading}
         refreshDisabled={globalAgentsRefreshDisabled}
+        refreshLabel={t("common:actions.refresh")}
         saveDisabled={globalAgentsSaveDisabled}
         saveLabel={globalAgentsSaveLabel}
         onChange={onSetGlobalAgentsContent}
@@ -572,6 +575,7 @@ export function SettingsCodexSection({
         placeholder={t("codex.globalConfigPlaceholder")}
         disabled={globalConfigLoading}
         refreshDisabled={globalConfigRefreshDisabled}
+        refreshLabel={t("common:actions.refresh")}
         saveDisabled={globalConfigSaveDisabled}
         saveLabel={globalConfigSaveLabel}
         onChange={onSetGlobalConfigContent}

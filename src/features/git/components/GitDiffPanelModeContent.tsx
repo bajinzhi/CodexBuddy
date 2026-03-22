@@ -278,7 +278,9 @@ export function GitPerFileModeContent({
                       <span className="per-file-edit-status" data-status={edit.status}>
                         {edit.status}
                       </span>
-                      <span className="per-file-edit-label">{edit.label}</span>
+                      <span className="per-file-edit-label">
+                        {t("editLabel", { count: edit.sequence })}
+                      </span>
                       <span className="per-file-edit-stats">
                         {edit.additions > 0 && (
                           <span className="per-file-edit-stat per-file-edit-stat-add">

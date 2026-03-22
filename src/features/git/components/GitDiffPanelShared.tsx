@@ -8,12 +8,16 @@ import Upload from "lucide-react/dist/esm/icons/upload";
 import X from "lucide-react/dist/esm/icons/x";
 import { MagicSparkleIcon } from "../../shared/components/MagicSparkleIcon";
 import { formatRelativeTime } from "../../../utils/time";
+import { translate } from "@/i18n/translate";
 import {
   getStatusClass,
   getStatusSymbol,
   splitNameAndExtension,
   splitPath,
 } from "./GitDiffPanel.utils";
+
+const appText = (key: string, options?: Parameters<typeof translate>[1]) =>
+  translate(`app:${key}`, options);
 
 export type DiffFile = {
   path: string;
@@ -63,12 +67,12 @@ export function CommitButton({
         disabled={!canCommit}
         title={
           !hasMessage
-            ? "Enter a commit message"
+            ? appText("gitDiff.enterCommitMessage")
             : !hasChanges
-              ? "No changes to commit"
+              ? appText("gitDiff.noChangesToCommit")
               : hasStagedFiles
-                ? "Commit staged changes"
-                : "Commit all unstaged changes"
+                ? appText("gitDiff.commitStagedChanges")
+                : appText("gitDiff.commitAllUnstagedChanges")
         }
       >
         {commitLoading ? (
@@ -88,7 +92,7 @@ export function CommitButton({
             <path d="M20 6 9 17l-5-5" />
           </svg>
         )}
-        <span>{commitLoading ? "Committing..." : "Commit"}</span>
+        <span>{commitLoading ? appText("gitDiff.committing") : appText("gitDiff.commit")}</span>
       </button>
     </div>
   );
@@ -129,8 +133,8 @@ export function SidebarError({
         type="button"
         className="ghost icon-button sidebar-error-dismiss"
         onClick={onDismiss}
-        aria-label="Dismiss error"
-        title="Dismiss error"
+        aria-label={translate("common:actions.dismiss")}
+        title={translate("common:actions.dismiss")}
       >
         <X size={12} aria-hidden />
       </button>
@@ -203,7 +207,7 @@ function DiffFileRow({
           <span className="diff-sep">/</span>
           <span className="diff-del">-{file.deletions}</span>
         </span>
-        <div className="diff-row-actions" role="group" aria-label="File actions">
+        <div className="diff-row-actions" role="group" aria-label={appText("gitDiff.fileActions")}>
           {showStage && (
             <button
               type="button"
@@ -212,9 +216,9 @@ function DiffFileRow({
                 event.stopPropagation();
                 void onStageFile?.(file.path);
               }}
-              data-tooltip="Stage Changes"
+              data-tooltip={appText("gitDiff.stageChanges")}
               data-tooltip-align="end"
-              aria-label="Stage file"
+              aria-label={appText("gitDiff.stageChanges")}
             >
               <Plus size={12} aria-hidden />
             </button>
@@ -227,9 +231,9 @@ function DiffFileRow({
                 event.stopPropagation();
                 void onUnstageFile?.(file.path);
               }}
-              data-tooltip="Unstage Changes"
+              data-tooltip={appText("gitDiff.unstageChanges")}
               data-tooltip-align="end"
-              aria-label="Unstage file"
+              aria-label={appText("gitDiff.unstageChanges")}
             >
               <Minus size={12} aria-hidden />
             </button>
@@ -242,9 +246,9 @@ function DiffFileRow({
                 event.stopPropagation();
                 void onDiscardFile?.(file.path);
               }}
-              data-tooltip="Discard Changes"
+              data-tooltip={appText("gitDiff.discardChanges")}
               data-tooltip-align="end"
-              aria-label="Discard changes"
+              aria-label={appText("gitDiff.discardChanges")}
             >
               <RotateCcw size={12} aria-hidden />
             </button>
@@ -328,8 +332,8 @@ export function DiffSection({
         <span>
           {title} ({files.length})
         </span>
-        {showSectionActions && (
-          <div className="diff-section-actions" role="group" aria-label={`${title} actions`}>
+          {showSectionActions && (
+          <div className="diff-section-actions" role="group" aria-label={appText("gitDiff.fileActions")}>
             {canApplyWorktree && (
               <button
                 type="button"
@@ -338,9 +342,9 @@ export function DiffSection({
                   void onApplyWorktreeChanges?.();
                 }}
                 disabled={worktreeApplyLoading || worktreeApplySuccess}
-                data-tooltip={worktreeApplyTitle ?? "Apply changes to parent workspace"}
+                data-tooltip={worktreeApplyTitle ?? appText("gitDiff.applyWorktreeChanges")}
                 data-tooltip-align="end"
-                aria-label="Apply worktree changes"
+                aria-label={appText("gitDiff.applyWorktreeChanges")}
               >
                 <WorktreeApplyIcon success={worktreeApplySuccess} />
               </button>
@@ -352,9 +356,9 @@ export function DiffSection({
                 onClick={() => {
                   void onReviewUncommittedChanges?.();
                 }}
-                data-tooltip="Review Uncommitted Changes"
+                data-tooltip={translate("app:composer.reviewInlinePrompt.presetTitleUncommitted")}
                 data-tooltip-align="end"
-                aria-label="Review uncommitted changes"
+                aria-label={translate("app:composer.reviewInlinePrompt.presetTitleUncommitted")}
               >
                 <MagicSparkleIcon size={12} />
               </button>
@@ -374,9 +378,9 @@ export function DiffSection({
                     }
                   })();
                 }}
-                data-tooltip="Stage All Changes"
+                data-tooltip={appText("gitDiff.stageAllChanges")}
                 data-tooltip-align="end"
-                aria-label="Stage all changes"
+                aria-label={appText("gitDiff.stageAllChanges")}
               >
                 <Plus size={12} aria-hidden />
               </button>
@@ -392,9 +396,9 @@ export function DiffSection({
                     }
                   })();
                 }}
-                data-tooltip="Unstage All Changes"
+                data-tooltip={appText("gitDiff.unstageAllChanges")}
                 data-tooltip-align="end"
-                aria-label="Unstage all changes"
+                aria-label={appText("gitDiff.unstageAllChanges")}
               >
                 <Minus size={12} aria-hidden />
               </button>
@@ -406,9 +410,9 @@ export function DiffSection({
                 onClick={() => {
                   void onDiscardFiles?.(filePaths);
                 }}
-                data-tooltip="Discard All Changes"
+                data-tooltip={appText("gitDiff.discardAllChanges")}
                 data-tooltip-align="end"
-                aria-label="Discard all changes"
+                aria-label={appText("gitDiff.discardAllChanges")}
               >
                 <RotateCcw size={12} aria-hidden />
               </button>
@@ -470,11 +474,11 @@ export function GitLogEntryRow({
         }
       }}
     >
-      <div className="git-log-summary">{entry.summary || "No message"}</div>
+      <div className="git-log-summary">{entry.summary || appText("gitDiff.noMessage")}</div>
       <div className="git-log-meta">
         <span className="git-log-sha">{entry.sha.slice(0, 7)}</span>
         <span className="git-log-sep">·</span>
-        <span className="git-log-author">{entry.author || "Unknown"}</span>
+        <span className="git-log-author">{entry.author || translate("common:labels.unknown")}</span>
         <span className="git-log-sep">·</span>
         <span className="git-log-date">{formatRelativeTime(entry.timestamp * 1000)}</span>
       </div>

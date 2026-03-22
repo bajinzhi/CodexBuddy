@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from "react";
 import type { WorkspaceInfo } from "../../../types";
 import { pickWorkspacePath } from "../../../services/tauri";
+import { translate } from "@/i18n/translate";
 
 type ClonePromptState = {
   workspace: WorkspaceInfo;
@@ -175,13 +176,27 @@ export function useClonePrompt({
     const copiesFolder = clonePrompt.copiesFolder.trim();
     if (!copyName) {
       setClonePrompt((prev) =>
-        prev ? { ...prev, error: "Copy name is required." } : prev,
+        prev
+          ? {
+              ...prev,
+              error: translate("workspaces.clonePrompt.errors.copyNameRequired", {
+                ns: "app",
+              }),
+            }
+          : prev,
       );
       return;
     }
     if (!copiesFolder) {
       setClonePrompt((prev) =>
-        prev ? { ...prev, error: "Copies folder is required." } : prev,
+        prev
+          ? {
+              ...prev,
+              error: translate("workspaces.clonePrompt.errors.copiesFolderRequired", {
+                ns: "app",
+              }),
+            }
+          : prev,
       );
       return;
     }

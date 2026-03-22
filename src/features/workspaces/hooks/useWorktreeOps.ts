@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import * as Sentry from "@sentry/react";
 import type { DebugEntry, WorkspaceInfo } from "../../../types";
+import { translate } from "@/i18n/translate";
 import {
   addClone as addCloneService,
   addWorktree as addWorktreeService,
@@ -93,7 +94,11 @@ export function useWorktreeOps({
       }
       const trimmedFolder = copiesFolder.trim();
       if (!trimmedFolder) {
-        throw new Error("Copies folder is required.");
+        throw new Error(
+          translate("workspaces.clonePrompt.errors.copiesFolderRequired", {
+            ns: "app",
+          }),
+        );
       }
       onDebug?.({
         id: `${Date.now()}-client-add-clone`,

@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from "react";
 import { pickWorkspacePath } from "@services/tauri";
+import { translate } from "@/i18n/translate";
 
 type WorkspaceFromUrlPromptState = {
   url: string;
@@ -58,11 +59,29 @@ export function useWorkspaceFromUrlPrompt({ onSubmit }: UseWorkspaceFromUrlPromp
     const targetFolderName = prompt.targetFolderName.trim() || null;
 
     if (!url) {
-      setPrompt((prev) => (prev ? { ...prev, error: "Remote Git URL is required." } : prev));
+      setPrompt((prev) =>
+        prev
+          ? {
+              ...prev,
+              error: translate("workspaces.fromUrlPrompt.errors.remoteGitUrlRequired", {
+                ns: "app",
+              }),
+            }
+          : prev,
+      );
       return;
     }
     if (!destinationPath) {
-      setPrompt((prev) => (prev ? { ...prev, error: "Destination folder is required." } : prev));
+      setPrompt((prev) =>
+        prev
+          ? {
+              ...prev,
+              error: translate("workspaces.fromUrlPrompt.errors.destinationFolderRequired", {
+                ns: "app",
+              }),
+            }
+          : prev,
+      );
       return;
     }
 

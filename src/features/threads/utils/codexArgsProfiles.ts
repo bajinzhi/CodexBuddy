@@ -502,10 +502,11 @@ export function buildEffectiveCodexArgsBadgeLabel(
 export function buildCodexArgsOptions(input: {
   appCodexArgs: string | null;
   additionalCodexArgs?: Array<string | null | undefined>;
+  defaultLabel: string;
 }): CodexArgsOption[] {
   const seen = new Set<string>();
   const options: CodexArgsOption[] = [
-    { value: "", codexArgs: null, label: "Default" },
+    { value: "", codexArgs: null, label: input.defaultLabel },
   ];
 
   const candidates = [

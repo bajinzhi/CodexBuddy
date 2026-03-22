@@ -6,6 +6,7 @@ import type {
   RequestUserInputResponse,
 } from "@/types";
 import { respondToUserInputRequest } from "@services/tauri";
+import { translate } from "@/i18n/translate";
 import type { ThreadAction } from "./useThreadsReducer";
 
 type UseThreadUserInputOptions = {
@@ -58,7 +59,7 @@ function buildUserInputConversationItem(
     entries.push({
       id: "user-input",
       header: "",
-      question: "Input requested",
+      question: translate("messages.inputRequested", { ns: "app" }),
       answers: [],
     });
   }

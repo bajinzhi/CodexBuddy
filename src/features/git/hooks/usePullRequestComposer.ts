@@ -1,4 +1,5 @@
 import { useCallback, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import type {
   AppMention,
   ComposerSendIntent,
@@ -77,6 +78,25 @@ export function usePullRequestComposer({
   clearActiveImages,
   handleSend,
 }: UsePullRequestComposerOptions) {
+  const { t } = useTranslation("app");
+  const resolveReviewActionLabel = useCallback(
+    (action: PullRequestReviewAction) => {
+      if (action.id === "pr-review-full") {
+        return t("gitDiff.reviewActions.reviewPr");
+      }
+      if (action.id === "pr-review-risks") {
+        return t("gitDiff.reviewActions.riskScan");
+      }
+      if (action.id === "pr-review-tests") {
+        return t("gitDiff.reviewActions.testPlan");
+      }
+      if (action.id === "pr-review-summary") {
+        return t("gitDiff.reviewActions.summarize");
+      }
+      return action.label;
+    },
+    [t],
+  );
   const isPullRequestComposer = useMemo(
     () =>
       Boolean(selectedPullRequest) &&
@@ -188,21 +208,27 @@ export function usePullRequestComposer({
 
   const composerContextActions = useMemo<ComposerContextAction[]>(() => {
     if (isPullRequestComposer && activeWorkspace && selectedPullRequest) {
-      return pullRequestReviewActions.map((action) => ({
-        id: action.id,
-        label: action.label,
-        title: `${action.label} for PR #${selectedPullRequest.number}`,
-        disabled: pullRequestReviewLaunching,
-        onSelect: async () => {
-          const reviewThreadId = await runPullRequestReview({
-            intent: action.intent,
-            activateThread: true,
-          });
-          if (reviewThreadId) {
-            clearActiveImages();
-          }
-        },
-      }));
+      return pullRequestReviewActions.map((action) => {
+        const actionLabel = resolveReviewActionLabel(action);
+        return {
+          id: action.id,
+          label: actionLabel,
+          title: t("gitDiff.reviewActions.forPullRequest", {
+            action: actionLabel,
+            number: selectedPullRequest.number,
+          }),
+          disabled: pullRequestReviewLaunching,
+          onSelect: async () => {
+            const reviewThreadId = await runPullRequestReview({
+              intent: action.intent,
+              activateThread: true,
+            });
+            if (reviewThreadId) {
+              clearActiveImages();
+            }
+          },
+        };
+      });
     }
 
     if (isCommitComposer && activeWorkspace && selectedCommit) {
@@ -214,8 +240,8 @@ export function usePullRequestComposer({
       return [
         {
           id: "commit-review",
-          label: "Review Commit",
-          title: `Review commit ${shortSha}`,
+          label: t("gitDiff.reviewActions.reviewCommit"),
+          title: t("gitDiff.reviewActions.reviewCommitTitle", { sha: shortSha }),
           onSelect: async () => {
             await startReview(reviewCommand);
           },
@@ -231,13 +257,17 @@ export function usePullRequestComposer({
     isPullRequestComposer,
     pullRequestReviewLaunching,
     pullRequestReviewActions,
+    resolveReviewActionLabel,
     runPullRequestReview,
     selectedCommit,
     selectedPullRequest,
     startReview,
+    t,
   ]);
 
-  const composerSendLabel = isPullRequestComposer ? "Ask PR" : undefined;
+  const composerSendLabel = isPullRequestComposer
+    ? t("gitDiff.reviewActions.askPullRequest")
+    : undefined;
   const handleComposerSend = isPullRequestComposer
     ? handleSendPullRequestQuestion
     : handleSend;

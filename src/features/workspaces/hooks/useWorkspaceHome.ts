@@ -6,6 +6,7 @@ import type {
   WorkspaceInfo,
 } from "../../../types";
 import { generateRunMetadata } from "../../../services/tauri";
+import { translate } from "@/i18n/translate";
 
 export type WorkspaceRunMode = "local" | "worktree";
 
@@ -92,7 +93,7 @@ const buildRunTitle = (prompt: string) => {
   const firstLine = prompt.trim().split("\n")[0] ?? "";
   const normalized = firstLine.replace(/\s+/g, " ").trim();
   if (!normalized) {
-    return "New run";
+    return translate("workspaceHome.runs.newRun", { ns: "app" });
   }
   if (normalized.length > MAX_TITLE_LENGTH) {
     return `${normalized.slice(0, MAX_TITLE_LENGTH)}...`;
@@ -158,8 +159,10 @@ const buildWorktreeBranch = (prompt: string) => {
   return `${prefix}/${slug}`;
 };
 
-const resolveModelLabel = (model: ModelOption | null, fallback: string) =>
-  model?.displayName?.trim() || model?.model?.trim() || fallback;
+const resolveModelLabel = (
+  model: ModelOption | null,
+  fallback = translate("workspaceHome.models.defaultModel", { ns: "app" }),
+) => model?.displayName?.trim() || model?.model?.trim() || fallback;
 
 const normalizeWorktreeName = (value: string | null | undefined) => {
   if (!value) {
@@ -407,7 +410,9 @@ export function useWorkspaceHome({
       }));
 
     if (runMode === "worktree" && selectedModels.length === 0) {
-      setWorkspaceError("Select at least one model to run in a worktree.");
+      setWorkspaceError(
+        translate("workspaceHome.errors.selectAtLeastOneModel", { ns: "app" }),
+      );
       return false;
     }
 
@@ -488,7 +493,9 @@ export function useWorkspaceHome({
             activate: false,
           });
           if (!threadId) {
-            throw new Error("Failed to start a local thread.");
+            throw new Error(
+              translate("workspaceHome.errors.failedToStartLocalThread", { ns: "app" }),
+            );
           }
           seedThreadCodexParams?.(activeWorkspace.id, threadId, {
             modelId: selectedModelId,
@@ -511,7 +518,7 @@ export function useWorkspaceHome({
             workspaceId: activeWorkspace.id,
             threadId,
             modelId: selectedModelId ?? null,
-            modelLabel: resolveModelLabel(model, "Default model"),
+            modelLabel: resolveModelLabel(model),
             sequence: 1,
           });
         } catch (error) {
@@ -541,7 +548,11 @@ export function useWorkspaceHome({
                 { activate: false },
               );
               if (!worktreeWorkspace) {
-                throw new Error("Failed to create worktree.");
+                throw new Error(
+                  translate("workspaceHome.errors.failedToCreateWorktree", {
+                    ns: "app",
+                  }),
+                );
               }
               if (!worktreeWorkspace.connected) {
                 await connectWorkspace(worktreeWorkspace);
@@ -555,7 +566,11 @@ export function useWorkspaceHome({
                 activate: false,
               });
               if (!threadId) {
-                throw new Error("Failed to start a worktree thread.");
+                throw new Error(
+                  translate("workspaceHome.errors.failedToStartWorktreeThread", {
+                    ns: "app",
+                  }),
+                );
               }
               seedThreadCodexParams?.(worktreeWorkspace.id, threadId, {
                 modelId: selection.modelId,

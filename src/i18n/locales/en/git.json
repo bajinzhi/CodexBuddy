@@ -18,6 +18,7 @@
   "discardChangesMenu_other": "Discard changes ({{count}})",
   "discardThisFile": "Discard changes in this file",
   "draft": "Draft",
+  "editLabel": "Edit {{count}}",
   "editCount_one": "{{count}} edit",
   "editCount_other": "{{count}} edits",
   "emptyPullRequestTitle": "No file changes in this pull request",

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { WorkspaceInfo } from "../../../types";
 import { validateBranchName } from "../utils/branchValidation";
 import type { InitGitRepoOutcome } from "./useGitActions";
+import { translate } from "@/i18n/translate";
 
 type InitGitRepoPromptState = {
   workspaceId: string;
@@ -131,10 +132,16 @@ export function useInitGitRepoPrompt({
     }
 
     const trimmedBranch = prompt.branch.trim();
+    const validationKey =
+      trimmedBranch.length === 0
+        ? null
+        : validateBranchName(prompt.branch);
     const validationError =
       trimmedBranch.length === 0
-        ? "Branch name is required."
-        : validateBranchName(prompt.branch);
+        ? translate("git.initPrompt.errors.branchNameRequired", { ns: "app" })
+        : validationKey
+          ? translate(validationKey, { ns: "app" })
+          : null;
     if (validationError) {
       setInitGitRepoPrompt((prev) =>
         prev ? { ...prev, error: validationError } : prev,
@@ -146,13 +153,27 @@ export function useInitGitRepoPrompt({
     if (prompt.createRemote) {
       if (!trimmedRepo) {
         setInitGitRepoPrompt((prev) =>
-          prev ? { ...prev, error: "Repository name is required." } : prev,
+          prev
+            ? {
+                ...prev,
+                error: translate("git.initPrompt.errors.repoNameRequired", {
+                  ns: "app",
+                }),
+              }
+            : prev,
         );
         return;
       }
       if (/\s/.test(trimmedRepo)) {
         setInitGitRepoPrompt((prev) =>
-          prev ? { ...prev, error: "Repository name cannot contain spaces." } : prev,
+          prev
+            ? {
+                ...prev,
+                error: translate("git.initPrompt.errors.repoNameNoSpaces", {
+                  ns: "app",
+                }),
+              }
+            : prev,
         );
         return;
       }
@@ -173,7 +194,14 @@ export function useInitGitRepoPrompt({
 
     if (initOutcome !== "initialized") {
       setInitGitRepoPrompt((prev) =>
-        prev ? { ...prev, error: prev.error ?? "Failed to initialize Git repository." } : prev,
+        prev
+          ? {
+              ...prev,
+              error:
+                prev.error ??
+                translate("git.initPrompt.errors.failedToInitialize", { ns: "app" }),
+            }
+          : prev,
       );
       return;
     }

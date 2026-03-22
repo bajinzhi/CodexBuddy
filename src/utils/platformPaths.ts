@@ -1,3 +1,5 @@
+import { translate } from "@/i18n/translate";
+
 type PlatformKind = "mac" | "windows" | "linux" | "unknown";
 
 function platformKind(): PlatformKind {
@@ -75,16 +77,23 @@ export function fileManagerName(): string {
 export function revealInFileManagerLabel(): string {
   const platform = platformKind();
   if (platform === "mac") {
-    return "Reveal in Finder";
+    return translate("app:files.revealInFinder");
   }
   if (platform === "windows") {
-    return "Show in Explorer";
+    return translate("app:files.showInExplorer");
   }
-  return "Reveal in File Manager";
+  return translate("app:files.revealInFileManager");
 }
 
 export function openInFileManagerLabel(): string {
-  return `Open in ${fileManagerName()}`;
+  const platform = platformKind();
+  if (platform === "mac") {
+    return translate("app:files.openInFinder");
+  }
+  if (platform === "windows") {
+    return translate("app:files.openInExplorer");
+  }
+  return translate("app:files.openInFileManager");
 }
 
 function looksLikeWindowsAbsolutePath(value: string): boolean {

@@ -522,7 +522,7 @@ export function Home({
   return (
     <div className="home">
       <div className="home-hero">
-        <div className="home-title">CodexBuddy</div>
+        <div className="home-title">{t("common:appName")}</div>
         <div className="home-subtitle">
           {t("home:subtitle")}
         </div>

@@ -18,6 +18,7 @@
   "discardChangesMenu_other": "丢弃更改（{{count}} 项）",
   "discardThisFile": "丢弃此文件中的更改",
   "draft": "草稿",
+  "editLabel": "编辑 {{count}}",
   "editCount_one": "{{count}} 处编辑",
   "editCount_other": "{{count}} 处编辑",
   "emptyPullRequestTitle": "此拉取请求没有文件变更",

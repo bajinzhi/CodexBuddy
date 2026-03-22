@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { getVersion } from "@tauri-apps/api/app";
 import { openUrl } from "@tauri-apps/plugin-opener";
+import { useTranslation } from "react-i18next";
 
 const GITHUB_URL = "https://github.com/bajinzhi/CodexBuddy";
 const TWITTER_URL = "https://x.com/bajinzhi";
 
 export function AboutView() {
+  const { t } = useTranslation(["app", "common"]);
   const [version, setVersion] = useState<string | null>(null);
 
   const handleOpenGitHub = () => {
@@ -44,15 +46,15 @@ export function AboutView() {
           <img
             className="about-icon"
             src="/app-icon.png"
-            alt="CodexBuddy icon"
+            alt={t("about.iconAlt", { ns: "app" })}
           />
-          <div className="about-title">CodexBuddy</div>
+          <div className="about-title">{t("common:appName")}</div>
         </div>
         <div className="about-version">
-          {version ? `Version ${version}` : "Version —"}
+          {version ? t("about.version", { ns: "app", version }) : t("about.versionFallback", { ns: "app" })}
         </div>
         <div className="about-tagline">
-          Monitor the situation of your Codex agents
+          {t("about.tagline", { ns: "app" })}
         </div>
         <div className="about-divider" />
         <div className="about-links">
@@ -61,7 +63,7 @@ export function AboutView() {
             className="about-link"
             onClick={handleOpenGitHub}
           >
-            GitHub
+            {t("about.github", { ns: "app" })}
           </button>
           <span className="about-link-sep">|</span>
           <button
@@ -69,10 +71,10 @@ export function AboutView() {
             className="about-link"
             onClick={handleOpenTwitter}
           >
-            Twitter
+            {t("about.twitter", { ns: "app" })}
           </button>
         </div>
-        <div className="about-footer">Made with ♥ by Codex & bajinzhi</div>
+        <div className="about-footer">{t("about.footer", { ns: "app" })}</div>
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 /** @vitest-environment jsdom */
 import { createRef } from "react";
-import { renderHook } from "@testing-library/react";
+import { act, renderHook } from "@testing-library/react";
+import i18n from "@/i18n";
 import { describe, expect, it, vi } from "vitest";
 import { useComposerAutocompleteState } from "./useComposerAutocompleteState";
 
@@ -160,6 +161,49 @@ describe("useComposerAutocompleteState slash commands", () => {
       "review",
       "status",
     ]);
+  });
+
+  it("refreshes slash command descriptions after switching languages", async () => {
+    const text = "/";
+    const selectionStart = text.length;
+    const textareaRef = createRef<HTMLTextAreaElement>();
+    textareaRef.current = {
+      focus: vi.fn(),
+      setSelectionRange: vi.fn(),
+    } as unknown as HTMLTextAreaElement;
+
+    const { result, rerender } = renderHook(() =>
+      useComposerAutocompleteState({
+        text,
+        selectionStart,
+        disabled: false,
+        appsEnabled: true,
+        skills: [],
+        apps: [],
+        prompts: [],
+        files: [],
+        textareaRef,
+        setText: vi.fn(),
+        setSelectionStart: vi.fn(),
+      }),
+    );
+
+    expect(
+      result.current.autocompleteMatches.find((item) => item.id === "compact")?.description,
+    ).toBe("compact the active thread context");
+
+    await act(async () => {
+      await i18n.changeLanguage("zh-CN");
+    });
+    rerender();
+
+    expect(
+      result.current.autocompleteMatches.find((item) => item.id === "compact")?.description,
+    ).toBe("压缩当前线程上下文");
+
+    await act(async () => {
+      await i18n.changeLanguage("en");
+    });
   });
 });
 

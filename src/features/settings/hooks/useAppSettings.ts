@@ -26,6 +26,7 @@ import {
 } from "@/i18n/preferences";
 import { normalizeCommonLinks } from "@settings/components/settingsViewHelpers";
 import { normalizeQuickCommands } from "@utils/quickCommands";
+import { translate } from "@/i18n/translate";
 
 const allowedUiLanguages = new Set(["system", "en", "zh-CN"]);
 const allowedThemes = new Set(["system", "light", "dark", "dim"]);
@@ -34,8 +35,10 @@ const allowedPersonality = new Set(["friendly", "pragmatic"]);
 const allowedFollowUpMessageBehavior = new Set(["queue", "steer"]);
 const DEFAULT_REMOTE_BACKEND_HOST = "127.0.0.1:4732";
 const DEFAULT_REMOTE_BACKEND_ID = "remote-default";
-const DEFAULT_REMOTE_BACKEND_NAME = "Primary remote";
 const DEFAULT_REMOTE_PROVIDER: AppSettings["remoteBackendProvider"] = "tcp";
+
+const getDefaultRemoteBackendName = () =>
+  translate("settings:server.primaryRemoteName");
 
 type RemoteBackendTarget = AppSettings["remoteBackends"][number];
 
@@ -79,7 +82,10 @@ function normalizeRemoteBackends(settings: AppSettings): {
     usedIds.add(id);
     return {
       id,
-      name: normalizeRemoteName(entry.name, `Remote ${index + 1}`),
+      name: normalizeRemoteName(
+        entry.name,
+        `${translate("settings:server.remoteNamePrefix")} ${index + 1}`,
+      ),
       provider: normalizeRemoteProvider(entry.provider),
       host: normalizeRemoteHost(entry.host),
       token: normalizeRemoteToken(entry.token),
@@ -90,14 +96,14 @@ function normalizeRemoteBackends(settings: AppSettings): {
     };
   });
 
-  if (normalized.length === 0) {
-    const fallback: RemoteBackendTarget = {
-      id: DEFAULT_REMOTE_BACKEND_ID,
-      name: DEFAULT_REMOTE_BACKEND_NAME,
-      provider: legacyProvider,
-      host: legacyHost,
-      token: legacyToken,
-      lastConnectedAtMs: null,
+    if (normalized.length === 0) {
+      const fallback: RemoteBackendTarget = {
+        id: DEFAULT_REMOTE_BACKEND_ID,
+        name: getDefaultRemoteBackendName(),
+        provider: legacyProvider,
+        host: legacyHost,
+        token: legacyToken,
+        lastConnectedAtMs: null,
     };
     return {
       remoteBackends: [fallback],
@@ -136,7 +142,7 @@ function buildDefaultSettings(): AppSettings {
   const isMobile = isMobilePlatform();
   const defaultRemote: RemoteBackendTarget = {
     id: DEFAULT_REMOTE_BACKEND_ID,
-    name: DEFAULT_REMOTE_BACKEND_NAME,
+    name: getDefaultRemoteBackendName(),
     provider: DEFAULT_REMOTE_PROVIDER,
     host: DEFAULT_REMOTE_BACKEND_HOST,
     token: null,

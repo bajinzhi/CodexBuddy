@@ -1,23 +1,25 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { ModelOption, WorkspaceInfo } from "@/types";
 import { connectWorkspace, getConfigModel, getModelList } from "@services/tauri";
 import { parseModelListResponse } from "@/features/models/utils/modelListResponse";
+import { prependSyntheticConfigModelOption } from "@/features/models/utils/configModelOptions";
 
 type SettingsDefaultModelsState = {
-  models: ModelOption[];
+  rawModels: ModelOption[];
+  configModel: string | null;
   isLoading: boolean;
   error: string | null;
   connectedWorkspaceCount: number;
 };
 
 const EMPTY_STATE: SettingsDefaultModelsState = {
-  models: [],
+  rawModels: [],
+  configModel: null,
   isLoading: false,
   error: null,
   connectedWorkspaceCount: 0,
 };
-
-const CONFIG_MODEL_DESCRIPTION = "Configured in CODEX_HOME/config.toml";
 
 const parseGptVersionScore = (slug: string): number | null => {
   const match = /^gpt-(\d+)(?:\.(\d+))?(?:\.(\d+))?/i.exec(slug.trim());
@@ -60,11 +62,23 @@ function compareModelsByLatest(a: ModelOption, b: ModelOption): number {
 }
 
 export function useSettingsDefaultModels(projects: WorkspaceInfo[]) {
+  const { t, i18n } = useTranslation("settings");
   const [state, setState] = useState<SettingsDefaultModelsState>(EMPTY_STATE);
   const requestIdRef = useRef(0);
   const sourceWorkspaceId = projects[0]?.id ?? null;
   const sourceWorkspaceName = projects[0]?.name ?? null;
   const sourceWorkspaceConnected = projects[0]?.connected ?? false;
+
+  const models = useMemo(
+    () =>
+      prependSyntheticConfigModelOption(state.rawModels, state.configModel, {
+        displayName: state.configModel
+          ? t("codex.configModelDisplayName", { configModel: state.configModel })
+          : undefined,
+        description: t("codex.configModelDescription"),
+      }).slice().sort(compareModelsByLatest),
+    [i18n.resolvedLanguage, state.configModel, state.rawModels, t],
+  );
 
   const refresh = useCallback(async () => {
     requestIdRef.current += 1;
@@ -125,30 +139,9 @@ export function useSettingsDefaultModels(projects: WorkspaceInfo[]) {
       );
       const configModel =
         configModelResult.status === "fulfilled" ? configModelResult.value : null;
-      const hasConfigModel = Boolean(
-        configModel &&
-          modelsFromList.some(
-            (model) => model.model === configModel || model.id === configModel,
-          ),
-      );
-      const models = (
-        hasConfigModel || !configModel
-          ? modelsFromList
-          : [
-              {
-                id: configModel,
-                model: configModel,
-                displayName: `${configModel} (config)`,
-                description: CONFIG_MODEL_DESCRIPTION,
-                supportedReasoningEfforts: [],
-                defaultReasoningEffort: null,
-                isDefault: false,
-              },
-              ...modelsFromList,
-            ]
-      ).sort(compareModelsByLatest);
       setState({
-        models,
+        rawModels: modelsFromList,
+        configModel,
         isLoading: false,
         error: errors.length ? errors.join(" | ") : null,
         connectedWorkspaceCount: 1,
@@ -157,7 +150,8 @@ export function useSettingsDefaultModels(projects: WorkspaceInfo[]) {
       const message = error instanceof Error ? error.message : String(error);
       if (requestId === requestIdRef.current) {
         setState({
-          models: [],
+          rawModels: [],
+          configModel: null,
           isLoading: false,
           error: message,
           connectedWorkspaceCount: sourceWorkspaceId ? 1 : 0,
@@ -171,7 +165,10 @@ export function useSettingsDefaultModels(projects: WorkspaceInfo[]) {
   }, [refresh]);
 
   return {
-    ...state,
+    models,
+    isLoading: state.isLoading,
+    error: state.error,
+    connectedWorkspaceCount: state.connectedWorkspaceCount,
     refresh,
   };
 }

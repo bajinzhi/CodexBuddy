@@ -13,11 +13,13 @@ import {
 type UseSettingsOpenAppDraftsParams = {
   appSettings: AppSettings;
   onUpdateAppSettings: (next: AppSettings) => Promise<void>;
+  newAppLabel: string;
 };
 
 export const useSettingsOpenAppDrafts = ({
   appSettings,
   onUpdateAppSettings,
+  newAppLabel,
 }: UseSettingsOpenAppDraftsParams) => {
   const [openAppDrafts, setOpenAppDrafts] = useState<OpenAppDraft[]>(() =>
     buildOpenAppDrafts(appSettings.openAppTargets),
@@ -117,7 +119,7 @@ export const useSettingsOpenAppDrafts = ({
   const handleAddOpenApp = () => {
     const newTarget: OpenAppDraft = {
       id: createOpenAppId(),
-      label: "New App",
+      label: newAppLabel,
       kind: "app",
       appName: "",
       command: null,

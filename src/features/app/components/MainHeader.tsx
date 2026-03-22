@@ -125,6 +125,7 @@ export function MainHeader({
   const infoMenu = useMenuController();
   const { isOpen: menuOpen, setOpen: setMenuOpen, containerRef: menuRef } = branchMenu;
   const { isOpen: infoOpen, containerRef: infoRef } = infoMenu;
+  const unknownBranchLabel = t("labels.unknown", { ns: "common" });
 
   const trimmedQuery = branchQuery.trim();
   const filteredBranches = useMemo(
@@ -136,10 +137,13 @@ export function MainHeader({
     [branches, trimmedQuery],
   );
   const canCreate = trimmedQuery.length > 0 && !exactMatch;
-  const branchValidationMessage = useMemo(
+  const branchValidationKey = useMemo(
     () => validateBranchName(trimmedQuery),
     [trimmedQuery],
   );
+  const branchValidationMessage = branchValidationKey
+    ? t(branchValidationKey, { ns: "app" })
+    : null;
   const resolvedWorktreePath = worktreePath ?? workspace.path;
   const resolvedWorktreeLabel = useMemo(() => {
     const trimmedBranchName = branchName.trim();
@@ -147,14 +151,18 @@ export function MainHeader({
     if (!trimmedWorktreeLabel) {
       return branchName;
     }
-    if (!trimmedBranchName || trimmedBranchName === "unknown") {
+    if (
+      !trimmedBranchName
+      || trimmedBranchName === "unknown"
+      || trimmedBranchName === unknownBranchLabel
+    ) {
       return trimmedWorktreeLabel;
     }
     if (trimmedWorktreeLabel === trimmedBranchName) {
       return trimmedWorktreeLabel;
     }
     return `${trimmedWorktreeLabel} · ${trimmedBranchName}`;
-  }, [branchName, worktreeLabel]);
+  }, [branchName, unknownBranchLabel, worktreeLabel]);
   const relativeWorktreePath = useMemo(() => {
     if (!parentPath) {
       return resolvedWorktreePath;

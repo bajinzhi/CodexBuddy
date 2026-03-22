@@ -83,7 +83,7 @@ export function SettingsEnvironmentsSection({
               className="settings-agents-textarea"
               value={environmentDraftScript}
               onChange={(event) => onSetEnvironmentDraftScript(event.target.value)}
-              placeholder="pnpm install"
+              placeholder={t("environments.setupScriptPlaceholder")}
               spellCheck={false}
               disabled={environmentSaving}
             />

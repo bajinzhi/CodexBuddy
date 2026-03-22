@@ -1,5 +1,6 @@
 import type { ModelOption } from "../../../types";
 import type { WorkspaceHomeRunInstance } from "../hooks/useWorkspaceHome";
+import { translate } from "@/i18n/translate";
 
 export const INSTANCE_OPTIONS = [1, 2, 3, 4];
 
@@ -11,7 +12,9 @@ export const buildIconPath = (workspacePath: string) => {
 };
 
 export const resolveModelLabel = (model: ModelOption | null) =>
-  model?.displayName?.trim() || model?.model?.trim() || "Default model";
+  model?.displayName?.trim() ||
+  model?.model?.trim() ||
+  translate("workspaceHome.models.defaultModel", { ns: "app" });
 
 export const buildLabelCounts = (instances: WorkspaceHomeRunInstance[]) => {
   const counts = new Map<string, number>();
@@ -31,12 +34,16 @@ export const buildModelSummary = (
   );
   const selectedModels = models.filter((model) => modelSelections[model.id]);
   if (selectedModels.length === 0) {
-    return "Select models";
+    return translate("workspaceHome.models.select", { ns: "app" });
   }
   if (selectedModels.length === 1) {
     const model = selectedModels[0];
     const count = modelSelections[model.id] ?? 1;
     return `${resolveModelLabel(model)} · ${count}x`;
   }
-  return `${selectedModels.length} models · ${totalInstances} runs`;
+  return translate("workspaceHome.models.multipleSummary", {
+    ns: "app",
+    modelCount: selectedModels.length,
+    runCount: totalInstances,
+  });
 };

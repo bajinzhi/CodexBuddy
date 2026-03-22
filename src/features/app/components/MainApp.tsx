@@ -1,4 +1,5 @@
 import { lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import successSoundUrl from "@/assets/success-notification.mp3";
 import errorSoundUrl from "@/assets/error-notification.mp3";
 import { MainAppShell } from "@app/components/MainAppShell";
@@ -92,6 +93,8 @@ const SettingsView = lazy(() =>
 );
 
 export default function MainApp() {
+  const { t } = useTranslation("common");
+  const defaultCodexArgsLabel = t("labels.default");
   const {
     appSettings,
     setAppSettings,
@@ -454,8 +457,9 @@ export default function MainApp() {
       buildCodexArgsOptions({
         appCodexArgs: appSettings.codexArgs ?? null,
         additionalCodexArgs: [selectedCodexArgsOverride],
+        defaultLabel: defaultCodexArgsLabel,
       }),
-    [appSettings.codexArgs, selectedCodexArgsOverride],
+    [appSettings.codexArgs, defaultCodexArgsLabel, selectedCodexArgsOverride],
   );
   const ensureWorkspaceRuntimeCodexArgs = useCallback(
     async (workspaceId: string, threadId: string | null) => {

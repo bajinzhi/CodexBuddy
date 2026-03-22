@@ -37,6 +37,15 @@
     "restarting": "Restarting…",
     "failed": "Update failed."
   },
+  "about": {
+    "iconAlt": "CodexBuddy icon",
+    "version": "Version {{version}}",
+    "versionFallback": "Version —",
+    "tagline": "Monitor the situation of your Codex agents",
+    "github": "GitHub",
+    "twitter": "Twitter",
+    "footer": "Made with ♥ by Codex & bajinzhi"
+  },
   "workspaces": {
     "enterAbsoluteDirectoryPath": "Enter at least one absolute directory path.",
     "added_one": "Added {{count}} workspace.",
@@ -64,11 +73,180 @@
     "deleteWorktreeFailed": "Delete worktree failed",
     "failedToAddWorkspace": "Failed to add workspace.\n\n{{message}}",
     "failedToAddWorkspaces": "Failed to add workspaces.\n\n{{message}}",
-    "failedToImportWorkspaceFromUrl": "Failed to import workspace from URL.\n\n{{message}}"
+    "failedToImportWorkspaceFromUrl": "Failed to import workspace from URL.\n\n{{message}}",
+    "fromUrlPrompt": {
+      "ariaLabel": "Add workspace from URL",
+      "title": "Add workspace from URL",
+      "remoteGitUrlLabel": "Remote Git URL",
+      "remoteGitUrlPlaceholder": "https://github.com/org/repo.git",
+      "targetFolderNameLabel": "Target folder name (optional)",
+      "targetFolderNamePlaceholder": "Defaults to repo name",
+      "destinationParentFolderLabel": "Destination parent folder",
+      "destinationNotSet": "Not set",
+      "cloneAndAdd": "Clone and Add",
+      "cloning": "Cloning…",
+      "errors": {
+        "remoteGitUrlRequired": "Remote Git URL is required.",
+        "destinationFolderRequired": "Destination folder is required."
+      }
+    },
+    "clonePrompt": {
+      "ariaLabel": "New clone agent",
+      "title": "New clone agent",
+      "subtitle": "Create a new working copy of \"{{workspaceName}}\".",
+      "copyNameLabel": "Copy name",
+      "copiesFolderLabel": "Copies folder",
+      "copiesFolderNotSet": "Not set",
+      "chooseCopiesFolder": "Browse",
+      "suggestedLabel": "Suggested",
+      "suggestedCopiesFolderAriaLabel": "Suggested copies folder",
+      "useSuggestedCopiesFolder": "Use suggested",
+      "errors": {
+        "copyNameRequired": "Copy name is required.",
+        "copiesFolderRequired": "Copies folder is required."
+      }
+    },
+    "worktreePrompt": {
+      "ariaLabel": "New worktree agent",
+      "title": "New worktree agent",
+      "subtitle": "Create a worktree under \"{{workspaceName}}\".",
+      "nameLabel": "Name",
+      "namePlaceholder": "(Optional)",
+      "branchNameLabel": "Branch name",
+      "noMatchingBranches": "No matching branches",
+      "noBranchesFound": "No branches found",
+      "copyAgentsMd": "Copy <code>AGENTS.md</code> into the worktree",
+      "environmentSetupScriptTitle": "Environment setup script",
+      "environmentSetupScriptHelp": "Stored on the project in Settings → Environments and runs once in a dedicated terminal after each new worktree is created.",
+      "setupScriptPlaceholder": "pnpm install"
+    },
+    "mobileRemotePrompt": {
+      "ariaLabel": "Add remote workspace paths",
+      "title": "Add project directories",
+      "subtitle": "Enter directories on the connected server.",
+      "pathsLabel": "Paths",
+      "pathsPlaceholder": "/home/vlad/dev/project-one\n/home/vlad/dev/project-two",
+      "hint": "One path per line. Comma and semicolon separators also work. You can use <code>~/...</code>.",
+      "recentlyAdded": "Recently added"
+    },
+    "renameWorktreePrompt": {
+      "branchNameRequired": "Branch name is required.",
+      "branchAlreadyExists": "Branch already exists. Renamed to \"{{branch}}\".",
+      "worktreeRenamed": "Worktree renamed.",
+      "upstreamBranchUpdated": "Upstream branch updated."
+    },
+    "errors": {
+      "workspaceNotFound": "Workspace not found."
+    }
+  },
+  "launchScript": {
+    "title": "Launch script",
+    "newTitle": "New launch script",
+    "new": "New",
+    "scriptPlaceholder": "e.g. npm run dev",
+    "labelPlaceholder": "Optional label",
+    "runAria": "Run launch script",
+    "setAria": "Set launch script"
+  },
+  "requestUserInput": {
+    "ariaLabel": "User input requested",
+    "requestCount_one": "Request 1 of {{count}}",
+    "requestCount_other": "Request 1 of {{count}}",
+    "typeAnswerOptional": "Type your answer (optional)",
+    "addNotesOptional": "Add notes (optional)",
+    "noQuestionsProvided": "No questions provided.",
+    "submit": "Submit"
+  },
+  "planReadyFollowup": {
+    "copy": "Start building from this plan, or describe changes to the plan.",
+    "placeholder": "Describe what you want to change in the plan...",
+    "sendChanges": "Send changes",
+    "implementThisPlan": "Implement this plan",
+    "acceptMessage": "Implement this plan.",
+    "changesMessagePrefix": "Update the plan with these changes:"
+  },
+  "planPanel": {
+    "waiting": "Waiting on a plan...",
+    "noActive": "No active plan."
+  },
+  "terminal": {
+    "resizePanel": "Resize terminal panel",
+    "tabs": "Terminal tabs",
+    "newTerminal": "New terminal",
+    "closeTab": "Close {{title}}"
+  },
+  "tabBar": {
+    "primaryAria": "Primary",
+    "home": "Home",
+    "projects": "Projects",
+    "codex": "Codex",
+    "git": "Git",
+    "log": "Log"
+  },
+  "layout": {
+    "backToChat": "Back to chat",
+    "noWorkspaceSelectedTitle": "No workspace selected",
+    "chooseProjectToChat": "Choose a project to start chatting.",
+    "selectProjectToDiff": "Select a project to inspect diffs.",
+    "goToProjects": "Go to Projects",
+    "files": "Files",
+    "diff": "Diff"
+  },
+  "git": {
+    "branchValidation": {
+      "dotOrDotDot": "Branch name cannot be '.' or '..'.",
+      "spaces": "Branch name cannot contain spaces.",
+      "leadingOrTrailingSlash": "Branch name cannot start or end with '/'.",
+      "doubleSlash": "Branch name cannot contain '//'.",
+      "lockSuffix": "Branch name cannot end with '.lock'.",
+      "doubleDot": "Branch name cannot contain '..'.",
+      "atBrace": "Branch name cannot contain '@{'.",
+      "invalidCharacters": "Branch name contains invalid characters.",
+      "trailingDot": "Branch name cannot end with '.'."
+    },
+    "initPrompt": {
+      "ariaLabel": "Initialize Git",
+      "title": "Initialize Git",
+      "subtitle": "Create a new repository under \"{{workspaceName}}\" and make an initial commit.",
+      "initialBranchLabel": "Initial branch",
+      "initialBranchPlaceholder": "main",
+      "createGitHubRepo": "Create GitHub repository and set up <code>origin</code>",
+      "githubRepoLabel": "GitHub repo",
+      "githubRepoPlaceholder": "owner/repo or repo",
+      "privateRepo": "Private repo",
+      "initializing": "Initializing...",
+      "initialize": "Initialize",
+      "confirmMessage_one": "Initialize Git in this folder?\n\nThis will create a .git directory, set the initial branch to \"{{branch}}\", and create an initial commit.\n\nThis folder contains {{count}} existing item.",
+      "confirmMessage_other": "Initialize Git in this folder?\n\nThis will create a .git directory, set the initial branch to \"{{branch}}\", and create an initial commit.\n\nThis folder contains {{count}} existing items.",
+      "errors": {
+        "branchNameRequired": "Branch name is required.",
+        "repoNameRequired": "Repository name is required.",
+        "repoNameNoSpaces": "Repository name cannot contain spaces.",
+        "failedToInitialize": "Failed to initialize Git repository."
+      }
+    },
+    "branchSwitcherPrompt": {
+      "ariaLabel": "Switch branch",
+      "currentLabel": "current",
+      "worktreeLabel": "worktree"
+    }
+  },
+  "renameThreadPrompt": {
+    "ariaLabel": "Rename thread",
+    "title": "Rename thread",
+    "currentName": "Current name: {{name}}",
+    "newName": "New name"
   },
   "threads": {
     "ignoredArgsTitle": "Some codex args are ignored",
     "ignoredArgsMessage": "Selected flags are ignored for per-thread overrides.",
+    "reviewTitles": {
+      "branch": "Review {{branch}}",
+      "commit": "Review Commit",
+      "commitWithSha": "Review {{sha}}",
+      "commitWithTitle": "Review {{sha}}: {{title}}",
+      "workingTree": "Review Working Tree"
+    },
     "items": {
       "planTitle": "Plan",
       "commandTitle": "Command",
@@ -232,16 +410,326 @@
     "toggleTerminal": "Toggle terminal panel",
     "copyThread": "Copy thread"
   },
+  "workspaceHome": {
+    "git": {
+      "setup": "Git setup",
+      "notInitialized": "Git is not initialized for this project.",
+      "initialize": "Initialize Git"
+    },
+    "runMode": {
+      "select": "Select run mode",
+      "toggle": "Toggle run mode menu",
+      "local": "Local",
+      "worktree": "Worktree"
+    },
+    "models": {
+      "select": "Select models",
+      "toggle": "Toggle models menu",
+      "connectToLoad": "Connect this workspace to load available models.",
+      "defaultModel": "Default model",
+      "multipleSummary": "{{modelCount}} models · {{runCount}} runs"
+    },
+    "reasoning": {
+      "label": "Thinking mode"
+    },
+    "collaborationMode": {
+      "label": "Collaboration mode"
+    },
+    "agentMd": {
+      "warning": "Showing the first part of a large file.",
+      "title": "AGENTS.md",
+      "placeholder": "Add workspace instructions for the agent…",
+      "truncated": "Truncated",
+      "readErrorTitle": "Couldn’t load AGENTS.md",
+      "writeErrorTitle": "Couldn’t save AGENTS.md"
+    },
+    "history": {
+      "recentRunsTitle": "Recent runs",
+      "runsEmpty": "Start a run to see its instances tracked here.",
+      "instanceCount_one": "{{count}} instance",
+      "instanceCount_other": "{{count}} instances",
+      "statusRunning": "Running",
+      "statusReviewing": "Reviewing",
+      "statusIdle": "Idle",
+      "failedSuffix": "Failed",
+      "partialSuffix": "Partial",
+      "noInstancesStarted": "No instances were started.",
+      "instancesPreparing": "Instances are preparing...",
+      "recentThreadsTitle": "Recent threads",
+      "threadsEmpty": "Threads from the sidebar will appear here.",
+      "agentsActivity": "Agents activity",
+      "threadCount_one": "{{count}} thread",
+      "threadCount_other": "{{count}} threads",
+      "moreErrors_one": "+{{count}} more",
+      "moreErrors_other": "+{{count}} more",
+      "untitledThread": "Untitled thread"
+    },
+    "errors": {
+      "selectAtLeastOneModel": "Select at least one model to run in a worktree.",
+      "failedToStartLocalThread": "Failed to start a local thread.",
+      "failedToCreateWorktree": "Failed to create worktree.",
+      "failedToStartWorktreeThread": "Failed to start a worktree thread."
+    },
+    "runs": {
+      "newRun": "New run"
+    }
+  },
   "composer": {
     "quickCommandsTitle": "Quick commands",
     "quickCommandsEmpty": "No quick commands yet. Add them in Composer settings.",
     "manageQuickCommands": "Manage quick commands",
+    "autocomplete": {
+      "groups": {
+        "files": "Files",
+        "skills": "Skills",
+        "apps": "Apps",
+        "prompts": "Prompts",
+        "slash": "Slash"
+      },
+      "slash": {
+        "apps": "list available apps",
+        "compact": "compact the active thread context",
+        "fast": "toggle Fast mode for upcoming turns",
+        "fork": "branch into a new thread",
+        "mcp": "list configured MCP tools",
+        "new": "start a new chat",
+        "resume": "refresh the active thread",
+        "review": "start a code review",
+        "status": "show session status"
+      }
+    },
+    "followUpBehaviorTitle": "Follow-up behavior",
+    "followUpBehaviorQueue": "Queue",
+    "followUpBehaviorSteer": "Steer",
+    "followUpBehaviorDefaultQueue": "Default: Queue",
+    "followUpBehaviorSteerUnavailable": "(Steer unavailable).",
+    "followUpBehaviorEnterAndShortcutQueue": "Both Enter and {{shortcut}} will queue this message.",
+    "followUpBehaviorDefaultMode": "Default: {{mode}}.",
+    "followUpBehaviorPressToAction": "Press {{shortcut}} to {{action}} this message.",
+    "reviewTools": "Review tools",
+    "meta": {
+      "planModeAria": "Plan mode",
+      "collaborationModeAria": "Collaboration mode",
+      "modelAria": "Model",
+      "fastModeEnabled": "Fast mode enabled",
+      "thinkingModeAria": "Thinking mode",
+      "argsProfileAria": "Codex args profile",
+      "agentAccessAria": "Agent access",
+      "accessReadOnly": "Read only",
+      "accessOnRequest": "On-Request",
+      "accessFull": "Full access"
+    },
+    "input": {
+      "addImage": "Add image",
+      "moreActions": "More actions",
+      "expandInput": "Expand input",
+      "collapseInput": "Collapse input",
+      "openDictationSettings": "Open dictation settings",
+      "dictationDisabledOpenSettings": "Dictation disabled. Open settings",
+      "cancelTranscription": "Cancel transcription",
+      "stopDictation": "Stop dictation",
+      "startDictation": "Start dictation",
+      "reviewInProgressPlaceholder": "Review in progress. Chat will re-enable when it completes.",
+      "askCodexPlaceholder": "Ask Codex to do something..."
+    },
+    "queue": {
+      "title": "Queued",
+      "imageCount_one": "{{count}} image",
+      "imageCount_other": "{{count}} images",
+      "itemMenuAria": "Queue item menu"
+    },
     "context": {
       "title": "Context",
       "unavailable": "Context unavailable",
       "remaining": "{{percent}}% free",
       "tooltip": "{{percent}}% free · {{used}} / {{total}} tokens"
+    },
+    "reviewInlinePrompt": {
+      "presetTitleBaseBranch": "Review against a base branch",
+      "presetSubtitleBaseBranch": "(PR Style)",
+      "presetTitleUncommitted": "Review uncommitted changes",
+      "presetTitleCommit": "Review a commit",
+      "presetTitleCustom": "Custom review instructions",
+      "titleBaseBranch": "Select a base branch",
+      "titleCommit": "Select a commit to review",
+      "titleCustom": "Custom review instructions",
+      "titlePreset": "Select a review preset",
+      "back": "Back",
+      "startReview": "Start review",
+      "pickRecentLocalBranch": "Pick a recent local branch:",
+      "selectRecentCommit": "Select a recent commit:",
+      "loadingBranches": "Loading branches…",
+      "loadingCommits": "Loading commits…",
+      "noBranchesFound": "No branches found.",
+      "noCommitsFound": "No commits found.",
+      "instructionsLabel": "Instructions",
+      "instructionsPlaceholder": "Focus on correctness, edge cases, and missing tests.",
+      "close": "Close"
     }
+  },
+  "dictation": {
+    "processing": "Processing..."
+  },
+  "files": {
+    "selectionRange": "Lines {{start}}-{{end}}",
+    "imagePreview": "Image preview",
+    "noSelection": "No selection",
+    "truncated": "Truncated",
+    "closePreview": "Close preview",
+    "loadingFile": "Loading file...",
+    "imagePreviewUnavailable": "Image preview unavailable.",
+    "selectionHints": "Selection hints",
+    "clearSelection": "Clear",
+    "addToChat": "Add to chat",
+    "mentionInChat": "Mention in chat",
+    "mentionFileInChat": "Mention {{name}} in chat",
+    "filterPlaceholder": "Filter files and folders",
+    "filterAria": "Filter files and folders",
+    "loadingFiles": "Loading files",
+    "noModified": "No modified",
+    "noFiles": "No files",
+    "matchCount_one": "{{count}} match",
+    "matchCount_other": "{{count}} matches",
+    "modifiedCount_one": "{{count}} modified",
+    "modifiedCount_other": "{{count}} modified",
+    "fileCount_one": "{{count}} file",
+    "fileCount_other": "{{count}} files",
+    "noModifiedFilesMatchFilter": "No modified files match your filter.",
+    "noMatchesFound": "No matches found.",
+    "noModifiedFiles": "No modified files.",
+    "noFilesAvailable": "No files available.",
+    "expandAllFolders": "Expand all folders",
+    "collapseAllFolders": "Collapse all folders",
+    "showAllFiles": "Show all files",
+    "showModifiedFilesOnly": "Show modified files only",
+    "revealInFinder": "Reveal in Finder",
+    "showInExplorer": "Show in Explorer",
+    "revealInFileManager": "Reveal in File Manager",
+    "openInFinder": "Open in Finder",
+    "openInExplorer": "Open in Explorer",
+    "openInFileManager": "Open in File Manager"
+  },
+  "prompts": {
+    "count_one": "{{count}} prompt",
+    "count_other": "{{count}} prompts",
+    "noPrompts": "No prompts",
+    "filterPlaceholder": "Filter prompts",
+    "filterAria": "Filter prompts",
+    "workspaceSectionTitle": "Workspace prompts",
+    "generalSectionTitle": "General prompts",
+    "addWorkspace": "Add workspace prompt",
+    "addGeneral": "Add general prompt",
+    "workspaceEmptyTitle": "No workspace prompts yet",
+    "workspaceEmptyPrefix": "Create one here or drop a .md file into the",
+    "generalEmptyTitle": "No general prompts yet",
+    "generalEmptyPrefix": "Create one here or drop a .md file into",
+    "workspaceFolderLink": "workspace prompts folder",
+    "workspaceEmptySuffix": ".",
+    "generalEmptySuffix": ".",
+    "nameLabel": "Name",
+    "namePlaceholder": "Prompt name",
+    "scopeLabel": "Scope",
+    "workspaceScope": "Workspace",
+    "generalScope": "General",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "Optional description",
+    "argumentHintLabel": "Argument hint",
+    "argumentHintPlaceholder": "Optional argument hint",
+    "contentLabel": "Content",
+    "contentPlaceholder": "Prompt content",
+    "argumentsPlaceholder": "Arguments",
+    "argumentsAria": "Arguments for {{name}}",
+    "sendCurrentAgent": "Send to current agent",
+    "sendNewAgent": "Send to a new agent",
+    "newAgentButton": "New agent",
+    "actionsAria": "Prompt actions",
+    "deletePromptConfirm": "Delete this prompt?",
+    "moveToWorkspace": "Move to workspace",
+    "moveToGeneral": "Move to general",
+    "nameRequired": "Name is required.",
+    "nameNoWhitespace": "Name cannot include whitespace."
+  },
+  "gitDiff": {
+    "enterCommitMessage": "Enter a commit message",
+    "noChangesToCommit": "No changes to commit",
+    "commitStagedChanges": "Commit staged changes",
+    "commitAllUnstagedChanges": "Commit all unstaged changes",
+    "committing": "Committing...",
+    "commit": "Commit",
+    "dismissError": "Dismiss error",
+    "fileActions": "File actions",
+    "stageChanges": "Stage Changes",
+    "unstageChanges": "Unstage Changes",
+    "discardChanges": "Discard Changes",
+    "applyWorktreeChanges": "Apply worktree changes",
+    "stageAllChanges": "Stage All Changes",
+    "unstageAllChanges": "Unstage All Changes",
+    "discardAllChanges": "Discard All Changes",
+    "loadingDiff": "Loading diff...",
+    "noNonWhitespaceChanges": "No non-whitespace changes.",
+    "diffUnavailable": "Diff unavailable.",
+    "discardChangesInThisFile": "Discard changes in this file",
+    "prSelectionActions": "PR selection actions",
+    "applyChangesToParentWorkspace": "Apply changes to parent workspace",
+    "applyChangesToWorkspace": "Apply changes to {{workspace}}",
+    "lastReviewThread": "Last review thread: {{id}}",
+    "reviewActions": {
+      "askPullRequest": "Ask PR",
+      "forPullRequest": "{{action}} for PR #{{number}}",
+      "reviewCommit": "Review Commit",
+      "reviewCommitTitle": "Review commit {{sha}}",
+      "reviewFailed": "PR review failed",
+      "reviewPr": "Review PR",
+      "riskScan": "Risk Scan",
+      "summarize": "Summarize",
+      "testPlan": "Test Plan"
+    },
+    "askForChangesOnHoveredLine": "Ask for changes on hovered line",
+    "askForChangesOnThisLine": "Ask for changes on this line",
+    "pullRequestSummary": "Pull request summary",
+    "jumpToFirstFile": "Jump to first file",
+    "checkoutBranch": "Checkout Branch",
+    "checkoutBranchAria": "Checkout PR #{{number}} branch",
+    "checkingOut": "Checking out...",
+    "draft": "Draft",
+    "noDescriptionProvided": "No description provided.",
+    "activity": "Activity",
+    "commentCount_one": "{{count}} comment",
+    "commentCount_other": "{{count}} comments",
+    "showAll": "Show all",
+    "collapse": "Collapse",
+    "loadingComments": "Loading comments…",
+    "noCommentsYet": "No comments yet.",
+    "earlierComment_one": "{{count}} earlier comment",
+    "earlierComment_other": "{{count}} earlier comments",
+    "noCommentBody": "No comment body.",
+    "noMessage": "No message",
+    "imagePreviewUnavailable": "Image preview unavailable.",
+    "previousVersion": "Previous version",
+    "currentVersion": "Current version",
+    "newImage": "New image",
+    "deletedImage": "Deleted image"
+  },
+  "mobileSetup": {
+    "ariaLabel": "Mobile server setup",
+    "closeAria": "Close mobile setup",
+    "kicker": "Mobile setup required",
+    "primaryRemoteName": "Primary remote",
+    "title": "Connect to your desktop backend",
+    "subtitle": "Complete this setup before using the app. Use the same connection details configured on your desktop CodexBuddy server settings.",
+    "hostLabel": "Tailscale host",
+    "hostPlaceholder": "macbook.your-tailnet.ts.net:4732",
+    "tokenLabel": "Remote backend token",
+    "tokenPlaceholder": "Token",
+    "defaultMessage": "Enter your desktop Tailscale host and token, then run Connect & test.",
+    "connected_one": "Connected. {{count}} workspace available from your desktop backend.",
+    "connected_other": "Connected. {{count}} workspaces available from your desktop backend.",
+    "unableToReachRemoteBackend": "Unable to reach remote backend.",
+    "unableToSaveRemoteBackendSettings": "Unable to save remote backend settings.",
+    "checking": "Checking...",
+    "connecting": "Connecting...",
+    "connectAndTest": "Connect & test",
+    "hint": "Use the Tailscale host from desktop Server settings and keep the desktop daemon running."
   },
   "commonLinks": {
     "title": "Common links",
@@ -296,6 +784,12 @@
     "newMessageFetchedIn_other": "New message will be fetched in {{count}} seconds",
     "noAnswerProvided": "No answer provided",
     "noAnswerProvidedSentence": "No answer provided.",
+    "imageAlt": "Image {{index}}",
+    "fileLink": {
+      "copyLink": "Copy Link",
+      "downloadLinkedFile": "Download Linked File",
+      "openFailed": "Couldn’t open file"
+    },
     "openImage": "Open image {{index}}",
     "planExportFailed": "Plan export failed",
     "questionFallback": "Question {{index}}",

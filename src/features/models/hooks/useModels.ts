@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type { DebugEntry, ModelOption, WorkspaceInfo } from "../../../types";
 import { getConfigModel, getModelList } from "../../../services/tauri";
+import { prependSyntheticConfigModelOption } from "../utils/configModelOptions";
 import {
   normalizeEffortValue,
   parseModelListResponse,
@@ -13,8 +15,6 @@ type UseModelsOptions = {
   preferredEffort?: string | null;
   selectionKey?: string | null;
 };
-
-const CONFIG_MODEL_DESCRIPTION = "Configured in CODEX_HOME/config.toml";
 
 const findModelByIdOrModel = (
   models: ModelOption[],
@@ -43,7 +43,8 @@ export function useModels({
   preferredEffort = null,
   selectionKey = null,
 }: UseModelsOptions) {
-  const [models, setModels] = useState<ModelOption[]>([]);
+  const { t, i18n } = useTranslation("settings");
+  const [rawModels, setRawModels] = useState<ModelOption[]>([]);
   const [configModel, setConfigModel] = useState<string | null>(null);
   const [selectedModelId, setSelectedModelIdState] = useState<string | null>(null);
   const [selectedEffort, setSelectedEffortState] = useState<string | null>(null);
@@ -96,6 +97,17 @@ export function useModels({
     hasUserSelectedEffort.current = true;
     setSelectedEffortState(next);
   }, []);
+
+  const models = useMemo(
+    () =>
+      prependSyntheticConfigModelOption(rawModels, configModel, {
+        displayName: configModel
+          ? t("codex.configModelDisplayName", { configModel })
+          : undefined,
+        description: t("codex.configModelDescription"),
+      }),
+    [configModel, i18n.resolvedLanguage, rawModels, t],
+  );
 
   const selectedModel = useMemo(
     () => models.find((model) => model.id === selectedModelId) ?? null,
@@ -203,35 +215,21 @@ export function useModels({
       });
       setConfigModel(configModelFromConfig);
       const dataFromServer: ModelOption[] = parseModelListResponse(response);
-      const data = (() => {
-        if (!configModelFromConfig) {
-          return dataFromServer;
-        }
-        const hasConfigModel = dataFromServer.some(
-          (model) => model.model === configModelFromConfig,
-        );
-        if (hasConfigModel) {
-          return dataFromServer;
-        }
-        const configOption: ModelOption = {
-          id: configModelFromConfig,
-          model: configModelFromConfig,
-          displayName: `${configModelFromConfig} (config)`,
-          description: CONFIG_MODEL_DESCRIPTION,
-          supportedReasoningEfforts: [],
-          defaultReasoningEffort: null,
-          isDefault: false,
-        };
-        return [configOption, ...dataFromServer];
-      })();
-      setModels(data);
+      const selectionModels = prependSyntheticConfigModelOption(
+        dataFromServer,
+        configModelFromConfig,
+      );
+      setRawModels(dataFromServer);
       lastFetchedWorkspaceId.current = workspaceId;
-      const defaultModel = pickDefaultModel(data, configModelFromConfig);
-      const existingSelection = findModelByIdOrModel(data, selectedModelId);
+      const defaultModel = pickDefaultModel(selectionModels, configModelFromConfig);
+      const existingSelection = findModelByIdOrModel(selectionModels, selectedModelId);
       if (selectedModelId && !existingSelection) {
         hasUserSelectedModel.current = false;
       }
-      const preferredSelection = findModelByIdOrModel(data, preferredModelId);
+      const preferredSelection = findModelByIdOrModel(
+        selectionModels,
+        preferredModelId,
+      );
       const shouldKeepExisting =
         hasUserSelectedModel.current && existingSelection !== null;
       const nextSelection =

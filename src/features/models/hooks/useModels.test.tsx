@@ -2,6 +2,7 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { WorkspaceInfo } from "../../../types";
+import i18n from "@/i18n";
 import { getConfigModel, getModelList } from "../../../services/tauri";
 import { useModels } from "./useModels";
 
@@ -121,5 +122,46 @@ describe("useModels", () => {
       expect(result.current.selectedModelId).toBe("custom-model");
       expect(result.current.selectedEffort).toBe("high");
     });
+  });
+
+  it("re-localizes the synthetic config model without refetching", async () => {
+    vi.mocked(getModelList).mockResolvedValueOnce({
+      result: {
+        data: [
+          {
+            id: "remote-1",
+            model: "gpt-5.1",
+            displayName: "GPT-5.1",
+            supportedReasoningEfforts: [],
+            defaultReasoningEffort: null,
+            isDefault: true,
+          },
+        ],
+      },
+    });
+    vi.mocked(getConfigModel).mockResolvedValueOnce("custom-model");
+
+    const { result } = renderHook(() =>
+      useModels({ activeWorkspace: workspace }),
+    );
+
+    await waitFor(() => {
+      expect(
+        result.current.models.find((model) => model.model === "custom-model")?.displayName,
+      ).toContain("(config)");
+    });
+
+    await act(async () => {
+      await i18n.changeLanguage("zh-CN");
+    });
+
+    await waitFor(() => {
+      expect(
+        result.current.models.find((model) => model.model === "custom-model")?.displayName,
+      ).toContain("（配置）");
+    });
+
+    expect(getModelList).toHaveBeenCalledTimes(1);
+    expect(getConfigModel).toHaveBeenCalledTimes(1);
   });
 });

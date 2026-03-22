@@ -23,6 +23,7 @@ import {
   listMcpServerStatus as listMcpServerStatusService,
 } from "@services/tauri";
 import { expandCustomPromptText } from "@utils/customPrompts";
+import { translate } from "@/i18n/translate";
 import {
   asString,
   extractReviewThreadId,
@@ -104,18 +105,34 @@ function buildReviewThreadTitle(target: ReviewTarget): string | null {
     const shortSha = target.sha.trim().slice(0, 7);
     const title = target.title?.trim() ?? "";
     if (shortSha && title) {
-      return clampThreadName(`Review ${shortSha}: ${title}`);
+      return clampThreadName(
+        translate("threads.reviewTitles.commitWithTitle", {
+          ns: "app",
+          sha: shortSha,
+          title,
+        }),
+      );
     }
     if (shortSha) {
-      return clampThreadName(`Review ${shortSha}`);
+      return clampThreadName(
+        translate("threads.reviewTitles.commitWithSha", {
+          ns: "app",
+          sha: shortSha,
+        }),
+      );
     }
-    return clampThreadName("Review Commit");
+    return clampThreadName(translate("threads.reviewTitles.commit", { ns: "app" }));
   }
   if (target.type === "baseBranch") {
-    return clampThreadName(`Review ${target.branch}`);
+    return clampThreadName(
+      translate("threads.reviewTitles.branch", {
+        ns: "app",
+        branch: target.branch,
+      }),
+    );
   }
   if (target.type === "uncommittedChanges") {
-    return "Review Working Tree";
+    return translate("threads.reviewTitles.workingTree", { ns: "app" });
   }
   return null;
 }

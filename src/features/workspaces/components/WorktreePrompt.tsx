@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { FocusEvent } from "react";
+import { Trans, useTranslation } from "react-i18next";
 import type { BranchInfo } from "../../../types";
 import { ModalShell } from "../../design-system/components/modal/ModalShell";
 import { BranchList } from "../../git/components/BranchList";
@@ -44,6 +45,7 @@ export function WorktreePrompt({
   isBusy = false,
   isSavingScript = false,
 }: WorktreePromptProps) {
+  const { t } = useTranslation(["app", "common"]);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const branchContainerRef = useRef<HTMLDivElement | null>(null);
   const branchListRef = useRef<HTMLDivElement | null>(null);
@@ -105,26 +107,28 @@ export function WorktreePrompt({
   return (
     <ModalShell
       className="worktree-modal"
-      ariaLabel="New worktree agent"
+      ariaLabel={t("workspaces.worktreePrompt.ariaLabel", { ns: "app" })}
       onBackdropClick={() => {
         if (!isBusy) {
           onCancel();
         }
       }}
     >
-      <div className="ds-modal-title worktree-modal-title">New worktree agent</div>
+      <div className="ds-modal-title worktree-modal-title">
+        {t("workspaces.worktreePrompt.title", { ns: "app" })}
+      </div>
       <div className="ds-modal-subtitle worktree-modal-subtitle">
-        Create a worktree under "{workspaceName}".
+        {t("workspaces.worktreePrompt.subtitle", { ns: "app", workspaceName })}
       </div>
       <label className="ds-modal-label worktree-modal-label" htmlFor="worktree-name">
-        Name
+        {t("workspaces.worktreePrompt.nameLabel", { ns: "app" })}
       </label>
       <input
         id="worktree-name"
         ref={inputRef}
         className="ds-modal-input worktree-modal-input"
         value={name}
-        placeholder="(Optional)"
+        placeholder={t("workspaces.worktreePrompt.namePlaceholder", { ns: "app" })}
         onChange={(event) => onNameChange(event.target.value)}
         onKeyDown={(event) => {
           if (event.key === "Escape") {
@@ -140,7 +144,7 @@ export function WorktreePrompt({
         }}
       />
       <label className="ds-modal-label worktree-modal-label" htmlFor="worktree-branch">
-        Branch name
+        {t("workspaces.worktreePrompt.branchNameLabel", { ns: "app" })}
       </label>
       <div
         className="worktree-modal-branch"
@@ -217,7 +221,9 @@ export function WorktreePrompt({
             selectedItemClassName="selected"
             emptyClassName="worktree-modal-branch-empty"
             emptyText={
-              branch.trim().length > 0 ? "No matching branches" : "No branches found"
+              branch.trim().length > 0
+                ? t("workspaces.worktreePrompt.noMatchingBranches", { ns: "app" })
+                : t("workspaces.worktreePrompt.noBranchesFound", { ns: "app" })
             }
             onMouseEnter={(index) => {
               setDidNavigateBranches(true);
@@ -237,21 +243,27 @@ export function WorktreePrompt({
           onChange={(event) => onCopyAgentsMdChange(event.target.checked)}
         />
         <label className="worktree-modal-checkbox-label" htmlFor="worktree-copy-agents">
-          Copy <code>AGENTS.md</code> into the worktree
+          <Trans
+            t={t}
+            ns="app"
+            i18nKey="workspaces.worktreePrompt.copyAgentsMd"
+            components={{ code: <code /> }}
+          />
         </label>
       </div>
       <div className="ds-modal-divider worktree-modal-divider" />
-      <div className="worktree-modal-section-title">Environment setup script</div>
+      <div className="worktree-modal-section-title">
+        {t("workspaces.worktreePrompt.environmentSetupScriptTitle", { ns: "app" })}
+      </div>
       <div className="worktree-modal-hint">
-        Stored on the project (Settings → Environments) and runs once in a dedicated
-        terminal after each new worktree is created.
+        {t("workspaces.worktreePrompt.environmentSetupScriptHelp", { ns: "app" })}
       </div>
       <textarea
         id="worktree-setup-script"
         className="ds-modal-textarea worktree-modal-textarea"
         value={setupScript}
         onChange={(event) => onSetupScriptChange(event.target.value)}
-        placeholder="pnpm install"
+        placeholder={t("workspaces.worktreePrompt.setupScriptPlaceholder", { ns: "app" })}
         rows={4}
         disabled={isBusy || isSavingScript}
       />
@@ -264,7 +276,7 @@ export function WorktreePrompt({
           type="button"
           disabled={isBusy}
         >
-          Cancel
+          {t("actions.cancel", { ns: "common" })}
         </button>
         <button
           className="primary ds-modal-button worktree-modal-button"
@@ -272,7 +284,7 @@ export function WorktreePrompt({
           type="button"
           disabled={isBusy || branch.trim().length === 0}
         >
-          Create
+          {t("actions.create", { ns: "common" })}
         </button>
       </div>
     </ModalShell>

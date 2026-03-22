@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { WorkspaceInfo } from "../../../types";
+import { translate } from "@/i18n/translate";
 
 type RenamePromptState = {
   workspaceId: string;
@@ -137,7 +138,9 @@ export function useRenameWorktreePrompt({
         prev
           ? {
               ...prev,
-              error: "Branch name is required.",
+              error: translate("workspaces.renameWorktreePrompt.branchNameRequired", {
+                ns: "app",
+              }),
               isSubmitting: false,
             }
           : prev,
@@ -162,9 +165,16 @@ export function useRenameWorktreePrompt({
         });
       }
       if (actualName !== trimmed) {
-        setNoticeMessage(`Branch already exists. Renamed to "${actualName}".`);
+        setNoticeMessage(
+          translate("workspaces.renameWorktreePrompt.branchAlreadyExists", {
+            ns: "app",
+            branch: actualName,
+          }),
+        );
       } else {
-        setNoticeMessage("Worktree renamed.");
+        setNoticeMessage(translate("workspaces.renameWorktreePrompt.worktreeRenamed", {
+          ns: "app",
+        }));
       }
       setRenamePrompt(null);
     } catch (error) {
@@ -194,7 +204,11 @@ export function useRenameWorktreePrompt({
         upstreamPrompt.newBranch,
       );
       setUpstreamPrompt(null);
-      setNoticeMessage("Upstream branch updated.");
+      setNoticeMessage(
+        translate("workspaces.renameWorktreePrompt.upstreamBranchUpdated", {
+          ns: "app",
+        }),
+      );
     } catch (error) {
       setUpstreamPrompt((prev) =>
         prev

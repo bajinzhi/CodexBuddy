@@ -5,6 +5,7 @@ import { LogicalPosition } from "@tauri-apps/api/dpi";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
 import * as Sentry from "@sentry/react";
+import { useTranslation } from "react-i18next";
 import { openWorkspaceIn } from "../../../services/tauri";
 import { pushErrorToast } from "../../../services/toasts";
 import type { OpenAppTarget } from "../../../types";
@@ -146,6 +147,7 @@ export function useFileLinkOpener(
   openTargets: OpenAppTarget[],
   selectedOpenAppId: string,
 ) {
+  const { t } = useTranslation("app");
   const reportOpenError = useCallback(
     (error: unknown, context: Record<string, string | null>) => {
       const message = error instanceof Error ? error.message : String(error);
@@ -159,12 +161,12 @@ export function useFileLinkOpener(
         },
       );
       pushErrorToast({
-        title: "Couldn’t open file",
+        title: t("messages.fileLink.openFailed"),
         message,
       });
       console.warn("Failed to open file link", { message, ...context });
     },
-    [],
+    [t],
   );
 
   const openFileLink = useCallback(
@@ -246,11 +248,11 @@ export function useFileLinkOpener(
           ? revealInFileManagerLabel()
           : target.kind === "command"
             ? command
-              ? `Open in ${target.label}`
-              : "Set command in Settings"
+              ? t("openApp.openInTarget", { target: target.label })
+              : t("openApp.setCommandInSettings")
             : appName
-              ? `Open in ${appName}`
-              : "Set app name in Settings";
+              ? t("openApp.openInTarget", { target: appName })
+              : t("openApp.setAppNameInSettings");
       const items = [
         await MenuItem.new({
           text: openLabel,
@@ -282,11 +284,11 @@ export function useFileLinkOpener(
               }),
             ]),
         await MenuItem.new({
-          text: "Download Linked File",
+          text: t("messages.fileLink.downloadLinkedFile"),
           enabled: false,
         }),
         await MenuItem.new({
-          text: "Copy Link",
+          text: t("messages.fileLink.copyLink"),
           action: async () => {
             const link = toFileUrl(resolvedPath, fileLocation.line, fileLocation.column);
             try {
@@ -305,7 +307,7 @@ export function useFileLinkOpener(
       const position = new LogicalPosition(event.clientX, event.clientY);
       await menu.popup(position, window);
     },
-    [openFileLink, openTargets, reportOpenError, selectedOpenAppId, workspacePath],
+    [openFileLink, openTargets, reportOpenError, selectedOpenAppId, t, workspacePath],
   );
 
   return { openFileLink, showFileLinkMenu };

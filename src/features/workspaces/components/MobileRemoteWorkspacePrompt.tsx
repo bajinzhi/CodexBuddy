@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { Trans, useTranslation } from "react-i18next";
 import { ModalShell } from "../../design-system/components/modal/ModalShell";
 
 type MobileRemoteWorkspacePromptProps = {
@@ -20,6 +21,7 @@ export function MobileRemoteWorkspacePrompt({
   onCancel,
   onConfirm,
 }: MobileRemoteWorkspacePromptProps) {
+  const { t } = useTranslation(["app", "common"]);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const focusTextareaAtEnd = () => {
     const textarea = textareaRef.current;
@@ -37,18 +39,20 @@ export function MobileRemoteWorkspacePrompt({
 
   return (
     <ModalShell
-      ariaLabel="Add remote workspace paths"
+      ariaLabel={t("workspaces.mobileRemotePrompt.ariaLabel", { ns: "app" })}
       className="mobile-remote-workspace-modal"
       cardClassName="mobile-remote-workspace-modal-card"
       onBackdropClick={onCancel}
     >
       <div className="mobile-remote-workspace-modal-content">
-        <div className="ds-modal-title">Add project directories</div>
+        <div className="ds-modal-title">
+          {t("workspaces.mobileRemotePrompt.title", { ns: "app" })}
+        </div>
         <div className="ds-modal-subtitle">
-          Enter directories on the connected server.
+          {t("workspaces.mobileRemotePrompt.subtitle", { ns: "app" })}
         </div>
         <label className="ds-modal-label" htmlFor="mobile-remote-workspace-paths">
-          Paths
+          {t("workspaces.mobileRemotePrompt.pathsLabel", { ns: "app" })}
         </label>
         <textarea
           id="mobile-remote-workspace-paths"
@@ -56,16 +60,25 @@ export function MobileRemoteWorkspacePrompt({
           className="ds-modal-textarea"
           value={value}
           onChange={(event) => onChange(event.target.value)}
-          placeholder={"/home/vlad/dev/project-one\n/home/vlad/dev/project-two"}
+          placeholder={t("workspaces.mobileRemotePrompt.pathsPlaceholder", {
+            ns: "app",
+          })}
           rows={4}
           wrap="off"
         />
         <div className="mobile-remote-workspace-modal-hint">
-          One path per line. Comma and semicolon separators also work. You can use `~/...`.
+          <Trans
+            t={t}
+            ns="app"
+            i18nKey="workspaces.mobileRemotePrompt.hint"
+            components={{ code: <code /> }}
+          />
         </div>
         {recentPaths.length > 0 && (
           <div className="mobile-remote-workspace-modal-recent">
-            <div className="mobile-remote-workspace-modal-recent-title">Recently added</div>
+            <div className="mobile-remote-workspace-modal-recent-title">
+              {t("workspaces.mobileRemotePrompt.recentlyAdded", { ns: "app" })}
+            </div>
             <div className="mobile-remote-workspace-modal-recent-list">
               {recentPaths.map((path) => (
                 <button
@@ -88,10 +101,10 @@ export function MobileRemoteWorkspacePrompt({
         {error && <div className="ds-modal-error">{error}</div>}
         <div className="ds-modal-actions">
           <button className="ghost ds-modal-button" onClick={onCancel} type="button">
-            Cancel
+            {t("actions.cancel", { ns: "common" })}
           </button>
           <button className="primary ds-modal-button" onClick={onConfirm} type="button">
-            Add
+            {t("actions.add", { ns: "common" })}
           </button>
         </div>
       </div>

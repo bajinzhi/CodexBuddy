@@ -1,3 +1,4 @@
+import { translate } from "@/i18n/translate";
 import { DebugPanel } from "../../../debug/components/DebugPanel";
 import { PlanPanel } from "../../../plan/components/PlanPanel";
 import { TerminalDock } from "../../../terminal/components/TerminalDock";
@@ -50,20 +51,20 @@ export function buildSecondaryNodes(options: SecondaryLayoutNodesOptions): Secon
 
   const compactEmptyCodexNode = (
     <div className="compact-empty">
-      <h3>No workspace selected</h3>
-      <p>Choose a project to start chatting.</p>
+      <h3>{translate("layout.noWorkspaceSelectedTitle", { ns: "app" })}</h3>
+      <p>{translate("layout.chooseProjectToChat", { ns: "app" })}</p>
       <button className="ghost" onClick={options.compactNavProps.onGoProjects}>
-        Go to Projects
+        {translate("layout.goToProjects", { ns: "app" })}
       </button>
     </div>
   );
 
   const compactEmptyGitNode = (
     <div className="compact-empty">
-      <h3>No workspace selected</h3>
-      <p>Select a project to inspect diffs.</p>
+      <h3>{translate("layout.noWorkspaceSelectedTitle", { ns: "app" })}</h3>
+      <p>{translate("layout.selectProjectToDiff", { ns: "app" })}</p>
       <button className="ghost" onClick={options.compactNavProps.onGoProjects}>
-        Go to Projects
+        {translate("layout.goToProjects", { ns: "app" })}
       </button>
     </div>
   );
@@ -78,7 +79,7 @@ export function buildSecondaryNodes(options: SecondaryLayoutNodesOptions): Secon
         className={`compact-git-switch-button${compactGitDiffActive ? "" : " active"}`}
         onClick={options.compactNavProps.onBackFromDiff}
       >
-        Files
+        {translate("layout.files", { ns: "app" })}
       </button>
       <button
         type="button"
@@ -86,7 +87,7 @@ export function buildSecondaryNodes(options: SecondaryLayoutNodesOptions): Secon
         onClick={options.compactNavProps.onShowSelectedDiff}
         disabled={!options.compactNavProps.hasActiveGitDiffs}
       >
-        Diff
+        {translate("layout.diff", { ns: "app" })}
       </button>
     </div>
   );

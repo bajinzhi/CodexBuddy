@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import type {
   GitHubPullRequest,
   GitHubPullRequestComment,
@@ -11,13 +12,6 @@ import type {
 } from "@/types";
 import { pushErrorToast } from "@services/toasts";
 import { buildPullRequestReviewPrompt } from "@utils/pullRequestReviewPrompt";
-
-const REVIEW_ACTIONS: PullRequestReviewAction[] = [
-  { id: "pr-review-full", label: "Review PR", intent: "full" },
-  { id: "pr-review-risks", label: "Risk Scan", intent: "risks" },
-  { id: "pr-review-tests", label: "Test Plan", intent: "tests" },
-  { id: "pr-review-summary", label: "Summarize", intent: "summary" },
-];
 
 type UsePullRequestReviewActionsOptions = {
   activeWorkspace: WorkspaceInfo | null;
@@ -58,6 +52,7 @@ export function usePullRequestReviewActions({
   startThreadForWorkspace,
   sendUserMessageToThread,
 }: UsePullRequestReviewActionsOptions) {
+  const { t } = useTranslation("app");
   const [isLaunchingReview, setIsLaunchingReview] = useState(false);
   const [lastReviewThreadId, setLastReviewThreadId] = useState<string | null>(null);
   const launchInFlightRef = useRef(false);
@@ -110,7 +105,7 @@ export function usePullRequestReviewActions({
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         pushErrorToast({
-          title: "PR review failed",
+          title: t("gitDiff.reviewActions.reviewFailed"),
           message,
         });
         return null;
@@ -129,10 +124,35 @@ export function usePullRequestReviewActions({
       reviewDeliveryMode,
       sendUserMessageToThread,
       startThreadForWorkspace,
+      t,
     ],
   );
 
-  const reviewActions = useMemo(() => REVIEW_ACTIONS, []);
+  const reviewActions = useMemo<PullRequestReviewAction[]>(
+    () => [
+      {
+        id: "pr-review-full",
+        label: t("gitDiff.reviewActions.reviewPr"),
+        intent: "full",
+      },
+      {
+        id: "pr-review-risks",
+        label: t("gitDiff.reviewActions.riskScan"),
+        intent: "risks",
+      },
+      {
+        id: "pr-review-tests",
+        label: t("gitDiff.reviewActions.testPlan"),
+        intent: "tests",
+      },
+      {
+        id: "pr-review-summary",
+        label: t("gitDiff.reviewActions.summarize"),
+        intent: "summary",
+      },
+    ],
+    [t],
+  );
 
   return {
     isLaunchingReview,

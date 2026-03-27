@@ -52,6 +52,8 @@ type WorktreeSectionProps = {
   onShowWorktreeMenu: (event: MouseEvent, worktree: WorkspaceInfo) => void;
   onToggleExpanded: (workspaceId: string) => void;
   onLoadOlderThreads: (workspaceId: string) => void;
+  searchQuery?: string;
+  isSearchActive?: boolean;
   sectionLabel?: string;
   sectionIcon?: ReactNode;
   className?: string;
@@ -83,6 +85,8 @@ export function WorktreeSection({
   onShowWorktreeMenu,
   onToggleExpanded,
   onLoadOlderThreads,
+  searchQuery: _searchQuery,
+  isSearchActive: _isSearchActive,
   sectionLabel,
   sectionIcon,
   className,

@@ -10,6 +10,8 @@ const imageExtensions = [
   ".bmp",
   ".tiff",
   ".tif",
+  ".heic",
+  ".heif",
 ];
 
 function isImagePath(path: string) {

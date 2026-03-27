@@ -149,6 +149,8 @@ export type ThreadSummary = {
   modelId?: string | null;
   effort?: string | null;
   isSubagent?: boolean;
+  subagentNickname?: string | null;
+  subagentRole?: string | null;
 };
 
 export type ThreadListSortKey = "created_at" | "updated_at";

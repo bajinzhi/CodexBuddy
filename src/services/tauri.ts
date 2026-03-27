@@ -59,7 +59,18 @@ export async function pickImageFiles(): Promise<string[]> {
     filters: [
       {
         name: "Images",
-        extensions: ["png", "jpg", "jpeg", "gif", "webp", "bmp", "tiff", "tif"],
+        extensions: [
+          "png",
+          "jpg",
+          "jpeg",
+          "gif",
+          "webp",
+          "bmp",
+          "tiff",
+          "tif",
+          "heic",
+          "heif",
+        ],
       },
     ],
   });
@@ -1051,6 +1062,10 @@ export async function listMcpServerStatus(
 
 export async function resumeThread(workspaceId: string, threadId: string) {
   return invoke<any>("resume_thread", { workspaceId, threadId });
+}
+
+export async function readThread(workspaceId: string, threadId: string) {
+  return invoke<any>("read_thread", { workspaceId, threadId });
 }
 
 export async function threadLiveSubscribe(workspaceId: string, threadId: string) {

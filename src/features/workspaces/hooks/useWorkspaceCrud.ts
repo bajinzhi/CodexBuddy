@@ -1,8 +1,9 @@
 import { useCallback } from "react";
 import type { Dispatch, MutableRefObject, SetStateAction } from "react";
 import * as Sentry from "@sentry/react";
-import type { DebugEntry, WorkspaceInfo, WorkspaceSettings } from "../../../types";
 import { translate } from "@/i18n/translate";
+import type { DebugEntry, WorkspaceInfo, WorkspaceSettings } from "../../../types";
+import { normalizeRootPath } from "../../threads/utils/threadNormalize";
 import {
   addWorkspace as addWorkspaceService,
   addWorkspaceFromGitUrl as addWorkspaceFromGitUrlService,
@@ -36,7 +37,7 @@ export type AddWorkspacesFromPathsResult = {
 };
 
 function normalizeWorkspacePathKey(value: string) {
-  return value.trim().replace(/\\/g, "/").replace(/\/+$/, "");
+  return normalizeRootPath(value.trim());
 }
 
 function inferHomePrefixes(paths: string[]): string[] {
@@ -168,9 +169,7 @@ export function useWorkspaceCrud({
       const trimmedFolderName = targetFolderName?.trim() || null;
       if (!trimmedUrl) {
         throw new Error(
-          translate("workspaces.fromUrlPrompt.errors.remoteGitUrlRequired", {
-            ns: "app",
-          }),
+          translate("workspaces.fromUrlPrompt.errors.remoteGitUrlRequired", { ns: "app" }),
         );
       }
       if (!trimmedDestination) {
@@ -381,9 +380,7 @@ export function useWorkspaceCrud({
       const currentSettings =
         workspaceSettingsRef.current.get(workspaceId) ?? currentWorkspace?.settings ?? null;
       if (!currentWorkspace || !currentSettings) {
-        throw new Error(
-          translate("workspaces.errors.workspaceNotFound", { ns: "app" }),
-        );
+        throw new Error(translate("workspaces.errors.workspaceNotFound", { ns: "app" }));
       }
       const previousSettings = currentSettings;
       const nextSettings = { ...currentSettings, ...patch };

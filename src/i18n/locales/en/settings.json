@@ -360,12 +360,16 @@
     "title": "Environments",
     "subtitle": "Configure per-project setup scripts and worktree locations.",
     "noProjects": "No projects yet.",
+    "globalWorktreesRootLabel": "Global worktrees root",
+    "globalWorktreesRootHelp": "Default location for new worktrees when a project does not override it. Each project gets its own subfolder under this root.",
+    "globalWorktreesRootPlaceholder": "/path/to/worktrees-root",
+    "globalWorktreesRootPickerTitle": "Select global worktrees root",
     "projectLabel": "Project",
     "setupScriptLabel": "Setup script",
     "setupScriptPlaceholder": "pnpm install",
     "setupScriptHelp": "Runs once in a dedicated terminal after each new worktree is created.",
     "worktreesFolderLabel": "Worktrees folder",
-    "worktreesFolderHelp": "Custom location for worktrees. Leave empty to use the default location.",
+    "worktreesFolderHelp": "Custom location for this project's worktrees. Leave empty to use the global root or the built-in default.",
     "worktreesFolderPlaceholder": "/path/to/worktrees"
   },
   "git": {

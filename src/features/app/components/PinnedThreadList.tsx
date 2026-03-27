@@ -91,6 +91,7 @@ export function PinnedThreadList({
             hasSubagentChildren={visibility.rowsWithChildren.has(row)}
             subagentsExpanded={!collapsedThreadKeys.has(threadKey)}
             onToggleSubagents={toggleThreadSubagents}
+            showPinnedLabel={false}
           />
         );
       })}

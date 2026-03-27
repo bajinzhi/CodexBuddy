@@ -111,6 +111,26 @@ pub(crate) async fn resume_thread(
 }
 
 #[tauri::command]
+pub(crate) async fn read_thread(
+    workspace_id: String,
+    thread_id: String,
+    state: State<'_, AppState>,
+    app: AppHandle,
+) -> Result<Value, String> {
+    if remote_backend::is_remote_mode(&*state).await {
+        return remote_backend::call_remote(
+            &*state,
+            app,
+            "read_thread",
+            json!({ "workspaceId": workspace_id, "threadId": thread_id }),
+        )
+        .await;
+    }
+
+    codex_core::read_thread_core(&state.sessions, workspace_id, thread_id).await
+}
+
+#[tauri::command]
 pub(crate) async fn thread_live_subscribe(
     workspace_id: String,
     thread_id: String,

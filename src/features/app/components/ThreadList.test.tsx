@@ -8,6 +8,9 @@ const nestedThread: ThreadSummary = {
   id: "thread-2",
   name: "Nested Agent",
   updatedAt: 900,
+  isSubagent: true,
+  subagentNickname: "Robie",
+  subagentRole: "explorer",
 };
 
 const thread: ThreadSummary = {
@@ -136,6 +139,23 @@ describe("ThreadList", () => {
       "thread-2",
       false,
     );
+  });
+
+  it("shows the subagent nickname pill with role styling", () => {
+    const { container } = render(
+      <ThreadList
+        {...baseProps}
+        unpinnedRows={[{ thread: nestedThread, depth: 1 }]}
+        activeThreadId="thread-2"
+      />,
+    );
+
+    const pill = screen.getByText("Robie");
+    const role = screen.getByText("Explorer");
+    expect(pill.className).toContain("thread-subagent-pill");
+    expect(role.className).toContain("thread-subagent-role");
+    expect((pill as HTMLElement).style.getPropertyValue("--thread-subagent-pill-hue")).toBeTruthy();
+    expect(container.querySelector(".thread-workspace-label")).toBeNull();
   });
 
   it("shows blue unread-style status when a thread is waiting for user input", () => {

@@ -776,6 +776,8 @@
     },
     "inputRequested": "Input requested",
     "loading": "Loading…",
+    "toolCallCount_one": "{{count}} tool call",
+    "toolCallCount_other": "{{count}} tool calls",
     "messageCount_one": "{{count}} message",
     "messageCount_other": "{{count}} messages",
     "moreQuestions_one": " +{{count}} more",

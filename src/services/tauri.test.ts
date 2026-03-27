@@ -18,6 +18,7 @@ import {
   getOpenAppIcon,
   listThreads,
   listMcpServerStatus,
+  readThread,
   readGlobalAgentsMd,
   readGlobalCodexConfigToml,
   listWorkspaces,
@@ -40,6 +41,7 @@ import {
   tailscaleDaemonStatus,
   tailscaleDaemonStop,
   tailscaleStatus,
+  pickImageFiles,
   pickWorkspacePaths,
   writeGlobalAgentsMd,
   writeGlobalCodexConfigToml,
@@ -116,6 +118,37 @@ describe("tauri invoke wrappers", () => {
     openMock.mockResolvedValueOnce(["/tmp/one", "/tmp/two"]);
 
     await expect(pickWorkspacePaths()).resolves.toEqual(["/tmp/one", "/tmp/two"]);
+  });
+
+  it("includes heic and heif in the image picker filter", async () => {
+    const openMock = vi.mocked(open);
+    openMock.mockResolvedValueOnce(["/tmp/photo.heic", "/tmp/photo.heif"]);
+
+    await expect(pickImageFiles()).resolves.toEqual([
+      "/tmp/photo.heic",
+      "/tmp/photo.heif",
+    ]);
+
+    expect(openMock).toHaveBeenCalledWith({
+      multiple: true,
+      filters: [
+        {
+          name: "Images",
+          extensions: [
+            "png",
+            "jpg",
+            "jpeg",
+            "gif",
+            "webp",
+            "bmp",
+            "tiff",
+            "tif",
+            "heic",
+            "heif",
+          ],
+        },
+      ],
+    });
   });
 
   it("returns null when markdown export is cancelled", async () => {
@@ -282,6 +315,18 @@ describe("tauri invoke wrappers", () => {
       cursor: "cursor-1",
       limit: 25,
       sortKey: "updated_at",
+    });
+  });
+
+  it("maps workspaceId/threadId for read_thread", async () => {
+    const invokeMock = vi.mocked(invoke);
+    invokeMock.mockResolvedValueOnce({});
+
+    await readThread("ws-10", "thread-1");
+
+    expect(invokeMock).toHaveBeenCalledWith("read_thread", {
+      workspaceId: "ws-10",
+      threadId: "thread-1",
     });
   });
 

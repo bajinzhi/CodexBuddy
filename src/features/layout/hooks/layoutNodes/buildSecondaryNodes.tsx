@@ -1,4 +1,3 @@
-import { translate } from "@/i18n/translate";
 import { DebugPanel } from "../../../debug/components/DebugPanel";
 import { PlanPanel } from "../../../plan/components/PlanPanel";
 import { TerminalDock } from "../../../terminal/components/TerminalDock";
@@ -21,16 +20,84 @@ type SecondaryLayoutNodes = Pick<
   | "compactGitBackNode"
 >;
 
+function buildTerminalPanelNode(terminalState: SecondaryLayoutNodesOptions["terminalState"]) {
+  if (!terminalState) {
+    return null;
+  }
+
+  return (
+    <TerminalPanel
+      containerRef={terminalState.containerRef}
+      status={terminalState.status}
+      message={terminalState.message}
+    />
+  );
+}
+
+function buildDebugPanels(debugPanelProps: SecondaryLayoutNodesOptions["debugPanelProps"]) {
+  const debugPanelNode = <DebugPanel {...debugPanelProps} />;
+  const debugPanelFullNode = (
+    <DebugPanel
+      {...debugPanelProps}
+      isOpen
+      variant="full"
+    />
+  );
+
+  return { debugPanelNode, debugPanelFullNode };
+}
+
+function buildCompactEmptyNode({
+  title,
+  description,
+  onGoProjects,
+}: {
+  title: string;
+  description: string;
+  onGoProjects: () => void;
+}) {
+  return (
+    <div className="compact-empty">
+      <h3>{title}</h3>
+      <p>{description}</p>
+      <button className="ghost" onClick={onGoProjects}>
+        Go to Projects
+      </button>
+    </div>
+  );
+}
+
+function buildCompactGitBackNode(
+  compactNavProps: SecondaryLayoutNodesOptions["compactNavProps"],
+) {
+  const compactGitDiffActive =
+    compactNavProps.centerMode === "diff" &&
+    Boolean(compactNavProps.selectedDiffPath);
+
+  return (
+    <div className="compact-git-back">
+      <button
+        type="button"
+        className={`compact-git-switch-button${compactGitDiffActive ? "" : " active"}`}
+        onClick={compactNavProps.onBackFromDiff}
+      >
+        Files
+      </button>
+      <button
+        type="button"
+        className={`compact-git-switch-button${compactGitDiffActive ? " active" : ""}`}
+        onClick={compactNavProps.onShowSelectedDiff}
+        disabled={!compactNavProps.hasActiveGitDiffs}
+      >
+        Diff
+      </button>
+    </div>
+  );
+}
+
 export function buildSecondaryNodes(options: SecondaryLayoutNodesOptions): SecondaryLayoutNodes {
   const planPanelNode = <PlanPanel {...options.planPanelProps} />;
-
-  const terminalPanelNode = options.terminalState ? (
-    <TerminalPanel
-      containerRef={options.terminalState.containerRef}
-      status={options.terminalState.status}
-      message={options.terminalState.message}
-    />
-  ) : null;
+  const terminalPanelNode = buildTerminalPanelNode(options.terminalState);
 
   const terminalDockNode = (
     <TerminalDock
@@ -39,58 +106,21 @@ export function buildSecondaryNodes(options: SecondaryLayoutNodesOptions): Secon
     />
   );
 
-  const debugPanelNode = <DebugPanel {...options.debugPanelProps} />;
+  const { debugPanelNode, debugPanelFullNode } = buildDebugPanels(options.debugPanelProps);
 
-  const debugPanelFullNode = (
-    <DebugPanel
-      {...options.debugPanelProps}
-      isOpen
-      variant="full"
-    />
-  );
+  const compactEmptyCodexNode = buildCompactEmptyNode({
+    title: "No workspace selected",
+    description: "Choose a project to start chatting.",
+    onGoProjects: options.compactNavProps.onGoProjects,
+  });
 
-  const compactEmptyCodexNode = (
-    <div className="compact-empty">
-      <h3>{translate("layout.noWorkspaceSelectedTitle", { ns: "app" })}</h3>
-      <p>{translate("layout.chooseProjectToChat", { ns: "app" })}</p>
-      <button className="ghost" onClick={options.compactNavProps.onGoProjects}>
-        {translate("layout.goToProjects", { ns: "app" })}
-      </button>
-    </div>
-  );
+  const compactEmptyGitNode = buildCompactEmptyNode({
+    title: "No workspace selected",
+    description: "Select a project to inspect diffs.",
+    onGoProjects: options.compactNavProps.onGoProjects,
+  });
 
-  const compactEmptyGitNode = (
-    <div className="compact-empty">
-      <h3>{translate("layout.noWorkspaceSelectedTitle", { ns: "app" })}</h3>
-      <p>{translate("layout.selectProjectToDiff", { ns: "app" })}</p>
-      <button className="ghost" onClick={options.compactNavProps.onGoProjects}>
-        {translate("layout.goToProjects", { ns: "app" })}
-      </button>
-    </div>
-  );
-
-  const compactGitDiffActive =
-    options.compactNavProps.centerMode === "diff" &&
-    Boolean(options.compactNavProps.selectedDiffPath);
-  const compactGitBackNode = (
-    <div className="compact-git-back">
-      <button
-        type="button"
-        className={`compact-git-switch-button${compactGitDiffActive ? "" : " active"}`}
-        onClick={options.compactNavProps.onBackFromDiff}
-      >
-        {translate("layout.files", { ns: "app" })}
-      </button>
-      <button
-        type="button"
-        className={`compact-git-switch-button${compactGitDiffActive ? " active" : ""}`}
-        onClick={options.compactNavProps.onShowSelectedDiff}
-        disabled={!options.compactNavProps.hasActiveGitDiffs}
-      >
-        {translate("layout.diff", { ns: "app" })}
-      </button>
-    </div>
-  );
+  const compactGitBackNode = buildCompactGitBackNode(options.compactNavProps);
 
   return {
     planPanelNode,

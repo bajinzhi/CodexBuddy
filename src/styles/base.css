@@ -56,6 +56,30 @@ body {
   overflow: hidden;
   position: relative;
   --main-topbar-height: 44px;
+  /* Shared Codex Monitor chrome language */
+  --cm-surface-row: color-mix(in srgb, var(--surface-card) 44%, transparent);
+  --cm-surface-panel-soft: color-mix(in srgb, var(--surface-card) 56%, transparent);
+  --cm-surface-panel: color-mix(in srgb, var(--surface-card) 64%, transparent);
+  --cm-surface-panel-strong: color-mix(in srgb, var(--surface-card) 72%, transparent);
+  --cm-surface-panel-elevated: color-mix(in srgb, var(--surface-card) 78%, transparent);
+  --cm-surface-panel-quiet: color-mix(in srgb, var(--surface-card) 80%, transparent);
+  --cm-surface-panel-loud: color-mix(in srgb, var(--surface-card) 84%, transparent);
+  --cm-surface-panel-hover: color-mix(in srgb, var(--surface-card) 90%, transparent);
+  --cm-surface-panel-solid: color-mix(in srgb, var(--surface-card) 92%, transparent);
+  --cm-surface-panel-active: color-mix(in srgb, var(--surface-active) 96%, transparent);
+  --cm-surface-command-panel: color-mix(in srgb, var(--surface-command) 94%, transparent);
+  --cm-surface-topbar: color-mix(in srgb, var(--surface-topbar) 86%, var(--surface-card) 14%);
+  --cm-surface-composer: color-mix(in srgb, var(--surface-composer) 98%, var(--surface-card) 2%);
+  --cm-border-soft: color-mix(in srgb, var(--border-subtle) 72%, transparent);
+  --cm-border-default: color-mix(in srgb, var(--border-subtle) 78%, transparent);
+  --cm-border-strong: color-mix(in srgb, var(--border-subtle) 82%, transparent);
+  --cm-border-emphasis: color-mix(in srgb, var(--border-subtle) 84%, transparent);
+  --cm-border-elevated: color-mix(in srgb, var(--border-subtle) 86%, transparent);
+  --cm-border-heavy: color-mix(in srgb, var(--border-subtle) 88%, transparent);
+  --cm-border-hover: color-mix(in srgb, var(--border-subtle) 92%, transparent);
+  --cm-border-contrast: color-mix(in srgb, var(--border-subtle) 100%, transparent);
+  --cm-border-accent: color-mix(in srgb, var(--border-accent) 36%, transparent);
+  --cm-border-accent-strong: color-mix(in srgb, var(--border-accent) 46%, transparent);
   transition: grid-template-columns 220ms ease;
   font-family: var(--ui-font-family);
 }

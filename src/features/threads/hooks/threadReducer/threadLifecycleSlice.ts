@@ -264,9 +264,60 @@ export function reduceThreadLifecycle(
     }
     case "setThreadName": {
       const list = state.threadsByWorkspace[action.workspaceId] ?? [];
-      const next = list.map((thread) =>
-        thread.id === action.threadId ? { ...thread, name: action.name } : thread,
-      );
+      if (!list.length) {
+        return state;
+      }
+      let didChange = false;
+      const next = list.map((thread) => {
+        if (thread.id !== action.threadId || thread.name === action.name) {
+          return thread;
+        }
+        didChange = true;
+        return { ...thread, name: action.name };
+      });
+      if (!didChange) {
+        return state;
+      }
+      return {
+        ...state,
+        threadsByWorkspace: {
+          ...state.threadsByWorkspace,
+          [action.workspaceId]: next,
+        },
+      };
+    }
+    case "mergeThreadSummary": {
+      const list = state.threadsByWorkspace[action.workspaceId] ?? [];
+      if (!list.length) {
+        return state;
+      }
+      let didChange = false;
+      const next = list.map((thread) => {
+        if (thread.id !== action.threadId) {
+          return thread;
+        }
+        const patchEntries = Object.entries(action.patch).filter(
+          ([, value]) => value !== undefined,
+        ) as Array<[keyof typeof action.patch, NonNullable<(typeof action.patch)[keyof typeof action.patch]>]>;
+        if (!patchEntries.length) {
+          return thread;
+        }
+        let nextThread = thread;
+        patchEntries.forEach(([key, value]) => {
+          if (nextThread[key as keyof ThreadSummary] === value) {
+            return;
+          }
+          nextThread = {
+            ...nextThread,
+            [key]: value,
+          };
+          didChange = true;
+        });
+        return nextThread;
+      });
+      if (!didChange) {
+        return state;
+      }
       return {
         ...state,
         threadsByWorkspace: {

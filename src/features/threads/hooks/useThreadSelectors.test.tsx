@@ -18,6 +18,7 @@ describe("useThreadSelectors", () => {
         activeWorkspaceId: "workspace-1",
         activeThreadIdByWorkspace: { "workspace-1": "thread-1" },
         itemsByThread: { "thread-1": [messageItem] },
+        threadsByWorkspace: {},
       }),
     );
 
@@ -31,6 +32,7 @@ describe("useThreadSelectors", () => {
         activeWorkspaceId: null,
         activeThreadIdByWorkspace: { "workspace-1": "thread-1" },
         itemsByThread: { "thread-1": [messageItem] },
+        threadsByWorkspace: {},
       }),
     );
 
@@ -44,10 +46,75 @@ describe("useThreadSelectors", () => {
         activeWorkspaceId: "workspace-1",
         activeThreadIdByWorkspace: { "workspace-1": "thread-2" },
         itemsByThread: {},
+        threadsByWorkspace: {},
       }),
     );
 
     expect(result.current.activeThreadId).toBe("thread-2");
     expect(result.current.activeItems).toEqual([]);
+  });
+
+  it("enriches collab tool items from active workspace thread metadata", () => {
+    const collabItem: ConversationItem = {
+      id: "collab-1",
+      kind: "tool",
+      toolType: "collabToolCall",
+      title: "Collab: spawn_agent",
+      detail: "From thread-parent → thread-child",
+      status: "completed",
+      output: "Investigate the issue\n\nthread-child: completed",
+      collabSender: { threadId: "thread-parent" },
+      collabReceiver: { threadId: "thread-child" },
+      collabReceivers: [{ threadId: "thread-child" }],
+      collabStatuses: [{ threadId: "thread-child", status: "completed" }],
+    };
+
+    const { result } = renderHook(() =>
+      useThreadSelectors({
+        activeWorkspaceId: "workspace-1",
+        activeThreadIdByWorkspace: { "workspace-1": "thread-parent" },
+        itemsByThread: { "thread-parent": [collabItem] },
+        threadsByWorkspace: {
+          "workspace-1": [
+            {
+              id: "thread-child",
+              name: "Review helper",
+              updatedAt: 1,
+              isSubagent: true,
+              subagentNickname: "Atlas",
+              subagentRole: "reviewer",
+            },
+          ],
+        },
+      }),
+    );
+
+    expect(result.current.activeItems).toEqual([
+      {
+        ...collabItem,
+        detail: "From thread-parent → Atlas [reviewer]",
+        output: "Investigate the issue\n\nAtlas [reviewer]: completed",
+        collabReceiver: {
+          threadId: "thread-child",
+          nickname: "Atlas",
+          role: "reviewer",
+        },
+        collabReceivers: [
+          {
+            threadId: "thread-child",
+            nickname: "Atlas",
+            role: "reviewer",
+          },
+        ],
+        collabStatuses: [
+          {
+            threadId: "thread-child",
+            nickname: "Atlas",
+            role: "reviewer",
+            status: "completed",
+          },
+        ],
+      },
+    ]);
   });
 });

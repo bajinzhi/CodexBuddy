@@ -8,6 +8,7 @@ import {
   archiveThread,
   interruptTurn,
   listThreads,
+  readThread,
   resumeThread,
   sendUserMessage as sendUserMessageService,
   setThreadName,
@@ -39,6 +40,7 @@ vi.mock("@services/tauri", () => ({
   startThread: vi.fn(),
   listThreads: vi.fn(),
   resumeThread: vi.fn(),
+  readThread: vi.fn(),
   archiveThread: vi.fn(),
   setThreadName: vi.fn(),
   getAccountRateLimits: vi.fn(),
@@ -1099,6 +1101,43 @@ describe("useThreads UX integration", () => {
     expect(result.current.isSubagentThread("ws-1", "thread-child-live")).toBe(true);
   });
 
+  it("keeps live subagent nickname and role in sidebar summaries from thread started", () => {
+    const { result } = renderHook(() =>
+      useThreads({
+        activeWorkspace: workspace,
+        onWorkspaceConnected: vi.fn(),
+      }),
+    );
+
+    act(() => {
+      handlers?.onThreadStarted?.("ws-1", {
+        id: "thread-child-live-meta",
+        preview: "Review helper",
+        agent_nickname: "Atlas",
+        agent_role: "reviewer",
+        source: {
+          subAgent: {
+            thread_spawn: {
+              parent_thread_id: "thread-parent-live",
+              depth: 1,
+            },
+          },
+        },
+      });
+    });
+
+    expect(
+      result.current.threadsByWorkspace["ws-1"]?.find(
+        (thread) => thread.id === "thread-child-live-meta",
+      ),
+    ).toMatchObject({
+      id: "thread-child-live-meta",
+      isSubagent: true,
+      subagentNickname: "Atlas",
+      subagentRole: "reviewer",
+    });
+  });
+
   it("classifies live spawned threads from top-level parent thread metadata", () => {
     const { result } = renderHook(() =>
       useThreads({
@@ -1200,6 +1239,186 @@ describe("useThreads UX integration", () => {
     );
     expect(result.current.isSubagentThread("ws-1", "thread-child-live-agent-ref")).toBe(
       true,
+    );
+  });
+
+  it("enriches live collab spawn rows as soon as thread started metadata arrives", () => {
+    const { result } = renderHook(() =>
+      useThreads({
+        activeWorkspace: workspace,
+        onWorkspaceConnected: vi.fn(),
+      }),
+    );
+
+    act(() => {
+      handlers?.onThreadStarted?.("ws-1", {
+        id: "thread-parent-live",
+        preview: "Parent thread",
+        updatedAt: 1_700_000_000_100,
+      });
+      result.current.setActiveThreadId("thread-parent-live");
+    });
+
+    act(() => {
+      handlers?.onItemCompleted?.("ws-1", "thread-parent-live", {
+        type: "collabAgentToolCall",
+        id: "item-spawn-live",
+        tool: "spawn_agent",
+        status: "completed",
+        sender_thread_id: "thread-parent-live",
+        receiver_thread_ids: ["thread-child-live"],
+        prompt: "Inspect the failing tests",
+        agent_statuses: [
+          {
+            thread_id: "thread-child-live",
+            status: "completed",
+          },
+        ],
+      });
+    });
+
+    expect(result.current.activeItems).toContainEqual(
+      expect.objectContaining({
+        id: "item-spawn-live",
+        kind: "tool",
+        detail: "From thread-parent-live → thread-child-live",
+        output: "Inspect the failing tests\n\nthread-child-live: completed",
+      }),
+    );
+
+    act(() => {
+      handlers?.onThreadStarted?.("ws-1", {
+        id: "thread-child-live",
+        preview: "Review helper",
+        updatedAt: 1_700_000_000_200,
+        agentNickname: "Atlas",
+        agentRole: "reviewer",
+        source: {
+          subAgent: "thread_spawn",
+        },
+      });
+    });
+
+    expect(result.current.threadsByWorkspace["ws-1"]).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "thread-child-live",
+          isSubagent: true,
+          subagentNickname: "Atlas",
+          subagentRole: "reviewer",
+        }),
+      ]),
+    );
+
+    expect(result.current.activeItems).toContainEqual(
+      expect.objectContaining({
+        id: "item-spawn-live",
+        kind: "tool",
+        detail: "From thread-parent-live → Atlas [reviewer]",
+        output: "Inspect the failing tests\n\nAtlas [reviewer]: completed",
+        collabReceiver: {
+          threadId: "thread-child-live",
+          nickname: "Atlas",
+          role: "reviewer",
+        },
+      }),
+    );
+  });
+
+  it("hydrates live collab spawn rows from thread/read when the event only has ids", async () => {
+    vi.mocked(resumeThread).mockResolvedValue({
+      result: {
+        thread: {
+          id: "thread-parent-read",
+          preview: "Parent thread",
+          updatedAt: 1_700_000_000_100,
+          turns: [],
+        },
+      },
+    });
+    vi.mocked(readThread).mockResolvedValue({
+      result: {
+        thread: {
+          id: "thread-child-read",
+          preview: "Review helper",
+          updatedAt: 1_700_000_000_300,
+          agentNickname: "Atlas",
+          agentRole: "reviewer",
+          source: {
+            subAgent: {
+              thread_spawn: {
+                parent_thread_id: "thread-parent-read",
+                depth: 1,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    const { result } = renderHook(() =>
+      useThreads({
+        activeWorkspace: workspace,
+        onWorkspaceConnected: vi.fn(),
+      }),
+    );
+
+    act(() => {
+      handlers?.onThreadStarted?.("ws-1", {
+        id: "thread-parent-read",
+        preview: "Parent thread",
+        updatedAt: 1_700_000_000_100,
+      });
+      result.current.setActiveThreadId("thread-parent-read");
+    });
+
+    act(() => {
+      handlers?.onItemCompleted?.("ws-1", "thread-parent-read", {
+        type: "collabAgentToolCall",
+        id: "item-spawn-read",
+        tool: "spawn_agent",
+        status: "completed",
+        sender_thread_id: "thread-parent-read",
+        receiver_thread_ids: ["thread-child-read"],
+        prompt: "Inspect the failing tests",
+        agent_statuses: [
+          {
+            thread_id: "thread-child-read",
+            status: "completed",
+          },
+        ],
+      });
+    });
+
+    await waitFor(() => {
+      expect(vi.mocked(readThread)).toHaveBeenCalledWith("ws-1", "thread-child-read");
+    });
+
+    await waitFor(() => {
+      expect(result.current.threadsByWorkspace["ws-1"]).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            id: "thread-child-read",
+            isSubagent: true,
+            subagentNickname: "Atlas",
+            subagentRole: "reviewer",
+          }),
+        ]),
+      );
+    });
+
+    expect(result.current.activeItems).toContainEqual(
+      expect.objectContaining({
+        id: "item-spawn-read",
+        kind: "tool",
+        detail: "From thread-parent-read → Atlas [reviewer]",
+        output: "Inspect the failing tests\n\nAtlas [reviewer]: completed",
+        collabReceiver: {
+          threadId: "thread-child-read",
+          nickname: "Atlas",
+          role: "reviewer",
+        },
+      }),
     );
   });
 

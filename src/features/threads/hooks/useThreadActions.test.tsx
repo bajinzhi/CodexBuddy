@@ -1149,6 +1149,8 @@ describe("useThreadActions", () => {
             cwd: "/tmp/codex",
             preview: "Review helper",
             updated_at: 4500,
+            agent_nickname: "Atlas",
+            agent_role: "reviewer",
             source: {
               sub_agent: "review",
             },
@@ -1180,6 +1182,8 @@ describe("useThreadActions", () => {
           updatedAt: 4500,
           createdAt: 0,
           isSubagent: true,
+          subagentNickname: "Atlas",
+          subagentRole: "reviewer",
         },
       ],
     });

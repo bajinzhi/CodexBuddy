@@ -4,13 +4,16 @@ import remarkGfm from "remark-gfm";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import { useTranslation } from "react-i18next";
 import {
-  decodeFileLink,
+  describeFileTarget,
+  formatParsedFileLocation,
   isFileLinkUrl,
-  isLinkableFilePath,
+  parseFileLinkUrl,
+  parseInlineFileTarget,
   remarkFileLinks,
+  resolveMessageFileHref,
   toFileLink,
-} from "../../../utils/remarkFileLinks";
-import { resolveMountedWorkspacePath } from "../utils/mountedWorkspacePaths";
+} from "../utils/messageFileLinks";
+import type { ParsedFileLocation } from "../../../utils/fileLinks";
 
 type MarkdownProps = {
   value: string;
@@ -20,8 +23,8 @@ type MarkdownProps = {
   codeBlockCopyUseModifier?: boolean;
   showFilePath?: boolean;
   workspacePath?: string | null;
-  onOpenFileLink?: (path: string) => void;
-  onOpenFileLinkMenu?: (event: React.MouseEvent, path: string) => void;
+  onOpenFileLink?: (path: ParsedFileLocation) => void;
+  onOpenFileLinkMenu?: (event: React.MouseEvent, path: ParsedFileLocation) => void;
   onOpenThreadLink?: (threadId: string) => void;
 };
 
@@ -47,103 +50,6 @@ type PreProps = {
 type LinkBlockProps = {
   urls: string[];
 };
-
-type ParsedFileReference = {
-  fullPath: string;
-  fileName: string;
-  lineLabel: string | null;
-  parentPath: string | null;
-};
-
-function normalizePathSeparators(path: string) {
-  return path.replace(/\\/g, "/");
-}
-
-function trimTrailingPathSeparators(path: string) {
-  return path.replace(/\/+$/, "");
-}
-
-function isWindowsAbsolutePath(path: string) {
-  return /^[A-Za-z]:\//.test(path);
-}
-
-function isAbsolutePath(path: string) {
-  return path.startsWith("/") || isWindowsAbsolutePath(path);
-}
-
-function extractPathRoot(path: string) {
-  if (isWindowsAbsolutePath(path)) {
-    return path.slice(0, 2).toLowerCase();
-  }
-  if (path.startsWith("/")) {
-    return "/";
-  }
-  return "";
-}
-
-function splitAbsolutePath(path: string) {
-  const root = extractPathRoot(path);
-  if (!root) {
-    return null;
-  }
-  const withoutRoot =
-    root === "/" ? path.slice(1) : path.slice(2).replace(/^\/+/, "");
-  return {
-    root,
-    segments: withoutRoot.split("/").filter(Boolean),
-  };
-}
-
-function toRelativePath(fromPath: string, toPath: string) {
-  const fromAbsolute = splitAbsolutePath(fromPath);
-  const toAbsolute = splitAbsolutePath(toPath);
-  if (!fromAbsolute || !toAbsolute) {
-    return null;
-  }
-  if (fromAbsolute.root !== toAbsolute.root) {
-    return null;
-  }
-  const caseInsensitive = fromAbsolute.root !== "/";
-  let commonLength = 0;
-  while (
-    commonLength < fromAbsolute.segments.length &&
-    commonLength < toAbsolute.segments.length &&
-    (caseInsensitive
-      ? fromAbsolute.segments[commonLength].toLowerCase() ===
-        toAbsolute.segments[commonLength].toLowerCase()
-      : fromAbsolute.segments[commonLength] === toAbsolute.segments[commonLength])
-  ) {
-    commonLength += 1;
-  }
-  const backtrack = new Array(fromAbsolute.segments.length - commonLength).fill("..");
-  const forward = toAbsolute.segments.slice(commonLength);
-  return [...backtrack, ...forward].join("/");
-}
-
-function relativeDisplayPath(path: string, workspacePath?: string | null) {
-  const normalizedPath = trimTrailingPathSeparators(normalizePathSeparators(path.trim()));
-  if (!workspacePath) {
-    return normalizedPath;
-  }
-  const normalizedWorkspace = trimTrailingPathSeparators(
-    normalizePathSeparators(workspacePath.trim()),
-  );
-  if (!normalizedWorkspace) {
-    return normalizedPath;
-  }
-  if (!isAbsolutePath(normalizedPath) || !isAbsolutePath(normalizedWorkspace)) {
-    return normalizedPath;
-  }
-  const relative = toRelativePath(normalizedWorkspace, normalizedPath);
-  if (relative === null) {
-    return normalizedPath;
-  }
-  if (relative.length === 0) {
-    const segments = normalizedPath.split("/").filter(Boolean);
-    return segments.length > 0 ? segments[segments.length - 1] : normalizedPath;
-  }
-  return relative;
-}
 
 function extractLanguageTag(className?: string) {
   if (!className) {
@@ -182,240 +88,122 @@ function normalizeUrlLine(line: string) {
   return withoutBullet;
 }
 
-function safeDecodeURIComponent(value: string) {
-  try {
-    return decodeURIComponent(value);
-  } catch {
+type StructuredReviewFinding = {
+  file: string;
+  category: string;
+  finding: string;
+  recommendation: string;
+  severity: string;
+};
+
+function escapeTableCell(value: string) {
+  return value
+    .replace(/\\/g, "\\\\")
+    .replace(/\|/g, "\\|")
+    .replace(/\r?\n/g, "<br />")
+    .trim();
+}
+
+function parseStructuredReviewFinding(line: string): StructuredReviewFinding | null {
+  const parts = line.split(/\s+\|\s+/).map((part) => part.trim());
+  if (parts.length !== 5) {
     return null;
   }
-}
-
-function safeDecodeFileLink(url: string) {
-  try {
-    return decodeFileLink(url);
-  } catch {
+  const [file, rawCategory, finding, recommendation, rawSeverity] = parts;
+  if (!file || !finding || !recommendation || !/^category=/i.test(rawCategory)) {
     return null;
   }
-}
-
-const FILE_LINE_SUFFIX_PATTERN = /:\d+(?::\d+)?$/;
-const FILE_HASH_LINE_SUFFIX_PATTERN = /^#L(\d+)(?:C(\d+))?$/i;
-const LIKELY_LOCAL_ABSOLUTE_PATH_PREFIXES = [
-  "/Users/",
-  "/home/",
-  "/tmp/",
-  "/var/",
-  "/opt/",
-  "/etc/",
-  "/private/",
-  "/Volumes/",
-  "/mnt/",
-  "/usr/",
-  "/workspace/",
-  "/workspaces/",
-  "/root/",
-  "/srv/",
-  "/data/",
-];
-const WORKSPACE_ROUTE_PREFIXES = ["/workspace/", "/workspaces/"];
-const LOCAL_WORKSPACE_ROUTE_SEGMENTS = new Set(["reviews", "settings"]);
-
-function stripPathLineSuffix(value: string) {
-  return value.replace(FILE_LINE_SUFFIX_PATTERN, "");
-}
-
-function hasLikelyFileName(path: string) {
-  const normalizedPath = stripPathLineSuffix(path).replace(/[\\/]+$/, "");
-  const lastSegment = normalizedPath.split(/[\\/]/).pop() ?? "";
-  if (!lastSegment || lastSegment === "." || lastSegment === "..") {
-    return false;
+  const category = rawCategory.replace(/^category=/i, "").trim();
+  const severity = rawSeverity.replace(/^severity=/i, "").trim();
+  if (!category || !severity) {
+    return null;
   }
-  if (lastSegment.startsWith(".") && lastSegment.length > 1) {
-    return true;
+  if (!/^(critical|high|medium|low|info|warning|error)$/i.test(severity)) {
+    return null;
   }
-  return lastSegment.includes(".");
+  return {
+    file,
+    category,
+    finding,
+    recommendation,
+    severity,
+  };
 }
 
-function hasLikelyLocalAbsolutePrefix(path: string) {
-  const normalizedPath = path.replace(/\\/g, "/");
-  return LIKELY_LOCAL_ABSOLUTE_PATH_PREFIXES.some((prefix) =>
-    normalizedPath.startsWith(prefix),
+function buildStructuredReviewTable(rows: StructuredReviewFinding[]) {
+  const header = [
+    "| File | Category | Finding | Recommendation | Severity |",
+    "| --- | --- | --- | --- | --- |",
+  ];
+  const body = rows.map(
+    ({ file, category, finding, recommendation, severity }) =>
+      `| \`${escapeTableCell(file)}\` | ${escapeTableCell(category)} | ${escapeTableCell(
+        finding,
+      )} | ${escapeTableCell(recommendation)} | ${escapeTableCell(severity)} |`,
   );
+  return [...header, ...body].join("\n");
 }
 
-function splitWorkspaceRoutePath(path: string) {
-  const normalizedPath = path.replace(/\\/g, "/");
-  if (normalizedPath.startsWith("/workspace/")) {
-    return {
-      segments: normalizedPath.slice("/workspace/".length).split("/").filter(Boolean),
-      prefix: "/workspace/",
-    };
-  }
-  if (normalizedPath.startsWith("/workspaces/")) {
-    return {
-      segments: normalizedPath.slice("/workspaces/".length).split("/").filter(Boolean),
-      prefix: "/workspaces/",
-    };
-  }
-  return null;
-}
+function normalizeStructuredReviewTables(value: string) {
+  const lines = value.split(/\r?\n/);
+  let inFence = false;
+  let pendingRows: StructuredReviewFinding[] = [];
+  const output: string[] = [];
 
-function hasLikelyWorkspaceNameSegment(segment: string) {
-  return /[A-Z]/.test(segment) || /[._-]/.test(segment);
-}
-
-function isKnownLocalWorkspaceRoutePath(path: string) {
-  const mountedPath = splitWorkspaceRoutePath(path);
-  if (!mountedPath || mountedPath.segments.length === 0) {
-    return false;
-  }
-
-  const routeSegment =
-    mountedPath.prefix === "/workspace/"
-      ? mountedPath.segments[0]
-      : mountedPath.segments[1];
-  return Boolean(routeSegment) && LOCAL_WORKSPACE_ROUTE_SEGMENTS.has(routeSegment);
-}
-
-function isLikelyMountedWorkspaceFilePath(
-  path: string,
-  workspacePath?: string | null,
-) {
-  if (isKnownLocalWorkspaceRoutePath(path)) {
-    return false;
-  }
-  if (resolveMountedWorkspacePath(path, workspacePath) !== null) {
-    return true;
-  }
-
-  const mountedPath = splitWorkspaceRoutePath(path);
-  return Boolean(
-    mountedPath?.prefix === "/workspace/" &&
-      mountedPath.segments.length >= 2 &&
-      hasLikelyWorkspaceNameSegment(mountedPath.segments[0]),
-  );
-}
-
-function usesAbsolutePathDepthFallback(
-  path: string,
-  workspacePath?: string | null,
-) {
-  const normalizedPath = path.replace(/\\/g, "/");
-  if (
-    WORKSPACE_ROUTE_PREFIXES.some((prefix) => normalizedPath.startsWith(prefix)) &&
-    !isLikelyMountedWorkspaceFilePath(normalizedPath, workspacePath)
-  ) {
-    return false;
-  }
-  return hasLikelyLocalAbsolutePrefix(normalizedPath) && pathSegmentCount(normalizedPath) >= 3;
-}
-
-function pathSegmentCount(path: string) {
-  return path.split("/").filter(Boolean).length;
-}
-
-function toPathFromFileHashAnchor(
-  url: string,
-  workspacePath?: string | null,
-) {
-  const hashIndex = url.indexOf("#");
-  if (hashIndex <= 0) {
-    return null;
-  }
-  const basePath = url.slice(0, hashIndex).trim();
-  const hash = url.slice(hashIndex).trim();
-  const match = hash.match(FILE_HASH_LINE_SUFFIX_PATTERN);
-  if (!basePath || !match || !isLikelyFileHref(basePath, workspacePath)) {
-    return null;
-  }
-  const [, line, column] = match;
-  return `${basePath}:${line}${column ? `:${column}` : ""}`;
-}
-
-function isLikelyFileHref(
-  url: string,
-  workspacePath?: string | null,
-) {
-  const trimmed = url.trim();
-  if (!trimmed) {
-    return false;
-  }
-  if (trimmed.startsWith("file://")) {
-    return true;
-  }
-  if (
-    trimmed.startsWith("http://") ||
-    trimmed.startsWith("https://") ||
-    trimmed.startsWith("mailto:")
-  ) {
-    return false;
-  }
-  if (trimmed.startsWith("thread://") || trimmed.startsWith("/thread/")) {
-    return false;
-  }
-  if (trimmed.startsWith("#")) {
-    return false;
-  }
-  if (/[?#]/.test(trimmed)) {
-    return false;
-  }
-  if (/^[A-Za-z]:[\\/]/.test(trimmed) || trimmed.startsWith("\\\\")) {
-    return true;
-  }
-  if (trimmed.startsWith("/")) {
-    if (FILE_LINE_SUFFIX_PATTERN.test(trimmed)) {
-      return true;
+  const flushPendingRows = () => {
+    if (pendingRows.length === 0) {
+      return;
     }
-    if (hasLikelyFileName(trimmed)) {
-      return true;
+    if (output.length > 0 && output[output.length - 1].trim()) {
+      output.push("");
     }
-    return usesAbsolutePathDepthFallback(trimmed, workspacePath);
+    output.push(buildStructuredReviewTable(pendingRows));
+    output.push("");
+    pendingRows = [];
+  };
+
+  for (const line of lines) {
+    const fenceMatch = line.match(/^\s*(```|~~~)/);
+    if (fenceMatch) {
+      flushPendingRows();
+      inFence = !inFence;
+      output.push(line);
+      continue;
+    }
+    const structuredRow = inFence ? null : parseStructuredReviewFinding(line);
+    if (structuredRow) {
+      pendingRows.push(structuredRow);
+      continue;
+    }
+    if (!inFence && pendingRows.length > 0 && !line.trim()) {
+      continue;
+    }
+    flushPendingRows();
+    output.push(line);
   }
-  if (FILE_LINE_SUFFIX_PATTERN.test(trimmed)) {
-    return true;
-  }
-  if (trimmed.startsWith("~/")) {
-    return true;
-  }
-  if (trimmed.startsWith("./") || trimmed.startsWith("../")) {
-    return FILE_LINE_SUFFIX_PATTERN.test(trimmed) || hasLikelyFileName(trimmed);
-  }
-  if (hasLikelyFileName(trimmed)) {
-    return pathSegmentCount(trimmed) >= 3;
-  }
-  return false;
+
+  flushPendingRows();
+  return output.join("\n");
 }
 
-function toPathFromFileUrl(url: string) {
-  if (!url.toLowerCase().startsWith("file://")) {
-    return null;
-  }
+function stripTrailingMemoryCitation(value: string) {
+  return value.replace(/\n*<oai-mem-citation>[\s\S]*?<\/oai-mem-citation>\s*$/i, "").trim();
+}
 
-  try {
-    const parsed = new URL(url);
-    if (parsed.protocol !== "file:") {
-      return null;
-    }
-
-    const decodedPath = safeDecodeURIComponent(parsed.pathname) ?? parsed.pathname;
-    let path = decodedPath;
-    if (parsed.host && parsed.host !== "localhost") {
-      const normalizedPath = decodedPath.startsWith("/")
-        ? decodedPath
-        : `/${decodedPath}`;
-      path = `//${parsed.host}${normalizedPath}`;
-    }
-    if (/^\/[A-Za-z]:\//.test(path)) {
-      path = path.slice(1);
-    }
-    return path;
-  } catch {
-    const manualPath = url.slice("file://".length).trim();
-    if (!manualPath) {
-      return null;
-    }
-    return safeDecodeURIComponent(manualPath) ?? manualPath;
+export function isStandaloneMarkdownTable(value: string) {
+  const stripped = stripTrailingMemoryCitation(value);
+  if (!stripped) {
+    return false;
   }
+  const normalized = normalizeStructuredReviewTables(normalizeListIndentation(stripped)).trim();
+  if (!normalized) {
+    return false;
+  }
+  const lines = normalized.split(/\r?\n/).filter((line) => line.trim().length > 0);
+  if (lines.length < 2) {
+    return false;
+  }
+  return lines.every((line) => /^\|.*\|\s*$/.test(line.trim()));
 }
 
 function extractUrlLines(value: string) {
@@ -529,32 +317,6 @@ function LinkBlock({ urls }: LinkBlockProps) {
   );
 }
 
-function parseFileReference(
-  rawPath: string,
-  workspacePath?: string | null,
-): ParsedFileReference {
-  const trimmed = rawPath.trim();
-  const lineMatch = trimmed.match(/^(.*?):(\d+(?::\d+)?)$/);
-  const pathWithoutLine = (lineMatch?.[1] ?? trimmed).trim();
-  const lineLabel = lineMatch?.[2] ?? null;
-  const displayPath = relativeDisplayPath(pathWithoutLine, workspacePath);
-  const normalizedPath = trimTrailingPathSeparators(displayPath) || displayPath;
-  const lastSlashIndex = normalizedPath.lastIndexOf("/");
-  const fallbackFile = normalizedPath || trimmed;
-  const fileName =
-    lastSlashIndex >= 0 ? normalizedPath.slice(lastSlashIndex + 1) : fallbackFile;
-  const rawParentPath =
-    lastSlashIndex >= 0 ? normalizedPath.slice(0, lastSlashIndex) : "";
-  const parentPath = rawParentPath || (normalizedPath.startsWith("/") ? "/" : null);
-
-  return {
-    fullPath: trimmed,
-    fileName,
-    lineLabel,
-    parentPath,
-  };
-}
-
 function FileReferenceLink({
   href,
   rawPath,
@@ -564,16 +326,13 @@ function FileReferenceLink({
   onContextMenu,
 }: {
   href: string;
-  rawPath: string;
+  rawPath: ParsedFileLocation;
   showFilePath: boolean;
   workspacePath?: string | null;
-  onClick: (event: React.MouseEvent, path: string) => void;
-  onContextMenu: (event: React.MouseEvent, path: string) => void;
+  onClick: (event: React.MouseEvent, path: ParsedFileLocation) => void;
+  onContextMenu: (event: React.MouseEvent, path: ParsedFileLocation) => void;
 }) {
-  const { fullPath, fileName, lineLabel, parentPath } = parseFileReference(
-    rawPath,
-    workspacePath,
-  );
+  const { fullPath, fileName, lineLabel, parentPath } = describeFileTarget(rawPath, workspacePath);
   return (
     <a
       href={href}
@@ -683,11 +442,13 @@ export function Markdown({
   onOpenFileLinkMenu,
   onOpenThreadLink,
 }: MarkdownProps) {
-  const normalizedValue = codeBlock ? value : normalizeListIndentation(value);
+  const normalizedValue = codeBlock
+    ? value
+    : normalizeStructuredReviewTables(normalizeListIndentation(value));
   const content = codeBlock
     ? `\`\`\`\n${normalizedValue}\n\`\`\``
     : normalizedValue;
-  const handleFileLinkClick = (event: React.MouseEvent, path: string) => {
+  const handleFileLinkClick = (event: React.MouseEvent, path: ParsedFileLocation) => {
     event.preventDefault();
     event.stopPropagation();
     onOpenFileLink?.(path);
@@ -698,65 +459,31 @@ export function Markdown({
   };
   const handleFileLinkContextMenu = (
     event: React.MouseEvent,
-    path: string,
+    path: ParsedFileLocation,
   ) => {
     event.preventDefault();
     event.stopPropagation();
     onOpenFileLinkMenu?.(event, path);
   };
-  const filePathWithOptionalLineMatch = /^(.+?)(:\d+(?::\d+)?)?$/;
-  const getLinkablePath = (rawValue: string) => {
-    const trimmed = rawValue.trim();
-    if (!trimmed) {
-      return null;
-    }
-    const match = trimmed.match(filePathWithOptionalLineMatch);
-    const pathOnly = match?.[1]?.trim() ?? trimmed;
-    if (!pathOnly || !isLinkableFilePath(pathOnly)) {
-      return null;
-    }
-    return trimmed;
-  };
+  const resolvedHrefFilePathCache = new Map<string, ParsedFileLocation | null>();
   const resolveHrefFilePath = (url: string) => {
-    const hashAnchorPath = toPathFromFileHashAnchor(url, workspacePath);
-    if (hashAnchorPath) {
-      const anchoredPath = getLinkablePath(hashAnchorPath);
-      if (anchoredPath) {
-        return safeDecodeURIComponent(anchoredPath) ?? anchoredPath;
-      }
+    if (resolvedHrefFilePathCache.has(url)) {
+      return resolvedHrefFilePathCache.get(url) ?? null;
     }
-    if (isLikelyFileHref(url, workspacePath)) {
-      const directPath = getLinkablePath(url);
-      if (directPath) {
-        return safeDecodeURIComponent(directPath) ?? directPath;
-      }
-    }
-    const decodedUrl = safeDecodeURIComponent(url);
-    if (decodedUrl) {
-      const decodedHashAnchorPath = toPathFromFileHashAnchor(
-        decodedUrl,
-        workspacePath,
-      );
-      if (decodedHashAnchorPath) {
-        const anchoredPath = getLinkablePath(decodedHashAnchorPath);
-        if (anchoredPath) {
-          return anchoredPath;
-        }
-      }
-    }
-    if (decodedUrl && isLikelyFileHref(decodedUrl, workspacePath)) {
-      const decodedPath = getLinkablePath(decodedUrl);
-      if (decodedPath) {
-        return decodedPath;
-      }
-    }
-    const fileUrlPath = toPathFromFileUrl(url);
-    if (!fileUrlPath) {
+    const resolvedPath = resolveMessageFileHref(url, workspacePath);
+    if (!resolvedPath) {
+      resolvedHrefFilePathCache.set(url, null);
       return null;
     }
-    return getLinkablePath(fileUrlPath);
+    resolvedHrefFilePathCache.set(url, resolvedPath);
+    return resolvedPath;
   };
   const components: Components = {
+    table: ({ children }) => (
+      <div className="markdown-table-wrap">
+        <table className="markdown-table">{children}</table>
+      </div>
+    ),
     a: ({ href, children }) => {
       const url = (href ?? "").trim();
       const threadId = url.startsWith("thread://")
@@ -779,7 +506,7 @@ export function Markdown({
         );
       }
       if (isFileLinkUrl(url)) {
-        const path = safeDecodeFileLink(url);
+        const path = parseFileLinkUrl(url);
         if (!path) {
           return (
             <a
@@ -806,6 +533,7 @@ export function Markdown({
       }
       const hrefFilePath = resolveHrefFilePath(url);
       if (hrefFilePath) {
+        const formattedHrefFilePath = formatParsedFileLocation(hrefFilePath);
         const clickHandler = (event: React.MouseEvent) =>
           handleFileLinkClick(event, hrefFilePath);
         const contextMenuHandler = onOpenFileLinkMenu
@@ -814,6 +542,7 @@ export function Markdown({
         return (
           <a
             href={href ?? toFileLink(hrefFilePath)}
+            title={formattedHrefFilePath}
             onClick={clickHandler}
             onContextMenu={contextMenuHandler}
           >
@@ -855,15 +584,15 @@ export function Markdown({
         return <code className={codeClassName}>{children}</code>;
       }
       const text = String(children ?? "").trim();
-      const linkablePath = getLinkablePath(text);
-      if (!linkablePath) {
+      const fileTarget = parseInlineFileTarget(text);
+      if (!fileTarget) {
         return <code>{children}</code>;
       }
-      const href = toFileLink(linkablePath);
+      const href = toFileLink(fileTarget);
       return (
         <FileReferenceLink
           href={href}
-          rawPath={linkablePath}
+          rawPath={fileTarget}
           showFilePath={showFilePath}
           workspacePath={workspacePath}
           onClick={handleFileLinkClick}
@@ -887,6 +616,11 @@ export function Markdown({
         remarkPlugins={[remarkGfm, remarkFileLinks]}
         urlTransform={(url) => {
           const hasScheme = /^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(url);
+          // Keep file-like hrefs intact before scheme sanitization runs, otherwise
+          // Windows absolute paths such as C:/repo/file.ts look like unknown schemes.
+          if (resolveHrefFilePath(url)) {
+            return url;
+          }
           if (
             isFileLinkUrl(url) ||
             url.startsWith("http://") ||

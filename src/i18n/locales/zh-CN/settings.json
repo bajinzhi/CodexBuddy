@@ -360,12 +360,16 @@
     "title": "环境",
     "subtitle": "为每个项目配置初始化脚本和工作树位置。",
     "noProjects": "还没有项目。",
+    "globalWorktreesRootLabel": "全局工作树根目录",
+    "globalWorktreesRootHelp": "当项目没有单独覆盖时，新工作树默认创建在这里。每个项目都会在此根目录下使用自己的子目录。",
+    "globalWorktreesRootPlaceholder": "/path/to/worktrees-root",
+    "globalWorktreesRootPickerTitle": "选择全局工作树根目录",
     "projectLabel": "项目",
     "setupScriptLabel": "初始化脚本",
     "setupScriptPlaceholder": "pnpm install",
     "setupScriptHelp": "每次创建新工作树后，会在独立终端中运行一次。",
     "worktreesFolderLabel": "工作树目录",
-    "worktreesFolderHelp": "为工作树指定自定义目录。留空则使用默认位置。",
+    "worktreesFolderHelp": "为当前项目的工作树指定自定义目录。留空则使用全局根目录或内置默认位置。",
     "worktreesFolderPlaceholder": "/path/to/worktrees"
   },
   "git": {

@@ -776,6 +776,8 @@
     },
     "inputRequested": "需要输入",
     "loading": "加载中…",
+    "toolCallCount_one": "{{count}} 次工具调用",
+    "toolCallCount_other": "{{count}} 次工具调用",
     "messageCount_one": "{{count}} 条消息",
     "messageCount_other": "{{count}} 条消息",
     "moreQuestions_one": " 另有 {{count}} 项",

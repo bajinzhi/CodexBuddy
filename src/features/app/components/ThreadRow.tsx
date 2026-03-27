@@ -4,6 +4,21 @@ import { useTranslation } from "react-i18next";
 import type { ThreadSummary } from "../../../types";
 import { getThreadStatusClass, type ThreadStatusById } from "../../../utils/threadStatus";
 
+const SUBAGENT_ROLE_HUES: Record<string, number> = {
+  default: 220,
+  explorer: 205,
+  reviewer: 142,
+  planner: 34,
+};
+
+function formatSubagentRole(role: string | null | undefined) {
+  const normalized = role?.trim().toLowerCase() ?? "";
+  if (!normalized) {
+    return null;
+  }
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+}
+
 type ThreadRowProps = {
   thread: ThreadSummary;
   depth: number;
@@ -27,6 +42,7 @@ type ThreadRowProps = {
   hasSubagentChildren?: boolean;
   subagentsExpanded?: boolean;
   onToggleSubagents?: (workspaceId: string, threadId: string) => void;
+  showPinnedLabel?: boolean;
 };
 
 export function ThreadRow({
@@ -47,6 +63,7 @@ export function ThreadRow({
   hasSubagentChildren = false,
   subagentsExpanded = true,
   onToggleSubagents,
+  showPinnedLabel = true,
 }: ThreadRowProps) {
   const { t } = useTranslation("app");
   const relativeTime = getThreadTime(thread);
@@ -71,6 +88,14 @@ export function ThreadRow({
   const canPin = depth === 0;
   const isPinned = canPin && isThreadPinned(workspaceId, thread.id);
   const canToggleSubagents = hasSubagentChildren && Boolean(onToggleSubagents);
+  const subagentNickname = thread.subagentNickname?.trim() ?? "";
+  const subagentRoleKey = thread.subagentRole?.trim().toLowerCase() ?? "";
+  const subagentRoleLabel = formatSubagentRole(thread.subagentRole);
+  const subagentHue = SUBAGENT_ROLE_HUES[subagentRoleKey] ?? SUBAGENT_ROLE_HUES.default;
+  const subagentPillStyle = {
+    "--thread-subagent-pill-hue": `${subagentHue}`,
+  } as CSSProperties;
+  const showSubagentMeta = thread.isSubagent && (subagentNickname || subagentRoleLabel);
 
   return (
     <div
@@ -92,10 +117,31 @@ export function ThreadRow({
       }}
     >
       <span className={`thread-status ${statusClass}`} aria-hidden />
-      {isPinned && <span className="thread-pin-icon" aria-label={t("sidebar.pinned")}>📌</span>}
+      {isPinned && (
+        <span
+          className="thread-pin-icon"
+          aria-label={showPinnedLabel ? t("sidebar.pinned") : undefined}
+          aria-hidden={showPinnedLabel ? undefined : true}
+        >
+          📌
+        </span>
+      )}
       <span className="thread-name">{thread.name}</span>
       <div className="thread-meta">
-        {workspaceLabel && <span className="thread-workspace-label">{workspaceLabel}</span>}
+        {showSubagentMeta ? (
+          <>
+            {subagentNickname ? (
+              <span className="thread-subagent-pill" style={subagentPillStyle}>
+                {subagentNickname}
+              </span>
+            ) : null}
+            {subagentRoleLabel ? (
+              <span className="thread-subagent-role">{subagentRoleLabel}</span>
+            ) : null}
+          </>
+        ) : workspaceLabel ? (
+          <span className="thread-workspace-label">{workspaceLabel}</span>
+        ) : null}
         {modelBadge && (
           <span className="thread-model-badge" title={modelBadge}>
             {modelBadge}

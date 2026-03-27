@@ -9,6 +9,16 @@ function asRecord(value: unknown): Record<string, unknown> | null {
   return value as Record<string, unknown>;
 }
 
+function firstNonEmptyString(...values: unknown[]): string | null {
+  for (const value of values) {
+    const normalized = asString(value);
+    if (normalized) {
+      return normalized;
+    }
+  }
+  return null;
+}
+
 function normalizeSubagentKind(value: string): string {
   const normalized = value
     .trim()
@@ -156,6 +166,43 @@ export function getParentThreadIdFromThread(
       spawn.parent_id,
   );
   return spawnParentId || null;
+}
+
+export function getSubagentMetadataFromThread(
+  thread: Record<string, unknown>,
+): { nickname: string | null; role: string | null } {
+  const sourceRecord = asRecord(thread.source);
+  const subAgent = asRecord(
+    sourceRecord?.subAgent ?? sourceRecord?.sub_agent ?? sourceRecord?.subagent,
+  );
+  const threadSpawn = asRecord(subAgent?.threadSpawn ?? subAgent?.thread_spawn);
+
+  return {
+    nickname: firstNonEmptyString(
+      thread.agentNickname,
+      thread.agent_nickname,
+      thread.nickname,
+      subAgent?.agentNickname,
+      subAgent?.agent_nickname,
+      threadSpawn?.agentNickname,
+      threadSpawn?.agent_nickname,
+    ),
+    role: firstNonEmptyString(
+      thread.agentRole,
+      thread.agent_role,
+      thread.agentType,
+      thread.agent_type,
+      thread.role,
+      subAgent?.agentRole,
+      subAgent?.agent_role,
+      subAgent?.agentType,
+      subAgent?.agent_type,
+      threadSpawn?.agentRole,
+      threadSpawn?.agent_role,
+      threadSpawn?.agentType,
+      threadSpawn?.agent_type,
+    ),
+  };
 }
 
 export type ResumedTurnState = {

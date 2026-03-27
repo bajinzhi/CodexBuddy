@@ -224,6 +224,38 @@ describe("useComposerImageDrop", () => {
     hook.unmount();
   });
 
+  it("accepts heic paths from tauri drag-drop", async () => {
+    const onAttachImages = vi.fn();
+    const hook = renderImageDropHook({ disabled: false, onAttachImages });
+
+    const target = document.createElement("div");
+    target.getBoundingClientRect = () =>
+      ({ left: 0, top: 0, right: 100, bottom: 100 } as DOMRect);
+    hook.result.dropTargetRef.current = target;
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    if (!mockOnDragDropEvent) {
+      throw new Error("Drag drop handler not registered");
+    }
+
+    act(() => {
+      mockOnDragDropEvent?.({
+        payload: {
+          type: "drop",
+          position: { x: 40, y: 40 },
+          paths: ["/tmp/screenshot.heic"],
+        },
+      });
+    });
+
+    expect(onAttachImages).toHaveBeenCalledWith(["/tmp/screenshot.heic"]);
+
+    hook.unmount();
+  });
+
   it("ignores drag/drop and paste when disabled", async () => {
     const onAttachImages = vi.fn();
     const hook = renderImageDropHook({ disabled: true, onAttachImages });

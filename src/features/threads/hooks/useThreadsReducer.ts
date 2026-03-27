@@ -66,6 +66,17 @@ export type ThreadAction =
   | { type: "addAssistantMessage"; threadId: string; text: string }
   | { type: "setThreadName"; workspaceId: string; threadId: string; name: string }
   | {
+      type: "mergeThreadSummary";
+      workspaceId: string;
+      threadId: string;
+      patch: Partial<
+        Pick<
+          ThreadSummary,
+          "isSubagent" | "subagentNickname" | "subagentRole" | "createdAt"
+        >
+      >;
+    }
+  | {
       type: "setThreadTimestamp";
       workspaceId: string;
       threadId: string;

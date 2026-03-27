@@ -1,4 +1,4 @@
-# App-Server Events Reference (Codex `23e55d7668dabf86f8ae80b2ed1947a5192da11a`)
+# App-Server Events Reference (Codex `19702e190ebf16f789617ca5f16bfc373c238fe7`)
 
 This document helps agents quickly answer:
 - Which app-server events CodexBuddy supports right now.
@@ -126,7 +126,10 @@ events are currently not routed:
 - `fuzzyFileSearch/sessionCompleted`
 - `fuzzyFileSearch/sessionUpdated`
 - `item/mcpToolCall/progress`
+- `item/autoApprovalReview/completed`
+- `item/autoApprovalReview/started`
 - `mcpServer/oauthLogin/completed`
+- `mcpServer/startupStatus/updated`
 - `model/rerouted`
 - `rawResponseItem/completed`
 - `serverRequest/resolved`
@@ -137,6 +140,7 @@ events are currently not routed:
 - `thread/realtime/itemAdded`
 - `thread/realtime/outputAudio/delta`
 - `thread/realtime/started`
+- `thread/realtime/transcriptUpdated`
 - `windows/worldWritableWarning`
 - `windowsSandbox/setupCompleted`
 
@@ -186,6 +190,13 @@ Compared against Codex v2 request methods, CodexBuddy currently does not send:
 - `externalAgentConfig/detect`
 - `externalAgentConfig/import`
 - `feedback/upload`
+- `fs/copy`
+- `fs/createDirectory`
+- `fs/getMetadata`
+- `fs/readDirectory`
+- `fs/readFile`
+- `fs/remove`
+- `fs/writeFile`
 - `fuzzyFileSearch/sessionStart`
 - `fuzzyFileSearch/sessionStop`
 - `fuzzyFileSearch/sessionUpdate`
@@ -193,10 +204,9 @@ Compared against Codex v2 request methods, CodexBuddy currently does not send:
 - `mock/experimentalMethod`
 - `plugin/install`
 - `plugin/list`
+- `plugin/read`
 - `plugin/uninstall`
 - `skills/config/write`
-- `skills/remote/export`
-- `skills/remote/list`
 - `thread/backgroundTerminals/clean`
 - `thread/decrement_elicitation`
 - `thread/increment_elicitation`
@@ -208,6 +218,7 @@ Compared against Codex v2 request methods, CodexBuddy currently does not send:
 - `thread/realtime/start`
 - `thread/realtime/stop`
 - `thread/rollback`
+- `thread/shellCommand`
 - `thread/unarchive`
 - `thread/unsubscribe`
 - `windowsSandbox/setupStart`

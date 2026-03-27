@@ -1,7 +1,9 @@
 import { joinWorkspacePath } from "../../../utils/platformPaths";
-
-const WORKSPACE_MOUNT_PREFIX = "/workspace/";
-const WORKSPACES_MOUNT_PREFIX = "/workspaces/";
+import {
+  isKnownLocalWorkspaceRoutePath,
+  splitWorkspaceRoutePath,
+  WORKSPACE_MOUNT_PREFIX,
+} from "./workspaceRoutePaths";
 
 function normalizePathSeparators(path: string) {
   return path.replace(/\\/g, "/");
@@ -23,6 +25,9 @@ export function resolveMountedWorkspacePath(
   workspacePath?: string | null,
 ) {
   const trimmed = path.trim();
+  if (isKnownLocalWorkspaceRoutePath(trimmed)) {
+    return null;
+  }
   const trimmedWorkspace = workspacePath?.trim() ?? "";
   if (!trimmedWorkspace) {
     return null;
@@ -51,20 +56,12 @@ export function resolveMountedWorkspacePath(
     return null;
   };
 
-  if (normalizedPath.startsWith(WORKSPACE_MOUNT_PREFIX)) {
-    return resolveFromSegments(
-      normalizedPath.slice(WORKSPACE_MOUNT_PREFIX.length).split("/").filter(Boolean),
-      true,
-    );
+  const routeMatch = splitWorkspaceRoutePath(normalizedPath);
+  if (!routeMatch) {
+    return null;
   }
-  if (normalizedPath.startsWith(WORKSPACES_MOUNT_PREFIX)) {
-    return resolveFromSegments(
-      normalizedPath
-        .slice(WORKSPACES_MOUNT_PREFIX.length)
-        .split("/")
-        .filter(Boolean),
-      false,
-    );
-  }
-  return null;
+  return resolveFromSegments(
+    routeMatch.segments,
+    routeMatch.prefix === WORKSPACE_MOUNT_PREFIX,
+  );
 }

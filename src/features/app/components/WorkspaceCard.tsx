@@ -6,6 +6,7 @@ import type { WorkspaceInfo } from "../../../types";
 type WorkspaceCardProps = {
   workspace: WorkspaceInfo;
   workspaceName?: React.ReactNode;
+  summary?: React.ReactNode;
   isActive: boolean;
   isCollapsed: boolean;
   addMenuOpen: boolean;
@@ -26,6 +27,7 @@ type WorkspaceCardProps = {
 export function WorkspaceCard({
   workspace,
   workspaceName,
+  summary,
   isActive,
   isCollapsed,
   addMenuOpen,
@@ -100,6 +102,7 @@ export function WorkspaceCard({
               +
             </button>
           </div>
+          {summary ? <div className="workspace-summary">{summary}</div> : null}
         </div>
         {!workspace.connected && (
           <span

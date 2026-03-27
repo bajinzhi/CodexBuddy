@@ -1,20 +1,33 @@
 import type { CommonLink, OpenAppTarget } from "@/types";
 
-type SettingsSection =
-  | "projects"
-  | "environments"
-  | "display"
-  | "about"
-  | "composer"
-  | "dictation"
-  | "shortcuts"
-  | "common-links"
-  | "open-apps"
-  | "git"
-  | "server"
-  | "agents";
+export const SETTINGS_SECTION_IDS = [
+  "projects",
+  "environments",
+  "display",
+  "about",
+  "composer",
+  "dictation",
+  "shortcuts",
+  "common-links",
+  "open-apps",
+  "git",
+  "server",
+  "agents",
+] as const;
 
-export type CodexSection = SettingsSection | "codex" | "features";
+export const SETTINGS_EXTRA_SECTION_IDS = ["codex", "features"] as const;
+
+export const SETTINGS_ROUTE_SECTION_IDS = [
+  ...SETTINGS_SECTION_IDS,
+  ...SETTINGS_EXTRA_SECTION_IDS,
+  "profile",
+] as const;
+
+type SettingsSection = (typeof SETTINGS_SECTION_IDS)[number];
+
+export type CodexSection =
+  | SettingsSection
+  | (typeof SETTINGS_EXTRA_SECTION_IDS)[number];
 
 export type ShortcutSettingKey =
   | "composerModelShortcut"

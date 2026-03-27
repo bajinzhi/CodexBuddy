@@ -17,6 +17,7 @@ type ThreadListProps = {
   unpinnedRows: ThreadListRow[];
   totalThreadRoots: number;
   isExpanded: boolean;
+  showExpandToggle?: boolean;
   nextCursor: string | null;
   isPaging: boolean;
   nested?: boolean;
@@ -45,6 +46,7 @@ export function ThreadList({
   unpinnedRows,
   totalThreadRoots,
   isExpanded,
+  showExpandToggle = true,
   nextCursor,
   isPaging,
   nested,
@@ -142,7 +144,7 @@ export function ThreadList({
           onToggleSubagents={(_, threadId) => toggleThreadSubagents(threadId)}
         />
       ))}
-      {totalThreadRoots > 3 && (
+      {showExpandToggle && totalThreadRoots > 3 && (
         <button
           className="thread-more"
           onClick={(event) => {

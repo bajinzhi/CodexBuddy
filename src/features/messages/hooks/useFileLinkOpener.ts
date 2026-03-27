@@ -10,6 +10,11 @@ import { openWorkspaceIn } from "../../../services/tauri";
 import { pushErrorToast } from "../../../services/toasts";
 import type { OpenAppTarget } from "../../../types";
 import {
+  type ParsedFileLocation,
+  formatFileLocation,
+  toFileUrl,
+} from "../../../utils/fileLinks";
+import {
   isAbsolutePath,
   joinWorkspacePath,
   revealInFileManagerLabel,
@@ -47,6 +52,17 @@ const canOpenTarget = (target: OpenTarget) => {
   return Boolean(resolveAppName(target));
 };
 
+function resolveOpenTarget(
+  openTargets: OpenAppTarget[],
+  selectedOpenAppId: string,
+): OpenTarget {
+  return {
+    ...DEFAULT_OPEN_TARGET,
+    ...(openTargets.find((entry) => entry.id === selectedOpenAppId) ??
+      openTargets[0]),
+  };
+}
+
 function resolveFilePath(path: string, workspacePath?: string | null) {
   const trimmed = path.trim();
   if (!workspacePath) {
@@ -62,84 +78,19 @@ function resolveFilePath(path: string, workspacePath?: string | null) {
   return joinWorkspacePath(workspacePath, trimmed);
 }
 
-type ParsedFileLocation = {
-  path: string;
-  line: number | null;
-  column: number | null;
-};
-
-const FILE_LOCATION_SUFFIX_PATTERN = /^(.*?):(\d+)(?::(\d+))?$/;
-const FILE_LOCATION_RANGE_SUFFIX_PATTERN = /^(.*?):(\d+)-(\d+)$/;
-const FILE_LOCATION_HASH_PATTERN = /^(.*?)#L(\d+)(?:C(\d+))?$/i;
-
-function parsePositiveInteger(value?: string) {
-  if (!value) {
-    return null;
-  }
-  const parsed = Number.parseInt(value, 10);
-  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
-}
-
-function parseFileLocation(rawPath: string): ParsedFileLocation {
-  const trimmed = rawPath.trim();
-  const hashMatch = trimmed.match(FILE_LOCATION_HASH_PATTERN);
-  if (hashMatch) {
-    const [, path, lineValue, columnValue] = hashMatch;
-    const line = parsePositiveInteger(lineValue);
-    if (line !== null) {
-      return {
-        path,
-        line,
-        column: parsePositiveInteger(columnValue),
-      };
-    }
-  }
-
-  const match = trimmed.match(FILE_LOCATION_SUFFIX_PATTERN);
-  if (match) {
-    const [, path, lineValue, columnValue] = match;
-    const line = parsePositiveInteger(lineValue);
-    if (line === null) {
-      return {
-        path: trimmed,
-        line: null,
-        column: null,
-      };
-    }
-
-    return {
-      path,
-      line,
-      column: parsePositiveInteger(columnValue),
-    };
-  }
-
-  const rangeMatch = trimmed.match(FILE_LOCATION_RANGE_SUFFIX_PATTERN);
-  if (rangeMatch) {
-    const [, path, startLineValue] = rangeMatch;
-    const startLine = parsePositiveInteger(startLineValue);
-    if (startLine !== null) {
-      return {
-        path,
-        line: startLine,
-        column: null,
-      };
-    }
-  }
-
+function resolveFileLinkContext(
+  fileLocation: ParsedFileLocation,
+  workspacePath?: string | null,
+) {
   return {
-    path: trimmed,
-    line: null,
-    column: null,
+    fileLocation,
+    rawPathLabel: formatFileLocation(
+      fileLocation.path,
+      fileLocation.line,
+      fileLocation.column,
+    ),
+    resolvedPath: resolveFilePath(fileLocation.path, workspacePath),
   };
-}
-
-function toFileUrl(path: string, line: number | null, column: number | null) {
-  const base = path.startsWith("/") ? `file://${path}` : path;
-  if (line === null) {
-    return base;
-  }
-  return `${base}#L${line}${column !== null ? `C${column}` : ""}`;
 }
 
 export function useFileLinkOpener(
@@ -170,14 +121,12 @@ export function useFileLinkOpener(
   );
 
   const openFileLink = useCallback(
-    async (rawPath: string) => {
-      const target = {
-        ...DEFAULT_OPEN_TARGET,
-        ...(openTargets.find((entry) => entry.id === selectedOpenAppId) ??
-          openTargets[0]),
-      };
-      const fileLocation = parseFileLocation(rawPath);
-      const resolvedPath = resolveFilePath(fileLocation.path, workspacePath);
+    async (targetLocation: ParsedFileLocation) => {
+      const target = resolveOpenTarget(openTargets, selectedOpenAppId);
+      const { fileLocation, rawPathLabel, resolvedPath } = resolveFileLinkContext(
+        targetLocation,
+        workspacePath,
+      );
       const openLocation = {
         ...(fileLocation.line !== null ? { line: fileLocation.line } : {}),
         ...(fileLocation.column !== null ? { column: fileLocation.column } : {}),
@@ -216,7 +165,7 @@ export function useFileLinkOpener(
         });
       } catch (error) {
         reportOpenError(error, {
-          rawPath,
+          rawPath: rawPathLabel,
           resolvedPath,
           workspacePath,
           targetId: target.id,
@@ -230,16 +179,14 @@ export function useFileLinkOpener(
   );
 
   const showFileLinkMenu = useCallback(
-    async (event: MouseEvent, rawPath: string) => {
+    async (event: MouseEvent, targetLocation: ParsedFileLocation) => {
       event.preventDefault();
       event.stopPropagation();
-      const target = {
-        ...DEFAULT_OPEN_TARGET,
-        ...(openTargets.find((entry) => entry.id === selectedOpenAppId) ??
-          openTargets[0]),
-      };
-      const fileLocation = parseFileLocation(rawPath);
-      const resolvedPath = resolveFilePath(fileLocation.path, workspacePath);
+      const target = resolveOpenTarget(openTargets, selectedOpenAppId);
+      const { fileLocation, rawPathLabel, resolvedPath } = resolveFileLinkContext(
+        targetLocation,
+        workspacePath,
+      );
       const appName = resolveAppName(target);
       const command = resolveCommand(target);
       const canOpen = canOpenTarget(target);
@@ -258,7 +205,7 @@ export function useFileLinkOpener(
           text: openLabel,
           enabled: canOpen,
           action: async () => {
-            await openFileLink(rawPath);
+            await openFileLink(fileLocation);
           },
         }),
         ...(target.kind === "finder"
@@ -271,7 +218,7 @@ export function useFileLinkOpener(
                     await revealItemInDir(resolvedPath);
                   } catch (error) {
                     reportOpenError(error, {
-                      rawPath,
+                      rawPath: rawPathLabel,
                       resolvedPath,
                       workspacePath,
                       targetId: target.id,

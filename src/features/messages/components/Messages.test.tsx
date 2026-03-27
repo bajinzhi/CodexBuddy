@@ -3,6 +3,7 @@ import { useCallback, useState } from "react";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ConversationItem } from "../../../types";
+import { expectOpenedFileTarget } from "../test/fileLinkAssertions";
 import { Messages } from "./Messages";
 
 const useFileLinkOpenerMock = vi.fn(
@@ -87,7 +88,7 @@ describe("Messages", () => {
     const openButton = screen.getByRole("button", { name: "Open image 1" });
     fireEvent.click(openButton);
     expect(screen.getByRole("dialog")).toBeTruthy();
-  }, 10_000);
+  });
 
   it("preserves newlines when images are attached", () => {
     const items: ConversationItem[] = [
@@ -142,6 +143,35 @@ describe("Messages", () => {
 
     const markdown = container.querySelector(".markdown");
     expect(markdown?.textContent ?? "").toContain("Literal [image] token");
+  });
+
+  it("uses the table container as the visual bubble for assistant table-only messages", () => {
+    const items: ConversationItem[] = [
+      {
+        id: "msg-table-1",
+        kind: "message",
+        role: "assistant",
+        text: [
+          "src/features/app/hooks/useMainAppLayoutSurfaces.ts | category=clarity | Layout assembly is still too broad. | Split surface assembly by domain. | high",
+          "",
+          "src/features/threads/hooks/threadMessagingHelpers.ts | category=clarity | Helper responsibilities are too broad. | Split helpers by concern. | medium",
+        ].join("\n"),
+      },
+    ];
+
+    const { container } = render(
+      <Messages
+        items={items}
+        threadId="thread-1"
+        workspaceId="ws-1"
+        isThinking={false}
+        openTargets={[]}
+        selectedOpenAppId=""
+      />,
+    );
+
+    expect(container.querySelector(".message-bubble-table-only")).toBeTruthy();
+    expect(container.querySelector(".markdown-table-wrap")).toBeTruthy();
   });
 
   it("quotes a message into composer using markdown blockquote format", () => {
@@ -271,14 +301,16 @@ describe("Messages", () => {
     expect(fileLink).toBeTruthy();
 
     fireEvent.click(fileLink as Element);
-    expect(openFileLinkMock).toHaveBeenCalledWith(
-      "iosApp/src/views/DocumentsList/DocumentListView.swift:111",
+    expectOpenedFileTarget(
+      openFileLinkMock,
+      "iosApp/src/views/DocumentsList/DocumentListView.swift",
+      111,
     );
   });
 
   it("routes markdown href file paths through the file opener", () => {
     const linkedPath =
-      "/Users/bajinzhi/Documents/Dev/CodexBuddy/src/features/messages/components/Markdown.tsx:244";
+      "/Users/dimillian/Documents/Dev/CodexMonitor/src/features/messages/components/Markdown.tsx:244";
     const items: ConversationItem[] = [
       {
         id: "msg-file-href-link",
@@ -300,7 +332,11 @@ describe("Messages", () => {
     );
 
     fireEvent.click(screen.getByText("this file"));
-    expect(openFileLinkMock).toHaveBeenCalledWith(linkedPath);
+    expectOpenedFileTarget(
+      openFileLinkMock,
+      "/Users/dimillian/Documents/Dev/CodexMonitor/src/features/messages/components/Markdown.tsx",
+      244,
+    );
   });
 
   it("routes absolute non-whitelisted file href paths through the file opener", () => {
@@ -326,7 +362,7 @@ describe("Messages", () => {
     );
 
     fireEvent.click(screen.getByText("app file"));
-    expect(openFileLinkMock).toHaveBeenCalledWith(linkedPath);
+    expectOpenedFileTarget(openFileLinkMock, "/custom/project/src/App.tsx", 12);
   });
 
   it("decodes percent-encoded href file paths before opening", () => {
@@ -351,12 +387,12 @@ describe("Messages", () => {
     );
 
     fireEvent.click(screen.getByText("guide"));
-    expect(openFileLinkMock).toHaveBeenCalledWith("./docs/My Guide.md");
+    expectOpenedFileTarget(openFileLinkMock, "./docs/My Guide.md");
   });
 
   it("routes absolute href file paths with #L anchors through the file opener", () => {
     const linkedPath =
-      "/Users/bajinzhi/Documents/Dev/CodexBuddy/src/features/messages/components/Markdown.tsx#L244";
+      "/Users/dimillian/Documents/Dev/CodexMonitor/src/features/messages/components/Markdown.tsx#L244";
     const items: ConversationItem[] = [
       {
         id: "msg-file-href-anchor-link",
@@ -378,13 +414,46 @@ describe("Messages", () => {
     );
 
     fireEvent.click(screen.getByText("this file"));
-    expect(openFileLinkMock).toHaveBeenCalledWith(
-      "/Users/bajinzhi/Documents/Dev/CodexBuddy/src/features/messages/components/Markdown.tsx:244",
+    expectOpenedFileTarget(
+      openFileLinkMock,
+      "/Users/dimillian/Documents/Dev/CodexMonitor/src/features/messages/components/Markdown.tsx",
+      244,
+    );
+  });
+
+  it("routes Windows absolute href file paths with #L anchors through the file opener", () => {
+    const linkedPath =
+      "I:\\gpt-projects\\CodexMonitor\\src\\features\\settings\\components\\sections\\SettingsDisplaySection.tsx#L422";
+    const items: ConversationItem[] = [
+      {
+        id: "msg-file-href-windows-anchor-link",
+        kind: "message",
+        role: "assistant",
+        text: `Open [settings display](${linkedPath})`,
+      },
+    ];
+
+    render(
+      <Messages
+        items={items}
+        threadId="thread-1"
+        workspaceId="ws-1"
+        isThinking={false}
+        openTargets={[]}
+        selectedOpenAppId=""
+      />,
+    );
+
+    fireEvent.click(screen.getByText("settings display"));
+    expectOpenedFileTarget(
+      openFileLinkMock,
+      "I:\\gpt-projects\\CodexMonitor\\src\\features\\settings\\components\\sections\\SettingsDisplaySection.tsx",
+      422,
     );
   });
 
   it("routes dotless workspace href file paths through the file opener", () => {
-    const linkedPath = "/workspace/CodexBuddy/LICENSE";
+    const linkedPath = "/workspace/CodexMonitor/LICENSE";
     const items: ConversationItem[] = [
       {
         id: "msg-file-href-workspace-dotless-link",
@@ -406,7 +475,7 @@ describe("Messages", () => {
     );
 
     fireEvent.click(screen.getByText("license"));
-    expect(openFileLinkMock).toHaveBeenCalledWith(linkedPath);
+    expectOpenedFileTarget(openFileLinkMock, linkedPath);
   });
 
   it("keeps non-file relative links as normal markdown links", () => {
@@ -572,9 +641,9 @@ describe("Messages", () => {
   });
 
   it("renders absolute file references as workspace-relative paths", () => {
-    const workspacePath = "/Users/bajinzhi/Documents/Dev/CodexBuddy";
+    const workspacePath = "/Users/dimillian/Documents/Dev/CodexMonitor";
     const absolutePath =
-      "/Users/bajinzhi/Documents/Dev/CodexBuddy/src/features/messages/components/Markdown.tsx:244";
+      "/Users/dimillian/Documents/Dev/CodexMonitor/src/features/messages/components/Markdown.tsx:244";
     const items: ConversationItem[] = [
       {
         id: "msg-file-link-absolute-inside",
@@ -603,12 +672,16 @@ describe("Messages", () => {
     const fileLink = container.querySelector(".message-file-link");
     expect(fileLink).toBeTruthy();
     fireEvent.click(fileLink as Element);
-    expect(openFileLinkMock).toHaveBeenCalledWith(absolutePath);
+    expectOpenedFileTarget(
+      openFileLinkMock,
+      "/Users/dimillian/Documents/Dev/CodexMonitor/src/features/messages/components/Markdown.tsx",
+      244,
+    );
   });
 
   it("renders absolute file references outside workspace using dotdot-relative paths", () => {
-    const workspacePath = "/Users/bajinzhi/Documents/Dev/CodexBuddy";
-    const absolutePath = "/Users/bajinzhi/Documents/Other/IceCubesApp/file.rs:123";
+    const workspacePath = "/Users/dimillian/Documents/Dev/CodexMonitor";
+    const absolutePath = "/Users/dimillian/Documents/Other/IceCubesApp/file.rs:123";
     const items: ConversationItem[] = [
       {
         id: "msg-file-link-absolute-outside",
@@ -637,7 +710,11 @@ describe("Messages", () => {
     const fileLink = container.querySelector(".message-file-link");
     expect(fileLink).toBeTruthy();
     fireEvent.click(fileLink as Element);
-    expect(openFileLinkMock).toHaveBeenCalledWith(absolutePath);
+    expectOpenedFileTarget(
+      openFileLinkMock,
+      "/Users/dimillian/Documents/Other/IceCubesApp/file.rs",
+      123,
+    );
   });
 
   it("does not re-render messages while typing when message props stay stable", () => {

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import * as Sentry from "@sentry/react";
 import type {
+  CollabAgentRef,
   CustomPromptOption,
   DebugEntry,
   ServiceTier,
@@ -22,17 +23,21 @@ import { useThreadSelectors } from "./useThreadSelectors";
 import { useThreadStatus } from "./useThreadStatus";
 import { useThreadUserInput } from "./useThreadUserInput";
 import { useThreadTitleAutogeneration } from "./useThreadTitleAutogeneration";
+import { useDetachedReviewTracking } from "./useDetachedReviewTracking";
 import {
   archiveThread as archiveThreadService,
+  readThread as readThreadService,
   setThreadName as setThreadNameService,
 } from "@services/tauri";
 import {
-  loadDetachedReviewLinks,
   makeCustomNameKey,
   saveCustomName,
-  saveDetachedReviewLinks,
 } from "@threads/utils/threadStorage";
 import { getParentThreadIdFromThread } from "@threads/utils/threadRpc";
+import {
+  buildThreadSummaryFromThread,
+  extractThreadFromResponse,
+} from "@threads/utils/threadSummary";
 import { getSubagentDescendantThreadIds } from "@threads/utils/subagentTree";
 
 type UseThreadsOptions = {
@@ -112,13 +117,10 @@ export function useThreads({
   const itemsByThreadRef = useRef(state.itemsByThread);
   const threadsByWorkspaceRef = useRef(state.threadsByWorkspace);
   const activeTurnIdByThreadRef = useRef(state.activeTurnIdByThread);
-  const detachedReviewStartedNoticeRef = useRef<Set<string>>(new Set());
-  const detachedReviewCompletedNoticeRef = useRef<Set<string>>(new Set());
-  const detachedReviewParentByChildRef = useRef<Record<string, string>>({});
   const subagentThreadByWorkspaceThreadRef = useRef<Record<string, true>>({});
   const threadParentByIdRef = useRef(state.threadParentById);
   const cascadeArchiveSkipRef = useRef<Record<string, number>>({});
-  const detachedReviewLinksByWorkspaceRef = useRef(loadDetachedReviewLinks());
+  const subagentHydrationInFlightRef = useRef<Record<string, true>>({});
   planByThreadRef.current = state.planByThread;
   itemsByThreadRef.current = state.itemsByThread;
   threadsByWorkspaceRef.current = state.threadsByWorkspace;
@@ -146,6 +148,7 @@ export function useThreads({
     activeWorkspaceId,
     activeThreadIdByWorkspace: state.activeThreadIdByWorkspace,
     itemsByThread: state.itemsByThread,
+    threadsByWorkspace: state.threadsByWorkspace,
   });
 
   const getCurrentRateLimits = useCallback(
@@ -275,113 +278,123 @@ export function useThreads({
     [],
   );
 
-  const registerDetachedReviewChild = useCallback(
-    (workspaceId: string, parentId: string, childId: string) => {
-      if (!workspaceId || !parentId || !childId || parentId === childId) {
-        return;
-      }
-      detachedReviewParentByChildRef.current[childId] = parentId;
-      const existingWorkspaceLinks =
-        detachedReviewLinksByWorkspaceRef.current[workspaceId] ?? {};
-      if (existingWorkspaceLinks[childId] !== parentId) {
-        const nextLinksByWorkspace = {
-          ...detachedReviewLinksByWorkspaceRef.current,
-          [workspaceId]: {
-            ...existingWorkspaceLinks,
-            [childId]: parentId,
-          },
-        };
-        detachedReviewLinksByWorkspaceRef.current = nextLinksByWorkspace;
-        saveDetachedReviewLinks(nextLinksByWorkspace);
-      }
-
-      const timestamp = Date.now();
-      recordThreadActivity(workspaceId, parentId, timestamp);
-      dispatch({
-        type: "setThreadTimestamp",
-        workspaceId,
-        threadId: parentId,
-        timestamp,
-      });
-
-      const noticeKey = `${parentId}->${childId}`;
-      if (!detachedReviewStartedNoticeRef.current.has(noticeKey)) {
-        detachedReviewStartedNoticeRef.current.add(noticeKey);
-        dispatch({
-          type: "addAssistantMessage",
-          threadId: parentId,
-          text: `Detached review started. [Open review thread](/thread/${childId})`,
-        });
-      }
-
-      if (parentId !== activeThreadId) {
-        dispatch({ type: "markUnread", threadId: parentId, hasUnread: true });
-      }
-      safeMessageActivity();
-    },
-    [activeThreadId, dispatch, recordThreadActivity, safeMessageActivity],
-  );
-
-  useEffect(() => {
-    const linksByWorkspace = detachedReviewLinksByWorkspaceRef.current;
-    Object.entries(state.threadsByWorkspace).forEach(([workspaceId, threads]) => {
-      const workspaceLinks = linksByWorkspace[workspaceId];
-      if (!workspaceLinks) {
-        return;
-      }
-      const threadIds = new Set(threads.map((thread) => thread.id));
-      Object.entries(workspaceLinks).forEach(([childId, parentId]) => {
-        if (!childId || !parentId || childId === parentId) {
-          return;
-        }
-        if (!threadIds.has(childId) || !threadIds.has(parentId)) {
-          return;
-        }
-        if (state.threadParentById[childId]) {
-          return;
-        }
-        updateThreadParent(parentId, [childId]);
-      });
-    });
-  }, [state.threadParentById, state.threadsByWorkspace, updateThreadParent]);
-
-  const handleReviewExited = useCallback(
-    (workspaceId: string, threadId: string) => {
-      const parentId = detachedReviewParentByChildRef.current[threadId];
-      if (!parentId) {
-        return;
-      }
-      delete detachedReviewParentByChildRef.current[threadId];
-
-      const timestamp = Date.now();
-      recordThreadActivity(workspaceId, parentId, timestamp);
-      dispatch({
-        type: "setThreadTimestamp",
-        workspaceId,
-        threadId: parentId,
-        timestamp,
-      });
-      const noticeKey = `${parentId}->${threadId}`;
-      const alreadyNotified = detachedReviewCompletedNoticeRef.current.has(noticeKey);
-      if (!alreadyNotified) {
-        detachedReviewCompletedNoticeRef.current.add(noticeKey);
-        dispatch({
-          type: "addAssistantMessage",
-          threadId: parentId,
-          text: `Detached review completed. [Open review thread](/thread/${threadId})`,
-        });
-      }
-      if (parentId !== activeThreadId) {
-        dispatch({ type: "markUnread", threadId: parentId, hasUnread: true });
-      }
-      safeMessageActivity();
-    },
-    [
+  const { registerDetachedReviewChild, handleReviewExited } =
+    useDetachedReviewTracking({
       activeThreadId,
       dispatch,
       recordThreadActivity,
       safeMessageActivity,
-    ],
+      threadsByWorkspace: state.threadsByWorkspace,
+      threadParentById: state.threadParentById,
+      updateThreadParent,
+    });
+
+  const hydrateSubagentThreads = useCallback(
+    async (workspaceId: string, receivers: CollabAgentRef[]) => {
+      if (!workspaceId || receivers.length === 0) {
+        return;
+      }
+      const uniqueThreadIds = Array.from(
+        new Set(
+          receivers
+            .map((receiver) => receiver.threadId.trim())
+            .filter((threadId) => threadId.length > 0),
+        ),
+      );
+      if (uniqueThreadIds.length === 0) {
+        return;
+      }
+
+      await Promise.all(
+        uniqueThreadIds.map(async (threadId) => {
+          const key = buildWorkspaceThreadKey(workspaceId, threadId);
+          if (subagentHydrationInFlightRef.current[key]) {
+            return;
+          }
+          const existingThread = threadsByWorkspaceRef.current[workspaceId]?.find(
+            (thread) => thread.id === threadId,
+          );
+          if (existingThread?.subagentNickname && existingThread.subagentRole) {
+            return;
+          }
+
+          subagentHydrationInFlightRef.current[key] = true;
+          try {
+            const response = await readThreadService(workspaceId, threadId);
+            const thread = extractThreadFromResponse(response);
+            if (!thread) {
+              return;
+            }
+            const fallbackIndex =
+              threadsByWorkspaceRef.current[workspaceId]?.length ?? 0;
+            const summary = buildThreadSummaryFromThread({
+              workspaceId,
+              thread,
+              fallbackIndex,
+              getCustomName,
+            });
+            if (!summary) {
+              return;
+            }
+
+            dispatch({ type: "ensureThread", workspaceId, threadId: summary.id });
+            const preview = String(thread.preview ?? "").trim();
+            const customName = getCustomName(workspaceId, summary.id);
+            if (preview || customName) {
+              dispatch({
+                type: "setThreadName",
+                workspaceId,
+                threadId: summary.id,
+                name: summary.name,
+              });
+            }
+            dispatch({
+              type: "mergeThreadSummary",
+              workspaceId,
+              threadId: summary.id,
+              patch: {
+                ...(summary.isSubagent ? { isSubagent: true } : {}),
+                ...(summary.subagentNickname
+                  ? { subagentNickname: summary.subagentNickname }
+                  : {}),
+                ...(summary.subagentRole ? { subagentRole: summary.subagentRole } : {}),
+                ...(summary.createdAt !== undefined ? { createdAt: summary.createdAt } : {}),
+              },
+            });
+            if (summary.updatedAt > 0) {
+              dispatch({
+                type: "setThreadTimestamp",
+                workspaceId,
+                threadId: summary.id,
+                timestamp: summary.updatedAt,
+              });
+            }
+            const parentThreadId = getParentThreadIdFromThread(thread);
+            if (parentThreadId) {
+              updateThreadParent(parentThreadId, [summary.id]);
+            }
+            if (summary.isSubagent) {
+              onSubagentThreadDetected(workspaceId, summary.id);
+            }
+          } catch (error) {
+            onDebug?.({
+              id: `${Date.now()}-client-thread-read-error`,
+              timestamp: Date.now(),
+              source: "error",
+              label: "thread/read error",
+              payload: {
+                workspaceId,
+                threadId,
+                error: error instanceof Error ? error.message : String(error),
+              },
+            });
+          } finally {
+            delete subagentHydrationInFlightRef.current[key];
+          }
+        }),
+      );
+    },
+    [dispatch, getCustomName, onDebug, onSubagentThreadDetected, updateThreadParent],
   );
 
   const { onUserMessageCreated } = useThreadTitleAutogeneration({
@@ -413,6 +426,7 @@ export function useThreads({
     onDebug,
     onWorkspaceConnected: handleWorkspaceConnected,
     applyCollabThreadLinks,
+    hydrateSubagentThreads,
     onReviewExited: handleReviewExited,
     approvalAllowlistRef,
     pendingInterruptsRef,

@@ -2,6 +2,7 @@ import { useCallback, useMemo } from "react";
 import type { Dispatch, MutableRefObject } from "react";
 import type {
   AppServerEvent,
+  CollabAgentRef,
   ConversationItem,
   DebugEntry,
   RateLimitSnapshot,
@@ -47,6 +48,10 @@ type ThreadEventHandlersOptions = {
     threadId: string,
     item: Record<string, unknown>,
   ) => void;
+  hydrateSubagentThreads?: (
+    workspaceId: string,
+    receivers: CollabAgentRef[],
+  ) => void | Promise<void>;
   onReviewExited?: (workspaceId: string, threadId: string) => void;
   approvalAllowlistRef: MutableRefObject<Record<string, string[][]>>;
   pendingInterruptsRef: MutableRefObject<Set<string>>;
@@ -72,6 +77,7 @@ export function useThreadEventHandlers({
   onDebug,
   onWorkspaceConnected,
   applyCollabThreadLinks,
+  hydrateSubagentThreads,
   onReviewExited,
   approvalAllowlistRef,
   pendingInterruptsRef,
@@ -143,6 +149,7 @@ export function useThreadEventHandlers({
     safeMessageActivity,
     recordThreadActivity,
     applyCollabThreadLinks,
+    hydrateSubagentThreads,
     onUserMessageCreated,
     onReviewExited,
   });

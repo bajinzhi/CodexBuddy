@@ -676,34 +676,37 @@ export function GitDiffPanel({
         </div>
       }
     >
+      <div className="git-panel-overview">
+        <div className="git-panel-overview-status">
+          <GitPanelModeStatus
+            mode={mode}
+            diffStatusLabel={diffStatusLabel}
+            perFileDiffStatusLabel={perFileDiffStatusLabel}
+            logCountLabel={logCountLabel}
+            logSyncLabel={logSyncLabel}
+            logUpstreamLabel={logUpstreamLabel}
+            issuesLoading={issuesLoading}
+            issuesTotal={issuesTotal}
+            pullRequestsLoading={pullRequestsLoading}
+            pullRequestsTotal={pullRequestsTotal}
+          />
+        </div>
 
-      <GitPanelModeStatus
-        mode={mode}
-        diffStatusLabel={diffStatusLabel}
-        perFileDiffStatusLabel={perFileDiffStatusLabel}
-        logCountLabel={logCountLabel}
-        logSyncLabel={logSyncLabel}
-        logUpstreamLabel={logUpstreamLabel}
-        issuesLoading={issuesLoading}
-        issuesTotal={issuesTotal}
-        pullRequestsLoading={pullRequestsLoading}
-        pullRequestsTotal={pullRequestsTotal}
-      />
+        <GitBranchRow
+          mode={mode}
+          branchName={branchName}
+          onFetch={onFetch}
+          fetchLoading={fetchLoading}
+        />
 
-      <GitBranchRow
-        mode={mode}
-        branchName={branchName}
-        onFetch={onFetch}
-        fetchLoading={fetchLoading}
-      />
-
-      <GitRootCurrentPath
-        mode={mode}
-        hasGitRoot={hasGitRoot}
-        gitRoot={gitRoot}
-        onScanGitRoots={onScanGitRoots}
-        gitRootScanLoading={gitRootScanLoading}
-      />
+        <GitRootCurrentPath
+          mode={mode}
+          hasGitRoot={hasGitRoot}
+          gitRoot={gitRoot}
+          onScanGitRoots={onScanGitRoots}
+          gitRootScanLoading={gitRootScanLoading}
+        />
+      </div>
 
       {mode === "diff" ? (
         <GitDiffModeContent

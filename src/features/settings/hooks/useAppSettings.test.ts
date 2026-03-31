@@ -58,7 +58,7 @@ describe("useAppSettings", () => {
     expect(result.current.settings.theme).toBe("system");
     expect(result.current.settings.uiLanguage).toBe("system");
     expect(result.current.settings.uiFontFamily).toContain("system-ui");
-    expect(result.current.settings.codeFontFamily).toContain("ui-monospace");
+    expect(result.current.settings.codeFontFamily).toMatch(/^"JetBrainsMono NF"/);
     expect(result.current.settings.codeFontSize).toBe(16);
     expect(result.current.settings.personality).toBe("friendly");
     expect(result.current.settings.usageShowRemaining).toBe(true);
@@ -86,7 +86,7 @@ describe("useAppSettings", () => {
     expect(result.current.settings.uiLanguage).toBe("zh-CN");
     expect(result.current.settings.theme).toBe("system");
     expect(result.current.settings.uiFontFamily).toContain("system-ui");
-    expect(result.current.settings.codeFontFamily).toContain("ui-monospace");
+    expect(result.current.settings.codeFontFamily).toMatch(/^"JetBrainsMono NF"/);
     expect(result.current.settings.backendMode).toBe("local");
     expect(result.current.settings.dictationModelId).toBe("base");
     expect(result.current.settings.interruptShortcut).toBeTruthy();
@@ -135,7 +135,7 @@ describe("useAppSettings", () => {
         theme: "system",
         uiScale: 0.1,
         uiFontFamily: expect.stringContaining("system-ui"),
-        codeFontFamily: expect.stringContaining("ui-monospace"),
+        codeFontFamily: expect.stringMatching(/^"JetBrainsMono NF"/),
         codeFontSize: 9,
         notificationSoundsEnabled: false,
         uiLanguage: "zh-CN",

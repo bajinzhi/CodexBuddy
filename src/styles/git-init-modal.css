@@ -25,7 +25,7 @@
 }
 
 .git-init-modal-checkbox-row code {
-  font-family: var(--code-font-family, Menlo, Monaco, "Courier New", monospace);
+  font-family: var(--code-font-family, "JetBrainsMono NF", ui-monospace, "Cascadia Mono", "Segoe UI Mono", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
   color: var(--ds-text-strong);
 }
 

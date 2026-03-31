@@ -758,7 +758,7 @@ fn default_ui_font_family() -> String {
 }
 
 fn default_code_font_family() -> String {
-    "ui-monospace, \"Cascadia Mono\", \"Segoe UI Mono\", Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace".to_string()
+    "\"JetBrainsMono NF\", ui-monospace, \"Cascadia Mono\", \"Segoe UI Mono\", Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace".to_string()
 }
 
 fn default_code_font_size() -> u8 {
@@ -1370,6 +1370,9 @@ mod tests {
         assert!(!settings.thread_title_autogeneration_enabled);
         assert!(!settings.automatic_app_update_checks_enabled);
         assert!(settings.ui_font_family.contains("system-ui"));
+        assert!(settings
+            .code_font_family
+            .starts_with("\"JetBrainsMono NF\""));
         assert!(settings.code_font_family.contains("ui-monospace"));
         assert_eq!(settings.code_font_size, 11);
         assert!(settings.notification_sounds_enabled);

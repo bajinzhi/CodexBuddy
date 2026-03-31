@@ -23,6 +23,7 @@ import {
   listWorkspaces,
 } from "@services/tauri";
 import { DEFAULT_COMMIT_MESSAGE_PROMPT } from "@utils/commitMessagePrompt";
+import { DEFAULT_CODE_FONT_FAMILY } from "@utils/fonts";
 import { SettingsView } from "./SettingsView";
 
 vi.mock("@tauri-apps/plugin-dialog", () => ({
@@ -119,8 +120,7 @@ const baseSettings: AppSettings = {
   automaticAppUpdateChecksEnabled: false,
   uiFontFamily:
     'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-  codeFontFamily:
-    'ui-monospace, "Cascadia Mono", "Segoe UI Mono", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+  codeFontFamily: DEFAULT_CODE_FONT_FAMILY,
   codeFontSize: 11,
   notificationSoundsEnabled: true,
   systemNotificationsEnabled: true,
@@ -735,7 +735,7 @@ describe("SettingsView Display", () => {
       );
       expect(onUpdateAppSettings).toHaveBeenCalledWith(
         expect.objectContaining({
-          codeFontFamily: expect.stringContaining("ui-monospace"),
+          codeFontFamily: DEFAULT_CODE_FONT_FAMILY,
         }),
       );
     });

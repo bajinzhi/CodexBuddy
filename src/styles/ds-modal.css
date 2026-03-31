@@ -71,7 +71,7 @@
 .ds-modal-textarea {
   min-height: 96px;
   resize: vertical;
-  font-family: var(--code-font-family, Menlo, Monaco, "Courier New", monospace);
+  font-family: var(--code-font-family, "JetBrainsMono NF", ui-monospace, "Cascadia Mono", "Segoe UI Mono", Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);
 }
 
 .ds-modal-divider {

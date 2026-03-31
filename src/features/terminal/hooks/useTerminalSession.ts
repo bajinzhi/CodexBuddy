@@ -5,6 +5,7 @@ import { FitAddon } from "@xterm/addon-fit";
 import "@xterm/xterm/css/xterm.css";
 import type { DebugEntry, TerminalStatus, WorkspaceInfo } from "../../../types";
 import { buildErrorDebugEntry } from "../../../utils/debugEntries";
+import { DEFAULT_CODE_FONT_FAMILY } from "../../../utils/fonts";
 import {
   subscribeTerminalExit,
   subscribeTerminalOutput,
@@ -77,7 +78,7 @@ function getTerminalAppearance(container: HTMLElement | null): TerminalAppearanc
         foreground: "#d9dee7",
         cursor: "#d9dee7",
       },
-      fontFamily: "Menlo, Monaco, \"Courier New\", monospace",
+      fontFamily: DEFAULT_CODE_FONT_FAMILY,
     };
   }
 
@@ -98,7 +99,7 @@ function getTerminalAppearance(container: HTMLElement | null): TerminalAppearanc
   const fontFamily =
     styles.getPropertyValue("--terminal-font-family").trim() ||
     styles.getPropertyValue("--code-font-family").trim() ||
-    "Menlo, Monaco, \"Courier New\", monospace";
+    DEFAULT_CODE_FONT_FAMILY;
 
   return {
     theme: {

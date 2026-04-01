@@ -1248,8 +1248,8 @@ impl Default for AppSettings {
 #[cfg(test)]
 mod tests {
     use super::{
-        AppSettings, BackendMode, CommonLink, RemoteBackendProvider, WorkspaceEntry, WorkspaceGroup,
-        WorkspaceKind, WorkspaceSettings,
+        AppSettings, BackendMode, CommonLink, RemoteBackendProvider, WorkspaceEntry,
+        WorkspaceGroup, WorkspaceKind, WorkspaceSettings,
     };
 
     #[test]

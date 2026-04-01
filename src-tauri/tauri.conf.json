@@ -4,9 +4,15 @@
   "version": "0.0.2",
   "identifier": "com.bajinzhi.codexbuddy",
   "build": {
-    "beforeDevCommand": "npm run dev",
+    "beforeDevCommand": {
+      "script": "npm run dev",
+      "cwd": ".."
+    },
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "npm run build",
+    "beforeBuildCommand": {
+      "script": "npm run build",
+      "cwd": ".."
+    },
     "frontendDist": "../dist"
   },
   "app": {

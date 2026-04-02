@@ -9,6 +9,7 @@ import {
   within,
 } from "@testing-library/react";
 import type { ComponentProps } from "react";
+import { ask } from "@tauri-apps/plugin-dialog";
 import { describe, expect, it, vi } from "vitest";
 import i18n from "@/i18n";
 import type { AppSettings, WorkspaceInfo } from "@/types";
@@ -49,6 +50,7 @@ vi.mock("@services/tauri", async () => {
 });
 
 const connectWorkspaceMock = vi.mocked(connectWorkspace);
+const askMock = vi.mocked(ask);
 const getAppBuildTypeMock = vi.mocked(getAppBuildType);
 const getConfigModelMock = vi.mocked(getConfigModel);
 const getModelListMock = vi.mocked(getModelList);
@@ -189,6 +191,29 @@ const createUpdateResult = () => ({
   upgraded: true,
   output: null,
   details: null,
+});
+
+const createUpdateCheckResult = (overrides: Partial<{
+  method: "brew_formula" | "brew_cask" | "npm" | "unknown";
+  package: string | null;
+  beforeVersion: string | null;
+  latestVersion: string | null;
+  canUpdate: boolean;
+  upToDate: boolean;
+  activeSessionCount: number;
+  activeSessions: Array<{ workspaceId: string; workspaceName: string }>;
+  details: string | null;
+}> = {}) => ({
+  method: "npm" as const,
+  package: "@openai/codex",
+  beforeVersion: "codex-cli 0.118.0",
+  latestVersion: "0.119.0",
+  canUpdate: true,
+  upToDate: false,
+  activeSessionCount: 0,
+  activeSessions: [] as Array<{ workspaceId: string; workspaceName: string }>,
+  details: null,
+  ...overrides,
 });
 
 const renderDisplaySection = (
@@ -1173,6 +1198,232 @@ describe("SettingsView Codex section", () => {
         expect.objectContaining({ reviewDeliveryMode: "detached" }),
       );
     });
+  });
+
+  it("shows already up-to-date when the installed Codex version matches latest", async () => {
+    cleanup();
+    const onRunCodexUpdateCheck = vi
+      .fn()
+      .mockResolvedValue(
+        createUpdateCheckResult({
+          beforeVersion: "codex-cli 0.118.0",
+          latestVersion: "0.118.0",
+          upToDate: true,
+        }),
+      );
+    const onRunCodexUpdate = vi.fn().mockResolvedValue(createUpdateResult());
+
+    render(
+      <SettingsView
+        workspaceGroups={[]}
+        groupedWorkspaces={[]}
+        ungroupedLabel="Ungrouped"
+        onClose={vi.fn()}
+        onMoveWorkspace={vi.fn()}
+        onDeleteWorkspace={vi.fn()}
+        onCreateWorkspaceGroup={vi.fn().mockResolvedValue(null)}
+        onRenameWorkspaceGroup={vi.fn().mockResolvedValue(null)}
+        onMoveWorkspaceGroup={vi.fn().mockResolvedValue(null)}
+        onDeleteWorkspaceGroup={vi.fn().mockResolvedValue(null)}
+        onAssignWorkspaceGroup={vi.fn().mockResolvedValue(null)}
+        reduceTransparency={false}
+        onToggleTransparency={vi.fn()}
+        appSettings={baseSettings}
+        openAppIconById={{}}
+        onUpdateAppSettings={vi.fn().mockResolvedValue(undefined)}
+        onRunDoctor={vi.fn().mockResolvedValue(createDoctorResult())}
+        onRunCodexUpdateCheck={onRunCodexUpdateCheck}
+        onRunCodexUpdate={onRunCodexUpdate}
+        onUpdateWorkspaceSettings={vi.fn().mockResolvedValue(undefined)}
+        scaleShortcutTitle="Scale shortcut"
+        scaleShortcutText="Use Command +/-"
+        onTestNotificationSound={vi.fn()}
+        onTestSystemNotification={vi.fn()}
+        dictationModelStatus={null}
+        onDownloadDictationModel={vi.fn()}
+        onCancelDictationDownload={vi.fn()}
+        onRemoveDictationModel={vi.fn()}
+        initialSection="codex"
+      />,
+    );
+
+    fireEvent.click(screen.getByTitle("Update Codex"));
+
+    await waitFor(() => {
+      expect(onRunCodexUpdateCheck).toHaveBeenCalledWith(null, null);
+      expect(onRunCodexUpdate).not.toHaveBeenCalled();
+      expect(screen.getByText("Codex is already the latest version")).toBeTruthy();
+      expect(
+        screen.getByText(
+          "The installed Codex version is already the latest available version. No update is needed.",
+        ),
+      ).toBeTruthy();
+    });
+  });
+
+  it("updates Codex immediately when no active sessions are running", async () => {
+    cleanup();
+    askMock.mockReset();
+    const onRunCodexUpdateCheck = vi.fn().mockResolvedValue(createUpdateCheckResult());
+    const onRunCodexUpdate = vi.fn().mockResolvedValue(createUpdateResult());
+
+    render(
+      <SettingsView
+        workspaceGroups={[]}
+        groupedWorkspaces={[]}
+        ungroupedLabel="Ungrouped"
+        onClose={vi.fn()}
+        onMoveWorkspace={vi.fn()}
+        onDeleteWorkspace={vi.fn()}
+        onCreateWorkspaceGroup={vi.fn().mockResolvedValue(null)}
+        onRenameWorkspaceGroup={vi.fn().mockResolvedValue(null)}
+        onMoveWorkspaceGroup={vi.fn().mockResolvedValue(null)}
+        onDeleteWorkspaceGroup={vi.fn().mockResolvedValue(null)}
+        onAssignWorkspaceGroup={vi.fn().mockResolvedValue(null)}
+        reduceTransparency={false}
+        onToggleTransparency={vi.fn()}
+        appSettings={baseSettings}
+        openAppIconById={{}}
+        onUpdateAppSettings={vi.fn().mockResolvedValue(undefined)}
+        onRunDoctor={vi.fn().mockResolvedValue(createDoctorResult())}
+        onRunCodexUpdateCheck={onRunCodexUpdateCheck}
+        onRunCodexUpdate={onRunCodexUpdate}
+        onUpdateWorkspaceSettings={vi.fn().mockResolvedValue(undefined)}
+        scaleShortcutTitle="Scale shortcut"
+        scaleShortcutText="Use Command +/-"
+        onTestNotificationSound={vi.fn()}
+        onTestSystemNotification={vi.fn()}
+        dictationModelStatus={null}
+        onDownloadDictationModel={vi.fn()}
+        onCancelDictationDownload={vi.fn()}
+        onRemoveDictationModel={vi.fn()}
+        initialSection="codex"
+      />,
+    );
+
+    fireEvent.click(screen.getByTitle("Update Codex"));
+
+    await waitFor(() => {
+      expect(onRunCodexUpdateCheck).toHaveBeenCalledWith(null, null);
+      expect(askMock).not.toHaveBeenCalled();
+      expect(onRunCodexUpdate).toHaveBeenCalledWith(null, null, false);
+    });
+  });
+
+  it("asks to end active sessions before updating Codex", async () => {
+    cleanup();
+    askMock.mockResolvedValue(true);
+    const onRunCodexUpdateCheck = vi
+      .fn()
+      .mockResolvedValue(
+        createUpdateCheckResult({
+          activeSessionCount: 2,
+          activeSessions: [
+            { workspaceId: "ws-1", workspaceName: "Workspace One" },
+            { workspaceId: "ws-2", workspaceName: "Workspace Two" },
+          ],
+        }),
+      );
+    const onRunCodexUpdate = vi.fn().mockResolvedValue(createUpdateResult());
+
+    render(
+      <SettingsView
+        workspaceGroups={[]}
+        groupedWorkspaces={[]}
+        ungroupedLabel="Ungrouped"
+        onClose={vi.fn()}
+        onMoveWorkspace={vi.fn()}
+        onDeleteWorkspace={vi.fn()}
+        onCreateWorkspaceGroup={vi.fn().mockResolvedValue(null)}
+        onRenameWorkspaceGroup={vi.fn().mockResolvedValue(null)}
+        onMoveWorkspaceGroup={vi.fn().mockResolvedValue(null)}
+        onDeleteWorkspaceGroup={vi.fn().mockResolvedValue(null)}
+        onAssignWorkspaceGroup={vi.fn().mockResolvedValue(null)}
+        reduceTransparency={false}
+        onToggleTransparency={vi.fn()}
+        appSettings={baseSettings}
+        openAppIconById={{}}
+        onUpdateAppSettings={vi.fn().mockResolvedValue(undefined)}
+        onRunDoctor={vi.fn().mockResolvedValue(createDoctorResult())}
+        onRunCodexUpdateCheck={onRunCodexUpdateCheck}
+        onRunCodexUpdate={onRunCodexUpdate}
+        onUpdateWorkspaceSettings={vi.fn().mockResolvedValue(undefined)}
+        scaleShortcutTitle="Scale shortcut"
+        scaleShortcutText="Use Command +/-"
+        onTestNotificationSound={vi.fn()}
+        onTestSystemNotification={vi.fn()}
+        dictationModelStatus={null}
+        onDownloadDictationModel={vi.fn()}
+        onCancelDictationDownload={vi.fn()}
+        onRemoveDictationModel={vi.fn()}
+        initialSection="codex"
+      />,
+    );
+
+    fireEvent.click(screen.getByTitle("Update Codex"));
+
+    await waitFor(() => {
+      expect(askMock).toHaveBeenCalled();
+      expect(onRunCodexUpdate).toHaveBeenCalledWith(null, null, true);
+    });
+  });
+
+  it("exits Codex update when the user declines ending active sessions", async () => {
+    cleanup();
+    askMock.mockResolvedValue(false);
+    const onRunCodexUpdateCheck = vi
+      .fn()
+      .mockResolvedValue(
+        createUpdateCheckResult({
+          activeSessionCount: 1,
+          activeSessions: [{ workspaceId: "ws-1", workspaceName: "Workspace One" }],
+        }),
+      );
+    const onRunCodexUpdate = vi.fn().mockResolvedValue(createUpdateResult());
+
+    render(
+      <SettingsView
+        workspaceGroups={[]}
+        groupedWorkspaces={[]}
+        ungroupedLabel="Ungrouped"
+        onClose={vi.fn()}
+        onMoveWorkspace={vi.fn()}
+        onDeleteWorkspace={vi.fn()}
+        onCreateWorkspaceGroup={vi.fn().mockResolvedValue(null)}
+        onRenameWorkspaceGroup={vi.fn().mockResolvedValue(null)}
+        onMoveWorkspaceGroup={vi.fn().mockResolvedValue(null)}
+        onDeleteWorkspaceGroup={vi.fn().mockResolvedValue(null)}
+        onAssignWorkspaceGroup={vi.fn().mockResolvedValue(null)}
+        reduceTransparency={false}
+        onToggleTransparency={vi.fn()}
+        appSettings={baseSettings}
+        openAppIconById={{}}
+        onUpdateAppSettings={vi.fn().mockResolvedValue(undefined)}
+        onRunDoctor={vi.fn().mockResolvedValue(createDoctorResult())}
+        onRunCodexUpdateCheck={onRunCodexUpdateCheck}
+        onRunCodexUpdate={onRunCodexUpdate}
+        onUpdateWorkspaceSettings={vi.fn().mockResolvedValue(undefined)}
+        scaleShortcutTitle="Scale shortcut"
+        scaleShortcutText="Use Command +/-"
+        onTestNotificationSound={vi.fn()}
+        onTestSystemNotification={vi.fn()}
+        dictationModelStatus={null}
+        onDownloadDictationModel={vi.fn()}
+        onCancelDictationDownload={vi.fn()}
+        onRemoveDictationModel={vi.fn()}
+        initialSection="codex"
+      />,
+    );
+
+    fireEvent.click(screen.getByTitle("Update Codex"));
+
+    await waitFor(() => {
+      expect(askMock).toHaveBeenCalled();
+      expect(onRunCodexUpdate).not.toHaveBeenCalled();
+    });
+
+    expect(screen.queryByText("Codex update failed")).toBeNull();
+    expect(screen.queryByText("Codex updated")).toBeNull();
   });
 
   it("renders mobile daemon controls in local backend mode for TCP provider", async () => {

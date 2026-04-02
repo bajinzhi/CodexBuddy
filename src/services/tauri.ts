@@ -3,6 +3,7 @@ import { open, save } from "@tauri-apps/plugin-dialog";
 import type { Options as NotificationOptions } from "@tauri-apps/plugin-notification";
 import type {
   AppSettings,
+  CodexUpdateCheckResult,
   CodexUpdateResult,
   CodexDoctorResult,
   DictationModelStatus,
@@ -914,8 +915,23 @@ export async function runCodexDoctor(
 export async function runCodexUpdate(
   codexBin: string | null,
   codexArgs: string | null,
+  killActiveSessions = false,
 ): Promise<CodexUpdateResult> {
-  return invoke<CodexUpdateResult>("codex_update", { codexBin, codexArgs });
+  return invoke<CodexUpdateResult>("codex_update", {
+    codexBin,
+    codexArgs,
+    killActiveSessions,
+  });
+}
+
+export async function runCodexUpdateCheck(
+  codexBin: string | null,
+  codexArgs: string | null,
+): Promise<CodexUpdateCheckResult> {
+  return invoke<CodexUpdateCheckResult>("codex_update_check", {
+    codexBin,
+    codexArgs,
+  });
 }
 
 export async function getWorkspaceFiles(workspaceId: string) {

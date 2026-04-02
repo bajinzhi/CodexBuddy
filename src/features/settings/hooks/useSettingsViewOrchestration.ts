@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import type {
   AppSettings,
   CodexDoctorResult,
+  CodexUpdateCheckResult,
   CodexUpdateResult,
   DictationModelStatus,
   WorkspaceGroup,
@@ -42,9 +43,14 @@ type UseSettingsViewOrchestrationArgs = {
     codexBin: string | null,
     codexArgs: string | null,
   ) => Promise<CodexDoctorResult>;
+  onRunCodexUpdateCheck?: (
+    codexBin: string | null,
+    codexArgs: string | null,
+  ) => Promise<CodexUpdateCheckResult>;
   onRunCodexUpdate?: (
     codexBin: string | null,
     codexArgs: string | null,
+    killActiveSessions?: boolean,
   ) => Promise<CodexUpdateResult>;
   onUpdateWorkspaceSettings: (
     id: string,
@@ -82,6 +88,7 @@ export function useSettingsViewOrchestration({
   onUpdateAppSettings,
   onToggleAutomaticAppUpdateChecks,
   onRunDoctor,
+  onRunCodexUpdateCheck,
   onRunCodexUpdate,
   onUpdateWorkspaceSettings,
   scaleShortcutTitle,
@@ -228,6 +235,7 @@ export function useSettingsViewOrchestration({
     projects,
     onUpdateAppSettings,
     onRunDoctor,
+    onRunCodexUpdateCheck,
     onRunCodexUpdate,
   });
 

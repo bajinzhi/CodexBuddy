@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import type {
   AppSettings,
   CodexDoctorResult,
+  CodexUpdateCheckResult,
   CodexUpdateResult,
   DictationModelStatus,
   WorkspaceSettings,
@@ -47,9 +48,14 @@ export type SettingsViewProps = {
     codexBin: string | null,
     codexArgs: string | null,
   ) => Promise<CodexDoctorResult>;
+  onRunCodexUpdateCheck?: (
+    codexBin: string | null,
+    codexArgs: string | null,
+  ) => Promise<CodexUpdateCheckResult>;
   onRunCodexUpdate?: (
     codexBin: string | null,
     codexArgs: string | null,
+    killActiveSessions?: boolean,
   ) => Promise<CodexUpdateResult>;
   onUpdateWorkspaceSettings: (
     id: string,
@@ -86,6 +92,7 @@ export function SettingsView({
   onUpdateAppSettings,
   onToggleAutomaticAppUpdateChecks,
   onRunDoctor,
+  onRunCodexUpdateCheck,
   onRunCodexUpdate,
   onUpdateWorkspaceSettings,
   scaleShortcutTitle,
@@ -119,6 +126,7 @@ export function SettingsView({
     onUpdateAppSettings,
     onToggleAutomaticAppUpdateChecks,
     onRunDoctor,
+    onRunCodexUpdateCheck,
     onRunCodexUpdate,
     onUpdateWorkspaceSettings,
     scaleShortcutTitle,

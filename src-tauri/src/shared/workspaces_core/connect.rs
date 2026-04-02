@@ -16,6 +16,13 @@ use super::helpers::resolve_entry_and_parent;
 
 static CONNECT_WORKSPACE_SPAWN_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
 
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct ActiveWorkspaceSessionInfo {
+    pub(crate) workspace_id: String,
+    pub(crate) workspace_name: String,
+}
+
 pub(super) fn workspace_session_spawn_lock() -> &'static Mutex<()> {
     CONNECT_WORKSPACE_SPAWN_LOCK.get_or_init(|| Mutex::new(()))
 }
@@ -49,6 +56,45 @@ pub(super) async fn take_live_shared_session(
         }
         remove_session_references(sessions, &existing_session).await;
     }
+}
+
+pub(crate) async fn list_active_workspace_sessions_core(
+    workspaces: &Mutex<HashMap<String, WorkspaceEntry>>,
+    sessions: &Mutex<HashMap<String, Arc<WorkspaceSession>>>,
+) -> Vec<ActiveWorkspaceSessionInfo> {
+    let session_entries: Vec<(String, Arc<WorkspaceSession>)> = {
+        let sessions = sessions.lock().await;
+        sessions
+            .iter()
+            .map(|(workspace_id, session)| (workspace_id.clone(), Arc::clone(session)))
+            .collect()
+    };
+
+    let workspace_names = {
+        let workspaces = workspaces.lock().await;
+        workspaces
+            .iter()
+            .map(|(workspace_id, entry)| (workspace_id.clone(), entry.name.clone()))
+            .collect::<HashMap<_, _>>()
+    };
+
+    let mut active = Vec::new();
+    for (workspace_id, session) in session_entries {
+        if !session_process_is_alive(&session).await {
+            continue;
+        }
+
+        active.push(ActiveWorkspaceSessionInfo {
+            workspace_name: workspace_names
+                .get(&workspace_id)
+                .cloned()
+                .unwrap_or_else(|| workspace_id.clone()),
+            workspace_id,
+        });
+    }
+
+    active.sort_by(|left, right| left.workspace_name.cmp(&right.workspace_name));
+    active
 }
 
 pub(crate) async fn connect_workspace_core<F, Fut>(
@@ -121,6 +167,21 @@ pub(super) async fn kill_session_by_id(
         let mut child = session.child.lock().await;
         kill_child_process_tree(&mut child).await;
     }
+}
+
+pub(crate) async fn kill_all_workspace_sessions_core(
+    sessions: &Mutex<HashMap<String, Arc<WorkspaceSession>>>,
+) -> usize {
+    let workspace_ids = {
+        let sessions = sessions.lock().await;
+        sessions.keys().cloned().collect::<Vec<_>>()
+    };
+
+    let count = workspace_ids.len();
+    for workspace_id in workspace_ids {
+        kill_session_by_id(sessions, &workspace_id).await;
+    }
+    count
 }
 
 #[cfg(test)]
@@ -248,6 +309,45 @@ mod tests {
             assert_eq!(spawn_calls.load(Ordering::SeqCst), 1);
             assert!(sessions.lock().await.contains_key(&entry.id));
             kill_session_by_id(&sessions, &entry.id).await;
+        });
+    }
+
+    #[test]
+    fn list_active_workspace_sessions_reports_live_entries() {
+        tokio::runtime::Runtime::new().unwrap().block_on(async {
+            let entry = make_workspace_entry("ws-3");
+            let workspaces = Mutex::new(HashMap::from([(entry.id.clone(), entry.clone())]));
+            let sessions = Mutex::new(HashMap::from([(
+                entry.id.clone(),
+                make_session(entry.clone()),
+            )]));
+
+            let active = list_active_workspace_sessions_core(&workspaces, &sessions).await;
+            assert_eq!(
+                active,
+                vec![ActiveWorkspaceSessionInfo {
+                    workspace_id: entry.id.clone(),
+                    workspace_name: entry.name.clone(),
+                }]
+            );
+
+            kill_all_workspace_sessions_core(&sessions).await;
+        });
+    }
+
+    #[test]
+    fn kill_all_workspace_sessions_clears_all_entries() {
+        tokio::runtime::Runtime::new().unwrap().block_on(async {
+            let entry_a = make_workspace_entry("ws-a");
+            let entry_b = make_workspace_entry("ws-b");
+            let sessions = Mutex::new(HashMap::from([
+                (entry_a.id.clone(), make_session(entry_a.clone())),
+                (entry_b.id.clone(), make_session(entry_b.clone())),
+            ]));
+
+            let killed = kill_all_workspace_sessions_core(&sessions).await;
+            assert_eq!(killed, 2);
+            assert!(sessions.lock().await.is_empty());
         });
     }
 }

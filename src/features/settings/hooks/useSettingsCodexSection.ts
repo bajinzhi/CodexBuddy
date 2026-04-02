@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
-import { open } from "@tauri-apps/plugin-dialog";
+import { ask, open } from "@tauri-apps/plugin-dialog";
+import { useTranslation } from "react-i18next";
 import type {
   AppSettings,
   CodexDoctorResult,
+  CodexUpdateCheckResult,
   CodexUpdateResult,
   WorkspaceInfo,
 } from "@/types";
@@ -21,9 +23,14 @@ type UseSettingsCodexSectionArgs = {
     codexBin: string | null,
     codexArgs: string | null,
   ) => Promise<CodexDoctorResult>;
+  onRunCodexUpdateCheck?: (
+    codexBin: string | null,
+    codexArgs: string | null,
+  ) => Promise<CodexUpdateCheckResult>;
   onRunCodexUpdate?: (
     codexBin: string | null,
     codexArgs: string | null,
+    killActiveSessions?: boolean,
   ) => Promise<CodexUpdateResult>;
 };
 
@@ -80,8 +87,10 @@ export const useSettingsCodexSection = ({
   projects,
   onUpdateAppSettings,
   onRunDoctor,
+  onRunCodexUpdateCheck,
   onRunCodexUpdate,
 }: UseSettingsCodexSectionArgs): SettingsCodexSectionProps => {
+  const { t } = useTranslation(["settings", "common"]);
   const [codexPathDraft, setCodexPathDraft] = useState(appSettings.codexBin ?? "");
   const [codexArgsDraft, setCodexArgsDraft] = useState(appSettings.codexArgs ?? "");
   const [isSavingSettings, setIsSavingSettings] = useState(false);
@@ -205,7 +214,7 @@ export const useSettingsCodexSection = ({
   const handleRunCodexUpdate = async () => {
     setCodexUpdateState({ status: "running", result: null });
     try {
-      if (!onRunCodexUpdate) {
+      if (!onRunCodexUpdate || !onRunCodexUpdateCheck) {
         setCodexUpdateState({
           status: "done",
           result: {
@@ -222,7 +231,80 @@ export const useSettingsCodexSection = ({
         return;
       }
 
-      const result = await onRunCodexUpdate(nextCodexBin, nextCodexArgs);
+      const check = await onRunCodexUpdateCheck(nextCodexBin, nextCodexArgs);
+      if (!check.canUpdate) {
+        setCodexUpdateState({
+          status: "done",
+          result: {
+            ok: false,
+            method: check.method,
+            package: check.package,
+            beforeVersion: check.beforeVersion,
+            afterVersion: null,
+            upgraded: false,
+            output: null,
+            details:
+              check.details ?? "Codex updates are not available in this build.",
+          },
+        });
+        return;
+      }
+
+      if (check.upToDate) {
+        setCodexUpdateState({
+          status: "done",
+          result: {
+            ok: true,
+            method: check.method,
+            package: check.package,
+            beforeVersion: check.beforeVersion,
+            afterVersion: check.beforeVersion,
+            upgraded: false,
+            output: null,
+            details: t("codex.alreadyLatestDetails", { ns: "settings" }),
+          },
+        });
+        return;
+      }
+
+      let killActiveSessions = false;
+      if (check.activeSessionCount > 0) {
+        const activeNames = check.activeSessions
+          .slice(0, 5)
+          .map((session) => `- ${session.workspaceName}`);
+        const promptLines = [
+          t("codex.updateSessionsInUsePrompt", {
+            ns: "settings",
+            count: check.activeSessionCount,
+          }),
+          ...activeNames,
+          check.activeSessionCount > activeNames.length
+            ? t("codex.updateSessionsInUseMore", {
+                ns: "settings",
+                count: check.activeSessionCount - activeNames.length,
+              })
+            : null,
+          t("codex.updateSessionsInUseWarning", { ns: "settings" }),
+        ].filter((line): line is string => Boolean(line));
+
+        const confirmed = await ask(promptLines.join("\n"), {
+          title: t("codex.updateSessionsInUseTitle", { ns: "settings" }),
+          kind: "warning",
+          okLabel: t("codex.killSessionsAndUpdate", { ns: "settings" }),
+          cancelLabel: t("actions.cancel", { ns: "common" }),
+        });
+        if (!confirmed) {
+          setCodexUpdateState({ status: "idle", result: null });
+          return;
+        }
+        killActiveSessions = true;
+      }
+
+      const result = await onRunCodexUpdate(
+        nextCodexBin,
+        nextCodexArgs,
+        killActiveSessions,
+      );
       setCodexUpdateState({ status: "done", result });
     } catch (error) {
       setCodexUpdateState({

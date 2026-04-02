@@ -62,13 +62,37 @@ pub(crate) async fn codex_doctor(
 }
 
 #[tauri::command]
-pub(crate) async fn codex_update(
+pub(crate) async fn codex_update_check(
     codex_bin: Option<String>,
     codex_args: Option<String>,
     state: State<'_, AppState>,
 ) -> Result<Value, String> {
-    crate::shared::codex_update_core::codex_update_core(&state.app_settings, codex_bin, codex_args)
-        .await
+    crate::shared::codex_update_core::codex_update_check_core(
+        &state.app_settings,
+        &state.workspaces,
+        &state.sessions,
+        codex_bin,
+        codex_args,
+    )
+    .await
+}
+
+#[tauri::command]
+pub(crate) async fn codex_update(
+    codex_bin: Option<String>,
+    codex_args: Option<String>,
+    kill_active_sessions: Option<bool>,
+    state: State<'_, AppState>,
+) -> Result<Value, String> {
+    crate::shared::codex_update_core::codex_update_core(
+        &state.app_settings,
+        &state.workspaces,
+        &state.sessions,
+        codex_bin,
+        codex_args,
+        kill_active_sessions.unwrap_or(false),
+    )
+    .await
 }
 
 #[tauri::command]

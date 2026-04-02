@@ -1,20 +1,26 @@
 #![allow(dead_code)]
 
 use serde_json::Value;
+use std::collections::HashMap;
 use std::env;
 use std::io::ErrorKind;
 #[cfg(target_os = "windows")]
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use std::time::Duration;
 
 use tokio::sync::Mutex;
 use tokio::time::timeout;
 
-use crate::backend::app_server::{build_codex_path_env, check_codex_installation};
+use crate::backend::app_server::{build_codex_path_env, check_codex_installation, WorkspaceSession};
 use crate::shared::process_core::tokio_command;
 #[cfg(target_os = "windows")]
 use crate::shared::process_core::{build_cmd_c_command, resolve_windows_executable};
-use crate::types::AppSettings;
+use crate::shared::workspaces_core::{
+    kill_all_workspace_sessions_core, list_active_workspace_sessions_core,
+    ActiveWorkspaceSessionInfo,
+};
+use crate::types::{AppSettings, WorkspaceEntry};
 
 const BREW_PACKAGE: &str = "codex";
 const NPM_PACKAGE: &str = "@openai/codex";
@@ -29,6 +35,34 @@ struct CodexUpdateResult {
     after_version: Option<String>,
     upgraded: bool,
     output: Option<String>,
+    details: Option<String>,
+}
+
+#[derive(serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+struct CodexUpdateCheckResult {
+    method: String,
+    package: Option<String>,
+    before_version: Option<String>,
+    latest_version: Option<String>,
+    can_update: bool,
+    up_to_date: bool,
+    active_session_count: usize,
+    active_sessions: Vec<ActiveWorkspaceSessionInfo>,
+    details: Option<String>,
+}
+
+struct UpdateEnvironment {
+    resolved: Option<String>,
+    path_env: Option<String>,
+    before_version: Option<String>,
+    method: String,
+    package: Option<String>,
+    latest_version: Option<String>,
+    can_update: bool,
+    up_to_date: bool,
+    codex_looks_like_npm: bool,
+    direct_npm_update_available: bool,
     details: Option<String>,
 }
 
@@ -302,6 +336,39 @@ fn should_use_direct_npm_update(codex_bin: Option<&str>, path_env: Option<&str>)
         && package_manager_command_available("npm", path_env)
 }
 
+fn normalize_version_for_compare(value: &str) -> Option<String> {
+    let trimmed = value.trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+
+    if let Ok(json_string) = serde_json::from_str::<String>(trimmed) {
+        return normalize_version_for_compare(&json_string);
+    }
+
+    let candidate = trimmed
+        .split_whitespace()
+        .last()
+        .unwrap_or(trimmed)
+        .trim()
+        .trim_start_matches('v')
+        .trim();
+    if candidate.is_empty() {
+        None
+    } else {
+        Some(candidate.to_string())
+    }
+}
+
+fn installed_matches_latest(installed: Option<&str>, latest: Option<&str>) -> bool {
+    match (installed, latest) {
+        (Some(installed), Some(latest)) => {
+            normalize_version_for_compare(installed) == normalize_version_for_compare(latest)
+        }
+        _ => false,
+    }
+}
+
 async fn npm_has_package(package: &str, path_env: Option<&str>) -> Result<bool, String> {
     let Some(output) = run_probe_command(
         "npm",
@@ -315,6 +382,53 @@ async fn npm_has_package(package: &str, path_env: Option<&str>) -> Result<bool, 
     };
 
     Ok(output.status.success())
+}
+
+fn parse_npm_view_version_output(output: &std::process::Output) -> Option<String> {
+    normalize_version_for_compare(String::from_utf8_lossy(&output.stdout).trim())
+}
+
+async fn npm_latest_version(package: &str, path_env: Option<&str>) -> Result<Option<String>, String> {
+    let Some(output) = run_probe_command(
+        "npm",
+        &["view", package, "version", "--json"],
+        path_env,
+        Duration::from_secs(20),
+    )
+    .await?
+    else {
+        return Ok(None);
+    };
+
+    if !output.status.success() {
+        return Ok(None);
+    }
+
+    Ok(parse_npm_view_version_output(&output))
+}
+
+async fn brew_package_is_outdated(
+    package: &str,
+    cask: bool,
+    path_env: Option<&str>,
+) -> Result<Option<bool>, String> {
+    let args = if cask {
+        vec!["outdated", "--quiet", "--cask", package]
+    } else {
+        vec!["outdated", "--quiet", "--formula", package]
+    };
+    let Some(output) = run_probe_command("brew", &args, path_env, Duration::from_secs(15)).await?
+    else {
+        return Ok(None);
+    };
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    Ok(Some(!stdout.trim().is_empty()))
+}
+
+fn npm_output_indicates_upgrade(output: &str) -> bool {
+    let lower = output.to_ascii_lowercase();
+    !lower.contains("up to date") && !lower.contains("up-to-date")
 }
 
 async fn run_npm_install_latest(
@@ -334,11 +448,47 @@ async fn run_npm_install_latest(
     Ok((output.status.success(), combine_output(&output)))
 }
 
-pub(crate) async fn codex_update_core(
+fn active_session_blocked_update_details(active_sessions: &[ActiveWorkspaceSessionInfo]) -> String {
+    let names = active_sessions
+        .iter()
+        .take(5)
+        .map(|session| session.workspace_name.as_str())
+        .collect::<Vec<_>>()
+        .join(", ");
+    let remainder = active_sessions.len().saturating_sub(5);
+    if names.is_empty() {
+        return "Active Codex sessions are running. Confirm ending all sessions before updating."
+            .to_string();
+    }
+    if remainder == 0 {
+        return format!(
+            "Active Codex sessions are running for: {names}. Confirm ending all sessions before updating."
+        );
+    }
+    format!(
+        "Active Codex sessions are running for: {names}, and {remainder} more. Confirm ending all sessions before updating."
+    )
+}
+
+fn codex_binary_locked_update_details(output: &str) -> Option<String> {
+    let lower = output.to_ascii_lowercase();
+    if lower.contains("ebusy")
+        && lower.contains("codex.exe")
+        && (lower.contains("copyfile") || lower.contains("resource busy or locked"))
+    {
+        return Some(
+            "Codex update failed because `codex.exe` is locked by another process. Close any external Codex terminals or sessions and retry."
+                .to_string(),
+        );
+    }
+    None
+}
+
+async fn inspect_update_environment(
     app_settings: &Mutex<AppSettings>,
     codex_bin: Option<String>,
     codex_args: Option<String>,
-) -> Result<Value, String> {
+) -> Result<UpdateEnvironment, String> {
     let (default_bin, default_args) = {
         let settings = app_settings.lock().await;
         (settings.codex_bin.clone(), settings.codex_args.clone())
@@ -364,95 +514,217 @@ pub(crate) async fn codex_update_core(
     let direct_npm_update_available =
         should_use_direct_npm_update(resolved.as_deref(), path_env.as_deref());
 
-    let (method, package, upgrade_ok, output, upgraded) = if direct_npm_update_available {
-        let (ok, output) = run_npm_install_latest(NPM_PACKAGE, path_env.as_deref()).await?;
-        (
-            "npm".to_string(),
-            Some(NPM_PACKAGE.to_string()),
-            ok,
-            output,
-            ok,
-        )
+    let (method, package, can_update, details) = if direct_npm_update_available {
+        ("npm".to_string(), Some(NPM_PACKAGE.to_string()), true, None)
     } else if codex_looks_like_npm {
         (
             "npm".to_string(),
             Some(NPM_PACKAGE.to_string()),
             false,
-            String::new(),
-            false,
+            Some(
+                "Codex appears to be installed via npm, but `npm` is not available on PATH."
+                    .to_string(),
+            ),
         )
     } else if detect_brew_cask(BREW_PACKAGE, path_env.as_deref()).await? {
-        let (ok, output) = run_brew_upgrade(&["--cask", BREW_PACKAGE], path_env.as_deref()).await?;
-        let upgraded = brew_output_indicates_upgrade(&output);
         (
             "brew_cask".to_string(),
             Some(BREW_PACKAGE.to_string()),
-            ok,
-            output,
-            upgraded,
+            true,
+            None,
         )
     } else if detect_brew_formula(BREW_PACKAGE, path_env.as_deref()).await? {
-        let (ok, output) = run_brew_upgrade(&[BREW_PACKAGE], path_env.as_deref()).await?;
-        let upgraded = brew_output_indicates_upgrade(&output);
         (
             "brew_formula".to_string(),
             Some(BREW_PACKAGE.to_string()),
-            ok,
-            output,
-            upgraded,
+            true,
+            None,
         )
     } else if npm_has_package(NPM_PACKAGE, path_env.as_deref()).await? {
-        let (ok, output) = run_npm_install_latest(NPM_PACKAGE, path_env.as_deref()).await?;
-        (
-            "npm".to_string(),
-            Some(NPM_PACKAGE.to_string()),
-            ok,
-            output,
-            ok,
-        )
+        ("npm".to_string(), Some(NPM_PACKAGE.to_string()), true, None)
     } else {
-        ("unknown".to_string(), None, false, String::new(), false)
+        (
+            "unknown".to_string(),
+            None,
+            false,
+            Some("Unable to detect Codex installation method (brew/npm).".to_string()),
+        )
     };
 
-    let after_version = if method == "unknown" {
-        None
-    } else {
-        match check_codex_installation(resolved.clone()).await {
-            Ok(version) => version,
-            Err(err) => {
-                let result = CodexUpdateResult {
-                    ok: false,
-                    method,
-                    package,
-                    before_version,
-                    after_version: None,
-                    upgraded,
-                    output: Some(trim_lines(&output, 8000)),
-                    details: Some(err),
-                };
-                return serde_json::to_value(result).map_err(|e| e.to_string());
-            }
+    let (latest_version, up_to_date) = match method.as_str() {
+        "npm" if can_update => {
+            let latest_version = npm_latest_version(NPM_PACKAGE, path_env.as_deref()).await?;
+            let up_to_date =
+                installed_matches_latest(before_version.as_deref(), latest_version.as_deref());
+            (latest_version, up_to_date)
+        }
+        "brew_cask" => (
+            None,
+            brew_package_is_outdated(BREW_PACKAGE, true, path_env.as_deref())
+                .await?
+                .map(|outdated| !outdated)
+                .unwrap_or(false),
+        ),
+        "brew_formula" => (
+            None,
+            brew_package_is_outdated(BREW_PACKAGE, false, path_env.as_deref())
+                .await?
+                .map(|outdated| !outdated)
+                .unwrap_or(false),
+        ),
+        _ => (None, false),
+    };
+
+    Ok(UpdateEnvironment {
+        resolved,
+        path_env,
+        before_version,
+        method,
+        package,
+        latest_version,
+        can_update,
+        up_to_date,
+        codex_looks_like_npm,
+        direct_npm_update_available,
+        details,
+    })
+}
+
+pub(crate) async fn codex_update_check_core(
+    app_settings: &Mutex<AppSettings>,
+    workspaces: &Mutex<HashMap<String, WorkspaceEntry>>,
+    sessions: &Mutex<HashMap<String, Arc<WorkspaceSession>>>,
+    codex_bin: Option<String>,
+    codex_args: Option<String>,
+) -> Result<Value, String> {
+    let environment = inspect_update_environment(app_settings, codex_bin, codex_args).await?;
+    let active_sessions = list_active_workspace_sessions_core(workspaces, sessions).await;
+
+    let result = CodexUpdateCheckResult {
+        method: environment.method,
+        package: environment.package,
+        before_version: environment.before_version,
+        latest_version: environment.latest_version,
+        can_update: environment.can_update,
+        up_to_date: environment.up_to_date,
+        active_session_count: active_sessions.len(),
+        active_sessions,
+        details: environment.details,
+    };
+
+    serde_json::to_value(result).map_err(|err| err.to_string())
+}
+
+pub(crate) async fn codex_update_core(
+    app_settings: &Mutex<AppSettings>,
+    workspaces: &Mutex<HashMap<String, WorkspaceEntry>>,
+    sessions: &Mutex<HashMap<String, Arc<WorkspaceSession>>>,
+    codex_bin: Option<String>,
+    codex_args: Option<String>,
+    kill_active_sessions: bool,
+) -> Result<Value, String> {
+    let environment = inspect_update_environment(app_settings, codex_bin, codex_args).await?;
+
+    if !environment.can_update {
+        let result = CodexUpdateResult {
+            ok: false,
+            method: environment.method,
+            package: environment.package,
+            before_version: environment.before_version,
+            after_version: None,
+            upgraded: false,
+            output: None,
+            details: environment.details,
+        };
+        return serde_json::to_value(result).map_err(|err| err.to_string());
+    }
+
+    if environment.up_to_date {
+        let result = CodexUpdateResult {
+            ok: true,
+            method: environment.method,
+            package: environment.package,
+            before_version: environment.before_version.clone(),
+            after_version: environment.before_version,
+            upgraded: false,
+            output: None,
+            details: None,
+        };
+        return serde_json::to_value(result).map_err(|err| err.to_string());
+    }
+
+    let active_sessions = list_active_workspace_sessions_core(workspaces, sessions).await;
+    if !active_sessions.is_empty() && !kill_active_sessions {
+        let result = CodexUpdateResult {
+            ok: false,
+            method: environment.method,
+            package: environment.package,
+            before_version: environment.before_version,
+            after_version: None,
+            upgraded: false,
+            output: None,
+            details: Some(active_session_blocked_update_details(&active_sessions)),
+        };
+        return serde_json::to_value(result).map_err(|err| err.to_string());
+    }
+
+    if !active_sessions.is_empty() {
+        kill_all_workspace_sessions_core(sessions).await;
+        tokio::time::sleep(Duration::from_millis(300)).await;
+    }
+
+    let (upgrade_ok, output, upgraded) = match environment.method.as_str() {
+        "npm" => {
+            let (ok, output) =
+                run_npm_install_latest(NPM_PACKAGE, environment.path_env.as_deref()).await?;
+            let upgraded = ok && npm_output_indicates_upgrade(&output);
+            (ok, output, upgraded)
+        }
+        "brew_cask" => {
+            let (ok, output) =
+                run_brew_upgrade(&["--cask", BREW_PACKAGE], environment.path_env.as_deref())
+                    .await?;
+            let upgraded = ok && brew_output_indicates_upgrade(&output);
+            (ok, output, upgraded)
+        }
+        "brew_formula" => {
+            let (ok, output) =
+                run_brew_upgrade(&[BREW_PACKAGE], environment.path_env.as_deref()).await?;
+            let upgraded = ok && brew_output_indicates_upgrade(&output);
+            (ok, output, upgraded)
+        }
+        _ => (false, String::new(), false),
+    };
+
+    let after_version = match check_codex_installation(environment.resolved.clone()).await {
+        Ok(version) => version,
+        Err(err) => {
+            let result = CodexUpdateResult {
+                ok: false,
+                method: environment.method,
+                package: environment.package,
+                before_version: environment.before_version,
+                after_version: None,
+                upgraded,
+                output: Some(trim_lines(&output, 8000)),
+                details: Some(err),
+            };
+            return serde_json::to_value(result).map_err(|e| e.to_string());
         }
     };
 
-    let details = if method == "unknown" {
-        Some("Unable to detect Codex installation method (brew/npm).".to_string())
-    } else if method == "npm" && codex_looks_like_npm && !direct_npm_update_available {
-        Some(
-            "Codex appears to be installed via npm, but `npm` is not available on PATH."
-                .to_string(),
-        )
-    } else if upgrade_ok {
+    let details = if upgrade_ok {
         None
     } else {
-        Some("Codex update failed.".to_string())
+        codex_binary_locked_update_details(&output)
+            .or_else(|| Some("Codex update failed.".to_string()))
     };
 
     let result = CodexUpdateResult {
         ok: upgrade_ok,
-        method,
-        package,
-        before_version,
+        method: environment.method,
+        package: environment.package,
+        before_version: environment.before_version,
         after_version,
         upgraded,
         output: Some(trim_lines(&output, 8000)),
@@ -475,6 +747,22 @@ mod tests {
         ));
         assert!(!brew_output_indicates_upgrade(
             "Warning: codex 0.118.0 is already installed and up-to-date"
+        ));
+    }
+
+    #[test]
+    fn normalize_version_for_compare_handles_codex_cli_versions() {
+        assert_eq!(
+            normalize_version_for_compare("codex-cli 0.118.0"),
+            Some("0.118.0".to_string())
+        );
+        assert_eq!(
+            normalize_version_for_compare("\"0.119.0\""),
+            Some("0.119.0".to_string())
+        );
+        assert!(installed_matches_latest(
+            Some("codex-cli 0.118.0"),
+            Some("0.118.0")
         ));
     }
 
@@ -528,6 +816,7 @@ mod tests {
             concat!(
                 "@echo off\r\n",
                 "if /I \"%~1\"==\"list\" goto list\r\n",
+                "if /I \"%~1\"==\"view\" goto view\r\n",
                 "if /I \"%~1\"==\"install\" goto install\r\n",
                 "echo unexpected args: %* 1>&2\r\n",
                 "exit /b 1\r\n",
@@ -535,6 +824,12 @@ mod tests {
                 "if /I not \"%~2\"==\"-g\" exit /b 1\r\n",
                 "if /I not \"%~3\"==\"@openai/codex\" exit /b 1\r\n",
                 "if /I not \"%~4\"==\"--depth=0\" exit /b 1\r\n",
+                "exit /b 0\r\n",
+                ":view\r\n",
+                "if /I not \"%~2\"==\"@openai/codex\" exit /b 1\r\n",
+                "if /I not \"%~3\"==\"version\" exit /b 1\r\n",
+                "if /I not \"%~4\"==\"--json\" exit /b 1\r\n",
+                "echo \"0.119.0\"\r\n",
                 "exit /b 0\r\n",
                 ":install\r\n",
                 "if /I not \"%~2\"==\"-g\" exit /b 1\r\n",
@@ -558,6 +853,12 @@ mod tests {
             assert!(npm_has_package(NPM_PACKAGE, Some(&path_env))
                 .await
                 .expect("probe npm package"));
+            assert_eq!(
+                npm_latest_version(NPM_PACKAGE, Some(&path_env))
+                    .await
+                    .expect("probe npm latest version"),
+                Some("0.119.0".to_string())
+            );
 
             let (ok, output) = run_npm_install_latest(NPM_PACKAGE, Some(&path_env))
                 .await

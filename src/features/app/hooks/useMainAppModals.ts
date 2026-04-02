@@ -4,6 +4,7 @@ import type {
   AppSettings,
   BranchInfo,
   CodexDoctorResult,
+  CodexUpdateCheckResult,
   CodexUpdateResult,
   ThreadSummary,
   WorkspaceGroup,
@@ -112,9 +113,14 @@ type UseMainAppModalsArgs = {
       codexBin: string | null,
       codexArgs: string | null,
     ) => Promise<CodexDoctorResult>;
+    codexUpdateCheck?: (
+      codexBin: string | null,
+      codexArgs: string | null,
+    ) => Promise<CodexUpdateCheckResult>;
     codexUpdate?: (
       codexBin: string | null,
       codexArgs: string | null,
+      killActiveSessions?: boolean,
     ) => Promise<CodexUpdateResult>;
     updateWorkspaceSettings: (
       id: string,
@@ -185,6 +191,7 @@ function buildSettingsViewProps({
     onToggleAutomaticAppUpdateChecks:
       settings.handleToggleAutomaticAppUpdateChecks,
     onRunDoctor: settings.doctor,
+    onRunCodexUpdateCheck: settings.codexUpdateCheck,
     onRunCodexUpdate: settings.codexUpdate,
     onUpdateWorkspaceSettings: async (id, nextSettings) => {
       await settings.updateWorkspaceSettings(id, nextSettings);

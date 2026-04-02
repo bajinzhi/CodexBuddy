@@ -392,6 +392,23 @@ export type CodexDoctorResult = {
 
 export type CodexUpdateMethod = "brew_formula" | "brew_cask" | "npm" | "unknown";
 
+export type CodexUpdateActiveSession = {
+  workspaceId: string;
+  workspaceName: string;
+};
+
+export type CodexUpdateCheckResult = {
+  method: CodexUpdateMethod;
+  package: string | null;
+  beforeVersion: string | null;
+  latestVersion: string | null;
+  canUpdate: boolean;
+  upToDate: boolean;
+  activeSessionCount: number;
+  activeSessions: CodexUpdateActiveSession[];
+  details: string | null;
+};
+
 export type CodexUpdateResult = {
   ok: boolean;
   method: CodexUpdateMethod;

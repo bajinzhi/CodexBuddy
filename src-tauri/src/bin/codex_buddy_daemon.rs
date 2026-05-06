@@ -82,7 +82,7 @@ use shared::process_core::kill_child_process_tree;
 use shared::prompts_core::{self, CustomPromptEntry};
 use shared::{
     agents_config_core, codex_aux_core, codex_core, files_core, git_core, git_ui_core,
-    local_usage_core, settings_core, workspaces_core, worktree_core,
+    local_usage_core, model_providers_core, settings_core, workspaces_core, worktree_core,
 };
 use storage::{read_settings, read_workspaces};
 use types::{
@@ -944,6 +944,25 @@ impl DaemonState {
 
     async fn get_config_model(&self, workspace_id: String) -> Result<Value, String> {
         codex_core::get_config_model_core(&self.workspaces, workspace_id).await
+    }
+
+    async fn get_model_provider_settings(
+        &self,
+    ) -> Result<model_providers_core::ModelProviderSettings, String> {
+        model_providers_core::get_model_provider_settings_core(&self.workspaces, &self.sessions)
+            .await
+    }
+
+    async fn save_model_provider_settings(
+        &self,
+        input: model_providers_core::SaveModelProviderSettingsInput,
+    ) -> Result<model_providers_core::ModelProviderSettings, String> {
+        model_providers_core::save_model_provider_settings_core(
+            input,
+            &self.workspaces,
+            &self.sessions,
+        )
+        .await
     }
 
     async fn add_clone(

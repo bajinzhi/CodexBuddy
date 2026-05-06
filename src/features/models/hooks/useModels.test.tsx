@@ -1,14 +1,19 @@
 // @vitest-environment jsdom
 import { act, renderHook, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
-import type { WorkspaceInfo } from "../../../types";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { ModelProviderSettings, WorkspaceInfo } from "../../../types";
 import i18n from "@/i18n";
-import { getConfigModel, getModelList } from "../../../services/tauri";
+import {
+  getConfigModel,
+  getModelList,
+  getModelProviderSettings,
+} from "../../../services/tauri";
 import { useModels } from "./useModels";
 
 vi.mock("../../../services/tauri", () => ({
   getModelList: vi.fn(),
   getConfigModel: vi.fn(),
+  getModelProviderSettings: vi.fn(),
 }));
 
 const workspace: WorkspaceInfo = {
@@ -19,7 +24,38 @@ const workspace: WorkspaceInfo = {
   settings: { sidebarCollapsed: false },
 };
 
+function providerSettings(): ModelProviderSettings {
+  return {
+    activeProviderId: "openai",
+    activeModel: null,
+    activeSessions: [],
+    providers: [
+      {
+        id: "openai",
+        name: "OpenAI",
+        baseUrl: null,
+        envKey: null,
+        wireApi: "responses",
+        models: [],
+        apiKey: null,
+        queryParams: [],
+        httpHeaders: [],
+        envHttpHeaders: [],
+        requestMaxRetries: null,
+        streamMaxRetries: null,
+        streamIdleTimeoutMs: null,
+        isBuiltin: true,
+        isReserved: true,
+      },
+    ],
+  };
+}
+
 describe("useModels", () => {
+  beforeEach(() => {
+    vi.mocked(getModelProviderSettings).mockResolvedValue(providerSettings());
+  });
+
   afterEach(() => {
     vi.clearAllMocks();
   });

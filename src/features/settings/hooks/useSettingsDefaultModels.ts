@@ -1,9 +1,18 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { ModelOption, WorkspaceInfo } from "@/types";
-import { connectWorkspace, getConfigModel, getModelList } from "@services/tauri";
+import {
+  connectWorkspace,
+  getConfigModel,
+  getModelList,
+  getModelProviderSettings,
+} from "@services/tauri";
 import { parseModelListResponse } from "@/features/models/utils/modelListResponse";
 import { prependSyntheticConfigModelOption } from "@/features/models/utils/configModelOptions";
+import {
+  buildProviderCatalogModelOptions,
+  mergeProviderCatalogModels,
+} from "@/features/models/utils/providerModelOptions";
 
 type SettingsDefaultModelsState = {
   rawModels: ModelOption[];
@@ -62,7 +71,7 @@ function compareModelsByLatest(a: ModelOption, b: ModelOption): number {
 }
 
 export function useSettingsDefaultModels(projects: WorkspaceInfo[]) {
-  const { t, i18n } = useTranslation("settings");
+  const { t } = useTranslation("settings");
   const [state, setState] = useState<SettingsDefaultModelsState>(EMPTY_STATE);
   const requestIdRef = useRef(0);
   const sourceWorkspaceId = projects[0]?.id ?? null;
@@ -77,14 +86,35 @@ export function useSettingsDefaultModels(projects: WorkspaceInfo[]) {
           : undefined,
         description: t("codex.configModelDescription"),
       }).slice().sort(compareModelsByLatest),
-    [i18n.resolvedLanguage, state.configModel, state.rawModels, t],
+    [state.configModel, state.rawModels, t],
   );
 
   const refresh = useCallback(async () => {
     requestIdRef.current += 1;
     const requestId = requestIdRef.current;
     if (!sourceWorkspaceId || !sourceWorkspaceName) {
-      setState(EMPTY_STATE);
+      setState((prev) => ({ ...prev, isLoading: true, error: null }));
+      try {
+        const providerSettings = await getModelProviderSettings();
+        if (requestId !== requestIdRef.current) {
+          return;
+        }
+        setState({
+          rawModels: buildProviderCatalogModelOptions(providerSettings),
+          configModel: providerSettings.activeModel,
+          isLoading: false,
+          error: null,
+          connectedWorkspaceCount: 0,
+        });
+      } catch (error) {
+        if (requestId !== requestIdRef.current) {
+          return;
+        }
+        setState({
+          ...EMPTY_STATE,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
       return;
     }
     setState((prev) => ({
@@ -111,10 +141,12 @@ export function useSettingsDefaultModels(projects: WorkspaceInfo[]) {
         return;
       }
 
-      const [modelListResult, configModelResult] = await Promise.allSettled([
-        canReadModelList ? getModelList(sourceWorkspaceId) : Promise.resolve(null),
-        getConfigModel(sourceWorkspaceId),
-      ]);
+      const [modelListResult, configModelResult, providerSettingsResult] =
+        await Promise.allSettled([
+          canReadModelList ? getModelList(sourceWorkspaceId) : Promise.resolve(null),
+          getConfigModel(sourceWorkspaceId),
+          getModelProviderSettings(),
+        ]);
       if (requestId !== requestIdRef.current) {
         return;
       }
@@ -133,14 +165,27 @@ export function useSettingsDefaultModels(projects: WorkspaceInfo[]) {
             : String(configModelResult.reason);
         errors.push(`${sourceWorkspaceName}: ${message}`);
       }
+      if (providerSettingsResult.status === "rejected") {
+        const message =
+          providerSettingsResult.reason instanceof Error
+            ? providerSettingsResult.reason.message
+            : String(providerSettingsResult.reason);
+        errors.push(message);
+      }
 
       const modelsFromList = parseModelListResponse(
         modelListResult.status === "fulfilled" ? modelListResult.value : null,
       );
+      const providerSettings =
+        providerSettingsResult.status === "fulfilled"
+          ? providerSettingsResult.value
+          : null;
       const configModel =
-        configModelResult.status === "fulfilled" ? configModelResult.value : null;
+        configModelResult.status === "fulfilled"
+          ? configModelResult.value
+          : providerSettings?.activeModel ?? null;
       setState({
-        rawModels: modelsFromList,
+        rawModels: mergeProviderCatalogModels(modelsFromList, providerSettings),
         configModel,
         isLoading: false,
         error: errors.length ? errors.join(" | ") : null,

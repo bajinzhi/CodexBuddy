@@ -15,6 +15,7 @@ use crate::event_sink::TauriEventSink;
 use crate::remote_backend;
 use crate::shared::agents_config_core;
 use crate::shared::codex_core::{self, insert_optional_nullable_string};
+use crate::shared::model_providers_core;
 use crate::state::AppState;
 use crate::types::WorkspaceEntry;
 
@@ -901,6 +902,46 @@ pub(crate) async fn get_config_model(
     }
 
     codex_core::get_config_model_core(&state.workspaces, workspace_id).await
+}
+
+#[tauri::command]
+pub(crate) async fn get_model_provider_settings(
+    state: State<'_, AppState>,
+    app: AppHandle,
+) -> Result<model_providers_core::ModelProviderSettings, String> {
+    if remote_backend::is_remote_mode(&*state).await {
+        let response =
+            remote_backend::call_remote(&*state, app, "get_model_provider_settings", json!({}))
+                .await?;
+        return serde_json::from_value(response).map_err(|err| err.to_string());
+    }
+
+    model_providers_core::get_model_provider_settings_core(&state.workspaces, &state.sessions).await
+}
+
+#[tauri::command]
+pub(crate) async fn save_model_provider_settings(
+    input: model_providers_core::SaveModelProviderSettingsInput,
+    state: State<'_, AppState>,
+    app: AppHandle,
+) -> Result<model_providers_core::ModelProviderSettings, String> {
+    if remote_backend::is_remote_mode(&*state).await {
+        let response = remote_backend::call_remote(
+            &*state,
+            app,
+            "save_model_provider_settings",
+            json!({ "input": input }),
+        )
+        .await?;
+        return serde_json::from_value(response).map_err(|err| err.to_string());
+    }
+
+    model_providers_core::save_model_provider_settings_core(
+        input,
+        &state.workspaces,
+        &state.sessions,
+    )
+    .await
 }
 
 /// Generates a commit message in the background without showing in the main chat

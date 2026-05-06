@@ -19,9 +19,11 @@ import {
   getAgentsSettings,
   getConfigModel,
   getExperimentalFeatureList,
+  getModelProviderSettings,
   isMobileRuntime,
   getModelList,
   listWorkspaces,
+  saveModelProviderSettings,
 } from "@services/tauri";
 import { DEFAULT_COMMIT_MESSAGE_PROMPT } from "@utils/commitMessagePrompt";
 import { DEFAULT_CODE_FONT_FAMILY } from "@utils/fonts";
@@ -42,6 +44,8 @@ vi.mock("@services/tauri", async () => {
     getAppBuildType: vi.fn(),
     getModelList: vi.fn(),
     getConfigModel: vi.fn(),
+    getModelProviderSettings: vi.fn(),
+    saveModelProviderSettings: vi.fn(),
     getExperimentalFeatureList: vi.fn(),
     getAgentsSettings: vi.fn(),
     isMobileRuntime: vi.fn(),
@@ -53,7 +57,9 @@ const connectWorkspaceMock = vi.mocked(connectWorkspace);
 const askMock = vi.mocked(ask);
 const getAppBuildTypeMock = vi.mocked(getAppBuildType);
 const getConfigModelMock = vi.mocked(getConfigModel);
+const getModelProviderSettingsMock = vi.mocked(getModelProviderSettings);
 const getModelListMock = vi.mocked(getModelList);
+const saveModelProviderSettingsMock = vi.mocked(saveModelProviderSettings);
 const getExperimentalFeatureListMock = vi.mocked(getExperimentalFeatureList);
 const getAgentsSettingsMock = vi.mocked(getAgentsSettings);
 const isMobileRuntimeMock = vi.mocked(isMobileRuntime);
@@ -61,6 +67,36 @@ const listWorkspacesMock = vi.mocked(listWorkspaces);
 connectWorkspaceMock.mockResolvedValue(undefined);
 getAppBuildTypeMock.mockResolvedValue("release");
 getConfigModelMock.mockResolvedValue(null);
+getModelProviderSettingsMock.mockResolvedValue({
+  activeProviderId: "openai",
+  activeModel: null,
+  activeSessions: [],
+  providers: [
+    {
+      id: "openai",
+      name: "OpenAI",
+      baseUrl: null,
+      envKey: null,
+      wireApi: "responses",
+      models: [],
+      apiKey: null,
+      queryParams: [],
+      httpHeaders: [],
+      envHttpHeaders: [],
+      requestMaxRetries: null,
+      streamMaxRetries: null,
+      streamIdleTimeoutMs: null,
+      isBuiltin: true,
+      isReserved: true,
+    },
+  ],
+});
+saveModelProviderSettingsMock.mockImplementation(async (input) => ({
+  activeProviderId: input.activeProviderId,
+  activeModel: input.activeModel,
+  providers: input.providers,
+  activeSessions: [],
+}));
 isMobileRuntimeMock.mockResolvedValue(false);
 listWorkspacesMock.mockResolvedValue([]);
 getAgentsSettingsMock.mockResolvedValue({

@@ -30,6 +30,7 @@ export function buildSyntheticConfigModelOption(
     supportedReasoningEfforts: [],
     defaultReasoningEffort: null,
     isDefault: false,
+    source: "config",
   };
 }
 

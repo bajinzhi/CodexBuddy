@@ -16,7 +16,7 @@ use super::helpers::resolve_entry_and_parent;
 
 static CONNECT_WORKSPACE_SPAWN_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
 
-#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize)]
+#[derive(Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub(crate) struct ActiveWorkspaceSessionInfo {
     pub(crate) workspace_id: String,

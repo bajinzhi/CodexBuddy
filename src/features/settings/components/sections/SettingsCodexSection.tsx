@@ -13,6 +13,7 @@ import {
   SettingsToggleRow,
 } from "@/features/design-system/components/settings/SettingsPrimitives";
 import { FileEditorCard } from "@/features/shared/components/FileEditorCard";
+import { SettingsModelProvidersSection } from "./SettingsModelProvidersSection";
 
 type SettingsCodexSectionProps = {
   appSettings: AppSettings;
@@ -438,7 +439,7 @@ export function SettingsCodexSection({
             aria-label={t("common:labels.model")}
           >
             {defaultModels.map((model) => (
-              <option key={model.model} value={model.model}>
+              <option key={model.id} value={model.model}>
                 {model.displayName?.trim() || model.model}
               </option>
             ))}
@@ -534,6 +535,14 @@ export function SettingsCodexSection({
           {t("codex.reviewModeHelp")}
         </div>
       </div>
+
+      <div className="settings-divider" />
+      <SettingsModelProvidersSection
+        onSaved={() => {
+          onRefreshDefaultModels();
+          onRefreshGlobalConfig();
+        }}
+      />
 
       <FileEditorCard
         title={t("codex.globalAgentsTitle")}

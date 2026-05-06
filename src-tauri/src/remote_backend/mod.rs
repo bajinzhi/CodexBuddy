@@ -155,6 +155,7 @@ fn can_retry_after_disconnect(method: &str) -> bool {
             | "file_read"
             | "get_agents_settings"
             | "get_config_model"
+            | "get_model_provider_settings"
             | "get_git_commit_diff"
             | "get_git_diffs"
             | "get_git_log"

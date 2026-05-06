@@ -1,20 +1,54 @@
 // @vitest-environment jsdom
 import { act, renderHook, waitFor } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
-import type { WorkspaceInfo } from "@/types";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { ModelProviderSettings, WorkspaceInfo } from "@/types";
 import i18n from "@/i18n";
-import { connectWorkspace, getConfigModel, getModelList } from "@services/tauri";
+import {
+  connectWorkspace,
+  getConfigModel,
+  getModelList,
+  getModelProviderSettings,
+} from "@services/tauri";
 import { useSettingsDefaultModels } from "./useSettingsDefaultModels";
 
 vi.mock("@services/tauri", () => ({
   connectWorkspace: vi.fn(),
   getConfigModel: vi.fn(),
   getModelList: vi.fn(),
+  getModelProviderSettings: vi.fn(),
 }));
 
 const connectWorkspaceMock = vi.mocked(connectWorkspace);
 const getConfigModelMock = vi.mocked(getConfigModel);
 const getModelListMock = vi.mocked(getModelList);
+const getModelProviderSettingsMock = vi.mocked(getModelProviderSettings);
+
+function providerSettings(): ModelProviderSettings {
+  return {
+    activeProviderId: "openai",
+    activeModel: null,
+    activeSessions: [],
+    providers: [
+      {
+        id: "openai",
+        name: "OpenAI",
+        baseUrl: null,
+        envKey: null,
+        wireApi: "responses",
+        models: [],
+        apiKey: null,
+        queryParams: [],
+        httpHeaders: [],
+        envHttpHeaders: [],
+        requestMaxRetries: null,
+        streamMaxRetries: null,
+        streamIdleTimeoutMs: null,
+        isBuiltin: true,
+        isReserved: true,
+      },
+    ],
+  };
+}
 
 function workspace(id: string, connected = true): WorkspaceInfo {
   return {
@@ -55,6 +89,10 @@ function deferred<T>() {
 }
 
 describe("useSettingsDefaultModels", () => {
+  beforeEach(() => {
+    getModelProviderSettingsMock.mockResolvedValue(providerSettings());
+  });
+
   afterEach(() => {
     vi.clearAllMocks();
   });

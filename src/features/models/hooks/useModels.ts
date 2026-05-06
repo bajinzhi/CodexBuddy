@@ -1,12 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import type { DebugEntry, ModelOption, WorkspaceInfo } from "../../../types";
-import { getConfigModel, getModelList } from "../../../services/tauri";
+import {
+  getConfigModel,
+  getModelList,
+  getModelProviderSettings,
+} from "../../../services/tauri";
 import { prependSyntheticConfigModelOption } from "../utils/configModelOptions";
 import {
   normalizeEffortValue,
   parseModelListResponse,
 } from "../utils/modelListResponse";
+import { mergeProviderCatalogModels } from "../utils/providerModelOptions";
 
 type UseModelsOptions = {
   activeWorkspace: WorkspaceInfo | null;
@@ -43,7 +48,7 @@ export function useModels({
   preferredEffort = null,
   selectionKey = null,
 }: UseModelsOptions) {
-  const { t, i18n } = useTranslation("settings");
+  const { t } = useTranslation("settings");
   const [rawModels, setRawModels] = useState<ModelOption[]>([]);
   const [configModel, setConfigModel] = useState<string | null>(null);
   const [selectedModelId, setSelectedModelIdState] = useState<string | null>(null);
@@ -106,7 +111,7 @@ export function useModels({
           : undefined,
         description: t("codex.configModelDescription"),
       }),
-    [configModel, i18n.resolvedLanguage, rawModels, t],
+    [configModel, rawModels, t],
   );
 
   const selectedModel = useMemo(
@@ -172,14 +177,20 @@ export function useModels({
       payload: { workspaceId },
     });
     try {
-      const [modelListResult, configModelResult] = await Promise.allSettled([
+      const [modelListResult, configModelResult, providerSettingsResult] =
+        await Promise.allSettled([
         getModelList(workspaceId),
         getConfigModel(workspaceId),
+        getModelProviderSettings(),
       ]);
+      const providerSettings =
+        providerSettingsResult.status === "fulfilled"
+          ? providerSettingsResult.value
+          : null;
       const configModelFromConfig =
         configModelResult.status === "fulfilled"
           ? configModelResult.value
-          : null;
+          : providerSettings?.activeModel ?? null;
       if (configModelResult.status === "rejected") {
         onDebug?.({
           id: `${Date.now()}-client-config-model-error`,
@@ -190,6 +201,18 @@ export function useModels({
             configModelResult.reason instanceof Error
               ? configModelResult.reason.message
               : String(configModelResult.reason),
+        });
+      }
+      if (providerSettingsResult.status === "rejected") {
+        onDebug?.({
+          id: `${Date.now()}-client-model-provider-settings-error`,
+          timestamp: Date.now(),
+          source: "error",
+          label: "model provider settings error",
+          payload:
+            providerSettingsResult.reason instanceof Error
+              ? providerSettingsResult.reason.message
+              : String(providerSettingsResult.reason),
         });
       }
       const response =
@@ -214,7 +237,10 @@ export function useModels({
         payload: response,
       });
       setConfigModel(configModelFromConfig);
-      const dataFromServer: ModelOption[] = parseModelListResponse(response);
+      const dataFromServer: ModelOption[] = mergeProviderCatalogModels(
+        parseModelListResponse(response),
+        providerSettings,
+      );
       const selectionModels = prependSyntheticConfigModelOption(
         dataFromServer,
         configModelFromConfig,

@@ -666,6 +666,46 @@ export type ModelOption = {
   supportedReasoningEfforts: { reasoningEffort: string; description: string }[];
   defaultReasoningEffort: string | null;
   isDefault: boolean;
+  providerId?: string | null;
+  providerName?: string | null;
+  source?: "appServer" | "config" | "providerCatalog";
+};
+
+export type ModelProviderKeyValue = {
+  key: string;
+  value: string;
+};
+
+export type ModelProviderConfig = {
+  id: string;
+  name: string;
+  baseUrl: string | null;
+  envKey: string | null;
+  wireApi: string;
+  models: string[];
+  apiKey: string | null;
+  queryParams: ModelProviderKeyValue[];
+  httpHeaders: ModelProviderKeyValue[];
+  envHttpHeaders: ModelProviderKeyValue[];
+  requestMaxRetries: number | null;
+  streamMaxRetries: number | null;
+  streamIdleTimeoutMs: number | null;
+  isBuiltin: boolean;
+  isReserved: boolean;
+};
+
+export type ModelProviderSettings = {
+  activeProviderId: string | null;
+  activeModel: string | null;
+  providers: ModelProviderConfig[];
+  activeSessions: { workspaceId: string; workspaceName: string }[];
+};
+
+export type SaveModelProviderSettingsInput = {
+  activeProviderId: string | null;
+  activeModel: string | null;
+  providers: ModelProviderConfig[];
+  restartActiveSessions: boolean;
 };
 
 export type CollaborationModeOption = {

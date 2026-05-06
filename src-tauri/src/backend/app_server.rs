@@ -14,6 +14,7 @@ use tokio::time::timeout;
 
 use crate::backend::events::{AppServerEvent, EventSink};
 use crate::codex::args::parse_codex_args;
+use crate::shared::model_providers_core;
 use crate::shared::process_core::{kill_child_process_tree, tokio_command};
 use crate::types::WorkspaceEntry;
 
@@ -767,6 +768,11 @@ pub(crate) async fn spawn_workspace_session<E: EventSink>(
     command.current_dir(&entry.path);
     if let Some(path) = codex_home.as_ref() {
         command.env("CODEX_HOME", path);
+    }
+    if let Some((env_key, api_key)) =
+        model_providers_core::resolve_active_provider_secret(codex_home.clone())?
+    {
+        command.env(env_key, api_key);
     }
     command.stdin(std::process::Stdio::piped());
     command.stdout(std::process::Stdio::piped());

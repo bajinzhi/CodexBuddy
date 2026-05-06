@@ -30,6 +30,25 @@ pub(super) async fn try_handle(
             };
             Some(state.get_config_model(workspace_id).await)
         }
+        "get_model_provider_settings" => Some(
+            state
+                .get_model_provider_settings()
+                .await
+                .and_then(|value| serde_json::to_value(value).map_err(|err| err.to_string())),
+        ),
+        "save_model_provider_settings" => {
+            let input =
+                match parse_input::<model_providers_core::SaveModelProviderSettingsInput>(params) {
+                    Ok(value) => value,
+                    Err(err) => return Some(Err(err)),
+                };
+            Some(
+                state
+                    .save_model_provider_settings(input)
+                    .await
+                    .and_then(|value| serde_json::to_value(value).map_err(|err| err.to_string())),
+            )
+        }
         "start_thread" => {
             let workspace_id = match parse_string(params, "workspaceId") {
                 Ok(value) => value,

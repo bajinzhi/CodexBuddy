@@ -84,7 +84,7 @@ export function parseModelListResponse(response: unknown): ModelOption[] {
       const modelSlug = String(record.model ?? record.id ?? "");
       const rawDisplayName = String(record.displayName || record.display_name || "");
       const displayName = rawDisplayName.trim().length > 0 ? rawDisplayName : modelSlug;
-      return {
+      const option: ModelOption = {
         id: String(record.id ?? record.model ?? ""),
         model: modelSlug,
         displayName,
@@ -94,7 +94,9 @@ export function parseModelListResponse(response: unknown): ModelOption[] {
           record.defaultReasoningEffort ?? record.default_reasoning_effort,
         ),
         isDefault: Boolean(record.isDefault ?? record.is_default ?? false),
-      } satisfies ModelOption;
+        source: "appServer",
+      };
+      return option;
     })
     .filter((model): model is ModelOption => model !== null);
 }

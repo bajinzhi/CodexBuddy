@@ -562,7 +562,7 @@ export function SettingsAgentsSection({
               aria-label={t("agents.agentModelAria")}
             >
               {effectiveModelOptions.map((option) => (
-                <option key={option.model} value={option.model}>
+                <option key={option.id} value={option.model}>
                   {option.model}
                 </option>
               ))}

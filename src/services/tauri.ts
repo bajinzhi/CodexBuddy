@@ -17,6 +17,8 @@ import type {
   WorkspaceInfo,
   AppMention,
   WorkspaceSettings,
+  ModelProviderSettings,
+  SaveModelProviderSettingsInput,
 } from "../types";
 import type {
   GitFileDiff,
@@ -258,6 +260,16 @@ export async function getConfigModel(workspaceId: string): Promise<string | null
   }
   const trimmed = model.trim();
   return trimmed.length > 0 ? trimmed : null;
+}
+
+export async function getModelProviderSettings(): Promise<ModelProviderSettings> {
+  return invoke<ModelProviderSettings>("get_model_provider_settings");
+}
+
+export async function saveModelProviderSettings(
+  input: SaveModelProviderSettingsInput,
+): Promise<ModelProviderSettings> {
+  return invoke<ModelProviderSettings>("save_model_provider_settings", { input });
 }
 
 export async function addWorkspace(path: string): Promise<WorkspaceInfo> {

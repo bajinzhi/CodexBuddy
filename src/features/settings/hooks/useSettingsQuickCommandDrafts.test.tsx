@@ -44,6 +44,8 @@ function buildAppSettings(): AppSettings {
     accentColor: "blue",
     usageShowRemaining: true,
     showMessageFilePath: false,
+    selectedPetId: "buddy-spark",
+    petOverlayVisible: false,
     chatHistoryScrollbackItems: null,
     threadTitleAutogenerationEnabled: true,
     automaticAppUpdateChecksEnabled: true,

@@ -7,6 +7,7 @@ import { SettingsFeaturesSection } from "./SettingsFeaturesSection";
 import { SettingsGitSection } from "./SettingsGitSection";
 import { SettingsCommonLinksSection } from "./SettingsCommonLinksSection";
 import { SettingsOpenAppsSection } from "./SettingsOpenAppsSection";
+import { SettingsPetsSection } from "./SettingsPetsSection";
 import { SettingsProjectsSection } from "./SettingsProjectsSection";
 import { SettingsServerSection } from "./SettingsServerSection";
 import { SettingsShortcutsSection } from "./SettingsShortcutsSection";
@@ -32,6 +33,9 @@ export function SettingsSectionContainers({
   }
   if (activeSection === "display") {
     return <SettingsDisplaySection {...orchestration.displaySectionProps} />;
+  }
+  if (activeSection === "pets") {
+    return <SettingsPetsSection {...orchestration.displaySectionProps} />;
   }
   if (activeSection === "about") {
     return <SettingsAboutSection {...orchestration.aboutSectionProps} />;

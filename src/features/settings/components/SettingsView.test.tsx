@@ -53,6 +53,22 @@ vi.mock("@services/tauri", async () => {
   };
 });
 
+vi.mock("@/features/pets/hooks/useAvailablePets", () => ({
+  useAvailablePets: () => ({
+    pets: [
+      {
+        id: "buddy-spark",
+        name: "Buddy Spark",
+        source: "builtin",
+        forms: [],
+      },
+    ],
+    isLoading: false,
+    error: null,
+    refresh: vi.fn(),
+  }),
+}));
+
 const connectWorkspaceMock = vi.mocked(connectWorkspace);
 const askMock = vi.mocked(ask);
 const getAppBuildTypeMock = vi.mocked(getAppBuildType);
@@ -153,6 +169,8 @@ const baseSettings: AppSettings = {
   accentColor: "blue",
   usageShowRemaining: false,
   showMessageFilePath: true,
+  selectedPetId: "buddy-spark",
+  petOverlayVisible: false,
   chatHistoryScrollbackItems: 200,
   threadTitleAutogenerationEnabled: false,
   automaticAppUpdateChecksEnabled: false,

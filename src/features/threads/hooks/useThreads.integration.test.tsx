@@ -846,6 +846,7 @@ describe("useThreads UX integration", () => {
         startMcp: threads.startMcp,
         startFast: threads.startFast,
         startStatus: threads.startStatus,
+        startPet: vi.fn().mockResolvedValue(undefined),
         clearActiveImages,
       });
       return { threads, queued };

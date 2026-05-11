@@ -250,6 +250,35 @@ export type CommonLink = {
   url: string;
 };
 
+export type PetAnimationDefinition = {
+  state: string;
+  assetPath?: string | null;
+  frameCount?: number | null;
+  frameWidth?: number | null;
+  frameHeight?: number | null;
+  fps?: number | null;
+};
+
+export type PetFormDefinition = {
+  id: string;
+  label: string;
+  animations: PetAnimationDefinition[];
+};
+
+export type PetDefinition = {
+  id: string;
+  name: string;
+  source: "builtin" | "codex" | string;
+  description?: string | null;
+  thumbnailPath?: string | null;
+  thumbnailDataUrl?: string | null;
+  forms: PetFormDefinition[];
+};
+
+export type PetAssetResponse = {
+  dataUrl: string;
+};
+
 export type AppSettings = {
   codexBin: string | null;
   codexArgs: string | null;
@@ -288,6 +317,8 @@ export type AppSettings = {
   accentColor: AccentColor;
   usageShowRemaining: boolean;
   showMessageFilePath: boolean;
+  selectedPetId: string | null;
+  petOverlayVisible: boolean;
   chatHistoryScrollbackItems: number | null;
   threadTitleAutogenerationEnabled: boolean;
   automaticAppUpdateChecksEnabled: boolean;

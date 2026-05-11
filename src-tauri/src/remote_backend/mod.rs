@@ -153,6 +153,8 @@ fn can_retry_after_disconnect(method: &str) -> bool {
             | "experimental_feature_list"
             | "set_workspace_runtime_codex_args"
             | "file_read"
+            | "list_pets"
+            | "read_pet_asset"
             | "get_agents_settings"
             | "get_config_model"
             | "get_model_provider_settings"

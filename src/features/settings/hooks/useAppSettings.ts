@@ -186,6 +186,8 @@ function buildDefaultSettings(): AppSettings {
     accentColor: "blue",
     usageShowRemaining: true,
     showMessageFilePath: true,
+    selectedPetId: "buddy-spark",
+    petOverlayVisible: false,
     chatHistoryScrollbackItems: CHAT_SCROLLBACK_DEFAULT,
     threadTitleAutogenerationEnabled: false,
     automaticAppUpdateChecksEnabled: false,
@@ -273,6 +275,14 @@ function normalizeAppSettings(settings: AppSettings): AppSettings {
     uiLanguage,
     theme: allowedThemes.has(settings.theme) ? settings.theme : "system",
     accentColor: allowedAccentColors.has(settings.accentColor) ? settings.accentColor : "blue",
+    selectedPetId:
+      typeof settings.selectedPetId === "string" && settings.selectedPetId.trim().length > 0
+        ? settings.selectedPetId.trim()
+        : "buddy-spark",
+    petOverlayVisible:
+      typeof settings.petOverlayVisible === "boolean"
+        ? settings.petOverlayVisible
+        : false,
     uiFontFamily: normalizeFontFamily(
       settings.uiFontFamily,
       DEFAULT_UI_FONT_FAMILY,

@@ -12,6 +12,7 @@ type UseMainAppShellPropsArgs = {
     | "sidebarToggleProps"
     | "shouldLoadGitHubPanelData"
     | "appModalsProps"
+    | "petOverlayNode"
     | "showMobileSetupWizard"
     | "mobileSetupWizardProps"
   >;

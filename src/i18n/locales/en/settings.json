@@ -7,6 +7,7 @@
     "projects": "Projects",
     "environments": "Environments",
     "display": "Display & Sound",
+    "pets": "Pet",
     "about": "About",
     "composer": "Composer",
     "dictation": "Dictation",
@@ -55,6 +56,15 @@
     "splitChatDiffViewSubtitle": "Show chat and diff side by side instead of swapping between them.",
     "threadTitleAutogenerationTitle": "Auto-generate new thread titles",
     "threadTitleAutogenerationSubtitle": "Generate a short title from your first message (uses extra tokens).",
+    "petHeading": "Pet",
+    "petDescription": "Show a compact companion that reacts to agent activity.",
+    "petOverlayTitle": "Show pet overlay",
+    "petOverlaySubtitle": "Toggle the draggable pet. You can also use /pet, /pet on, or /pet off.",
+    "petSelectLabel": "Selected pet",
+    "petSelectHelp": "Custom pet packages are loaded from CODEX_HOME/pets.",
+    "petLoading": "Loading pet packages...",
+    "petLoadError": "Unable to load custom pets: {{error}}",
+    "petMissingOption": "Missing pet ({{id}})",
     "chatHeading": "Chat",
     "chatDescription": "Control how much conversation history is retained per thread.",
     "unlimitedChatHistoryTitle": "Unlimited chat history",
@@ -83,6 +93,10 @@
     "systemNotificationsSubtitle": "Show a system notification when a long-running agent finishes while the window is unfocused.",
     "subagentNotificationsTitle": "Sub-agent notifications",
     "subagentNotificationsSubtitle": "Include spawned sub-agent threads in system notifications."
+  },
+  "pets": {
+    "title": "Pet",
+    "subtitle": "Control the CodexBuddy pet overlay and custom pet packages."
   },
   "about": {
     "title": "About",

@@ -21,6 +21,7 @@ mod menu;
 #[path = "menu_mobile.rs"]
 mod menu;
 mod notifications;
+mod pets;
 mod prompts;
 mod remote_backend;
 mod rules;
@@ -203,6 +204,8 @@ pub fn run() {
             files::file_write,
             files::read_image_as_data_url,
             files::write_text_file,
+            pets::list_pets,
+            pets::read_pet_asset,
             codex::get_config_model,
             codex::get_model_provider_settings,
             codex::save_model_provider_settings,

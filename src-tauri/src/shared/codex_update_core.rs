@@ -72,7 +72,13 @@ fn trim_lines(value: &str, max_len: usize) -> String {
         return trimmed.to_string();
     }
 
-    let mut shortened = trimmed[..max_len].to_string();
+    let boundary = trimmed
+        .char_indices()
+        .map(|(index, _)| index)
+        .take_while(|index| *index <= max_len)
+        .last()
+        .unwrap_or(0);
+    let mut shortened = trimmed[..boundary].to_string();
     shortened.push_str("…");
     shortened
 }
@@ -764,6 +770,14 @@ mod tests {
             Some("codex-cli 0.118.0"),
             Some("0.118.0")
         ));
+    }
+
+    #[test]
+    fn trim_lines_truncates_on_utf8_character_boundaries() {
+        let output = "a更新失败";
+
+        assert_eq!(trim_lines(output, 2), "a…");
+        assert_eq!(trim_lines(output, 4), "a更…");
     }
 
     #[cfg(target_os = "windows")]

@@ -229,6 +229,11 @@ pub(super) async fn try_handle(
                 .await,
             )
         }
+        "list_pets" => Some(serialize_result(state.list_pets()).await),
+        "read_pet_asset" => {
+            let request = parse_request_or_err!(params, pets_core::ReadPetAssetRequest);
+            Some(serialize_result(state.read_pet_asset(request.pet_id, request.asset_path)).await)
+        }
         "get_app_settings" => Some(serialize_value(state.get_app_settings().await)),
         "update_app_settings" => {
             let settings_value = match params {

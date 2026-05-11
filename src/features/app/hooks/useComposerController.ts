@@ -33,6 +33,7 @@ export function useComposerController({
   startMcp,
   startFast,
   startStatus,
+  startPet,
 }: {
   activeThreadId: string | null;
   activeTurnId: string | null;
@@ -69,6 +70,7 @@ export function useComposerController({
   startMcp: (text: string) => Promise<void>;
   startFast: (text: string) => Promise<void>;
   startStatus: (text: string) => Promise<void>;
+  startPet: (text: string) => Promise<void>;
 }) {
   const [composerDraftsByThread, setComposerDraftsByThread] = useState<
     Record<string, string>
@@ -115,6 +117,7 @@ export function useComposerController({
     startMcp,
     startFast,
     startStatus,
+    startPet,
     clearActiveImages,
   });
 

@@ -1,4 +1,11 @@
-import { lazy, Suspense, type CSSProperties, type ComponentProps, type RefObject } from "react";
+import {
+  lazy,
+  Suspense,
+  type CSSProperties,
+  type ComponentProps,
+  type ReactNode,
+  type RefObject,
+} from "react";
 import { AppLayout } from "@app/components/AppLayout";
 import { AppModals } from "@app/components/AppModals";
 import type { AppModalsProps } from "@app/components/AppModals";
@@ -34,6 +41,7 @@ type MainAppShellProps = {
   };
   appLayoutProps: ComponentProps<typeof AppLayout>;
   appModalsProps: AppModalsProps;
+  petOverlayNode?: ReactNode;
   showMobileSetupWizard: boolean;
   mobileSetupWizardProps: ComponentProps<typeof MobileServerSetupWizard>;
 };
@@ -48,6 +56,7 @@ export function MainAppShell({
   gitHubPanelDataProps,
   appLayoutProps,
   appModalsProps,
+  petOverlayNode,
   showMobileSetupWizard,
   mobileSetupWizardProps,
 }: MainAppShellProps) {
@@ -63,6 +72,7 @@ export function MainAppShell({
       ) : null}
       <AppLayout {...appLayoutProps} />
       <AppModals {...appModalsProps} />
+      {petOverlayNode}
       {showMobileSetupWizard ? <MobileServerSetupWizard {...mobileSetupWizardProps} /> : null}
     </div>
   );

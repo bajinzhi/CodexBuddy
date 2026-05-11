@@ -4,6 +4,7 @@ export const SETTINGS_SECTION_IDS = [
   "projects",
   "environments",
   "display",
+  "pets",
   "about",
   "composer",
   "dictation",

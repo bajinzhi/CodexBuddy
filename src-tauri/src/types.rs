@@ -517,6 +517,10 @@ pub(crate) struct AppSettings {
         rename = "showMessageFilePath"
     )]
     pub(crate) show_message_file_path: bool,
+    #[serde(default = "default_selected_pet_id", rename = "selectedPetId")]
+    pub(crate) selected_pet_id: Option<String>,
+    #[serde(default, rename = "petOverlayVisible")]
+    pub(crate) pet_overlay_visible: bool,
     #[serde(
         default = "default_chat_history_scrollback_items",
         rename = "chatHistoryScrollbackItems"
@@ -1158,6 +1162,10 @@ fn default_common_links() -> Vec<CommonLink> {
     Vec::new()
 }
 
+fn default_selected_pet_id() -> Option<String> {
+    Some("buddy-spark".to_string())
+}
+
 impl Default for AppSettings {
     fn default() -> Self {
         Self {
@@ -1197,6 +1205,8 @@ impl Default for AppSettings {
             accent_color: default_accent_color(),
             usage_show_remaining: default_usage_show_remaining(),
             show_message_file_path: default_show_message_file_path(),
+            selected_pet_id: default_selected_pet_id(),
+            pet_overlay_visible: false,
             chat_history_scrollback_items: default_chat_history_scrollback_items(),
             thread_title_autogeneration_enabled: false,
             automatic_app_update_checks_enabled: false,

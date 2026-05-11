@@ -35,6 +35,7 @@ const makeOptions = (
   startMcp: vi.fn().mockResolvedValue(undefined),
   startFast: vi.fn().mockResolvedValue(undefined),
   startStatus: vi.fn().mockResolvedValue(undefined),
+  startPet: vi.fn().mockResolvedValue(undefined),
   clearActiveImages: vi.fn(),
   ...overrides,
 });
@@ -393,6 +394,39 @@ describe("useQueuedSend", () => {
     expect(startFast).toHaveBeenCalledWith("/fast on");
     expect(options.sendUserMessage).not.toHaveBeenCalled();
     expect(options.startReview).not.toHaveBeenCalled();
+  });
+
+  it("routes /pet to the pet handler and strips attachments", async () => {
+    const startPet = vi.fn().mockResolvedValue(undefined);
+    const options = makeOptions({ startPet });
+    const { result } = renderHook((props) => useQueuedSend(props), {
+      initialProps: options,
+    });
+
+    await act(async () => {
+      await result.current.handleSend("/pet on", ["img-1"]);
+    });
+
+    expect(startPet).toHaveBeenCalledWith("/pet on");
+    expect(options.sendUserMessage).not.toHaveBeenCalled();
+    expect(options.clearActiveImages).toHaveBeenCalled();
+  });
+
+  it("runs queued /pet immediately instead of adding an in-flight queue item", async () => {
+    const startPet = vi.fn().mockResolvedValue(undefined);
+    const options = makeOptions({ startPet, isProcessing: true });
+    const { result } = renderHook((props) => useQueuedSend(props), {
+      initialProps: options,
+    });
+
+    await act(async () => {
+      await result.current.queueMessage("/pet off", ["img-1"]);
+    });
+
+    expect(startPet).toHaveBeenCalledWith("/pet off");
+    expect(result.current.activeQueue).toHaveLength(0);
+    expect(options.sendUserMessage).not.toHaveBeenCalled();
+    expect(options.clearActiveImages).toHaveBeenCalled();
   });
 
   it("routes /mcp to the MCP handler", async () => {

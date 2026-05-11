@@ -27,6 +27,7 @@ import "./styles/prompts.css";
 import "./styles/debug.css";
 import "./styles/terminal.css";
 import "./styles/plan.css";
+import "./styles/pets.css";
 import "./styles/about.css";
 import "./styles/tabbar.css";
 import "./styles/worktree-modal.css";

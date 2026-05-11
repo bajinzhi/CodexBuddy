@@ -82,7 +82,8 @@ use shared::process_core::kill_child_process_tree;
 use shared::prompts_core::{self, CustomPromptEntry};
 use shared::{
     agents_config_core, codex_aux_core, codex_core, files_core, git_core, git_ui_core,
-    local_usage_core, model_providers_core, settings_core, workspaces_core, worktree_core,
+    local_usage_core, model_providers_core, pets_core, settings_core, workspaces_core,
+    worktree_core,
 };
 use storage::{read_settings, read_workspaces};
 use types::{
@@ -678,6 +679,18 @@ impl DaemonState {
         content: String,
     ) -> Result<(), String> {
         files_core::file_write_core(&self.workspaces, scope, kind, workspace_id, content).await
+    }
+
+    async fn list_pets(&self) -> Result<Vec<pets_core::PetDefinitionResponse>, String> {
+        pets_core::list_pets_core()
+    }
+
+    async fn read_pet_asset(
+        &self,
+        pet_id: String,
+        asset_path: String,
+    ) -> Result<pets_core::PetAssetResponse, String> {
+        pets_core::read_pet_asset_core(&pet_id, &asset_path)
     }
 
     async fn start_thread(&self, workspace_id: String) -> Result<Value, String> {

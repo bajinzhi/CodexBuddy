@@ -18,6 +18,8 @@ import type {
   AppMention,
   WorkspaceSettings,
   ModelProviderSettings,
+  PetAssetResponse,
+  PetDefinition,
   SaveModelProviderSettingsInput,
 } from "../types";
 import type {
@@ -884,6 +886,17 @@ export async function isMobileRuntime(): Promise<boolean> {
 
 export async function updateAppSettings(settings: AppSettings): Promise<AppSettings> {
   return invoke<AppSettings>("update_app_settings", { settings });
+}
+
+export async function listPets(): Promise<PetDefinition[]> {
+  return invoke<PetDefinition[]>("list_pets");
+}
+
+export async function readPetAsset(
+  petId: string,
+  assetPath: string,
+): Promise<PetAssetResponse> {
+  return invoke<PetAssetResponse>("read_pet_asset", { petId, assetPath });
 }
 
 export async function tailscaleStatus(): Promise<TailscaleStatus> {

@@ -77,6 +77,7 @@ export const SETTINGS_SECTION_LABELS: Record<CodexSection, string> = {
   projects: "Projects",
   environments: "Environments",
   display: "Display & Sound",
+  pets: "Pet",
   about: "About",
   composer: "Composer",
   dictation: "Dictation",

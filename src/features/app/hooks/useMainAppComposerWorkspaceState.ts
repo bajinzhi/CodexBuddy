@@ -87,6 +87,7 @@ type UseMainAppComposerWorkspaceStateArgs = {
     startMcp: Parameters<typeof useComposerController>[0]["startMcp"];
     startFast: Parameters<typeof useComposerController>[0]["startFast"];
     startStatus: Parameters<typeof useComposerController>[0]["startStatus"];
+    startPet: Parameters<typeof useComposerController>[0]["startPet"];
     handleWorktreeCreated?: Parameters<typeof useWorkspaceHome>[0]["onWorktreeCreated"];
     addDebugEntry: (entry: DebugEntry) => void;
   };
@@ -148,6 +149,7 @@ export function useMainAppComposerWorkspaceState({
     startMcp,
     startFast,
     startStatus,
+    startPet,
     handleWorktreeCreated,
     addDebugEntry,
   } = actions;
@@ -247,6 +249,7 @@ export function useMainAppComposerWorkspaceState({
     startMcp,
     startFast,
     startStatus,
+    startPet,
   });
 
   const workspaceHomeState = useWorkspaceHome({

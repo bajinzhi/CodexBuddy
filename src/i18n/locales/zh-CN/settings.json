@@ -7,6 +7,7 @@
     "projects": "项目",
     "environments": "环境",
     "display": "显示与声音",
+    "pets": "宠物",
     "about": "关于",
     "composer": "编辑器",
     "dictation": "语音输入",
@@ -55,6 +56,15 @@
     "splitChatDiffViewSubtitle": "并排显示聊天和 Diff，而不是在两者之间切换。",
     "threadTitleAutogenerationTitle": "自动生成新线程标题",
     "threadTitleAutogenerationSubtitle": "根据首条消息生成简短标题（会额外消耗令牌）。",
+    "petHeading": "宠物",
+    "petDescription": "显示一个会随智能体活动变化的紧凑悬浮宠物。",
+    "petOverlayTitle": "显示宠物悬浮层",
+    "petOverlaySubtitle": "开启可拖拽宠物。也可以使用 /pet、/pet on 或 /pet off。",
+    "petSelectLabel": "选择宠物",
+    "petSelectHelp": "自定义宠物包从 CODEX_HOME/pets 加载。",
+    "petLoading": "正在加载宠物包...",
+    "petLoadError": "无法加载自定义宠物：{{error}}",
+    "petMissingOption": "缺失的宠物（{{id}}）",
     "chatHeading": "聊天",
     "chatDescription": "控制每个线程保留多少历史记录。",
     "unlimitedChatHistoryTitle": "无限聊天历史",
@@ -83,6 +93,10 @@
     "systemNotificationsSubtitle": "当窗口未聚焦且长时任务完成时显示系统通知。",
     "subagentNotificationsTitle": "子智能体通知",
     "subagentNotificationsSubtitle": "在系统通知中包含已派生的子智能体线程。"
+  },
+  "pets": {
+    "title": "宠物",
+    "subtitle": "控制 CodexBuddy 悬浮宠物和自定义宠物包。"
   },
   "about": {
     "title": "关于",

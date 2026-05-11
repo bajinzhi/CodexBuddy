@@ -43,6 +43,7 @@ type UseQueuedSendOptions = {
   startMcp: (text: string) => Promise<void>;
   startFast: (text: string) => Promise<void>;
   startStatus: (text: string) => Promise<void>;
+  startPet: (text: string) => Promise<void>;
   clearActiveImages: () => void;
 };
 
@@ -70,6 +71,7 @@ type SlashCommandKind =
   | "fork"
   | "mcp"
   | "new"
+  | "pet"
   | "resume"
   | "review"
   | "status";
@@ -87,6 +89,9 @@ function parseSlashCommand(text: string, appsEnabled: boolean): SlashCommandKind
   if (/^\/mcp\b/i.test(text)) {
     return "mcp";
   }
+  if (/^\/pet\b/i.test(text)) {
+    return "pet";
+  }
   if (/^\/review\b/i.test(text)) {
     return "review";
   }
@@ -103,6 +108,12 @@ function parseSlashCommand(text: string, appsEnabled: boolean): SlashCommandKind
     return "status";
   }
   return null;
+}
+
+function isImmediateSlashCommand(
+  command: SlashCommandKind | null,
+): command is SlashCommandKind {
+  return command === "pet";
 }
 
 export function useQueuedSend({
@@ -127,6 +138,7 @@ export function useQueuedSend({
   startMcp,
   startFast,
   startStatus,
+  startPet,
   clearActiveImages,
 }: UseQueuedSendOptions): UseQueuedSendResult {
   const [queuedByThread, setQueuedByThread] = useState<
@@ -215,6 +227,10 @@ export function useQueuedSend({
         await startStatus(trimmed);
         return;
       }
+      if (command === "pet") {
+        await startPet(trimmed);
+        return;
+      }
       if (command === "new" && activeWorkspace) {
         const threadId = await startThreadForWorkspace(activeWorkspace.id);
         const rest = trimmed.replace(/^\/new\b/i, "").trim();
@@ -234,6 +250,7 @@ export function useQueuedSend({
       startMcp,
       startFast,
       startStatus,
+      startPet,
       startThreadForWorkspace,
     ],
   );
@@ -263,6 +280,11 @@ export function useQueuedSend({
               ? "steer"
               : "queue";
       if (!trimmed && nextImages.length === 0) {
+        return;
+      }
+      if (isImmediateSlashCommand(command)) {
+        await runSlashCommand(command, trimmed);
+        clearActiveImages();
         return;
       }
       if (activeThreadId && isReviewing) {
@@ -330,6 +352,11 @@ export function useQueuedSend({
       if (!trimmed && nextImages.length === 0) {
         return;
       }
+      if (isImmediateSlashCommand(command)) {
+        await runSlashCommand(command, trimmed);
+        clearActiveImages();
+        return;
+      }
       if (activeThreadId && isReviewing) {
         return;
       }
@@ -347,6 +374,7 @@ export function useQueuedSend({
       createQueuedItem,
       enqueueMessage,
       isReviewing,
+      runSlashCommand,
     ],
   );
 
@@ -402,7 +430,11 @@ export function useQueuedSend({
       try {
         const trimmed = nextItem.text.trim();
         const command = parseSlashCommand(trimmed, appsEnabled);
-        if (command) {
+        if (isImmediateSlashCommand(command)) {
+          await runSlashCommand(command, trimmed);
+          setInFlightByThread((prev) => ({ ...prev, [threadId]: null }));
+          setHasStartedByThread((prev) => ({ ...prev, [threadId]: false }));
+        } else if (command) {
           await runSlashCommand(command, trimmed);
         } else {
           const queuedMentions = nextItem.appMentions ?? [];

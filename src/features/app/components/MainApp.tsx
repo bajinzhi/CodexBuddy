@@ -65,6 +65,8 @@ import { useRemoteThreadLiveConnection } from "@app/hooks/useRemoteThreadLiveCon
 import { useTrayRecentThreads } from "@app/hooks/useTrayRecentThreads";
 import { useTraySessionUsage } from "@app/hooks/useTraySessionUsage";
 import { useTauriEvent } from "@app/hooks/useTauriEvent";
+import { PetOverlayController } from "@/features/pets/components/PetOverlayController";
+import { parsePetCommand } from "@/features/pets/petCommands";
 import { useAppBootstrapOrchestration } from "@app/bootstrap/useAppBootstrapOrchestration";
 import {
   useThreadCodexBootstrapOrchestration,
@@ -1211,6 +1213,64 @@ export default function MainApp() {
     accountRateLimits: activeRateLimits,
     showRemaining: appSettings.usageShowRemaining,
   });
+  const setPetVisibility = useCallback(
+    (nextVisible: boolean | "toggle") => {
+      setAppSettings((current) => {
+        const visible =
+          nextVisible === "toggle" ? !current.petOverlayVisible : nextVisible;
+        if (current.petOverlayVisible === visible) {
+          return current;
+        }
+        const nextSettings = {
+          ...current,
+          petOverlayVisible: visible,
+        };
+        void queueSaveSettings(nextSettings);
+        return nextSettings;
+      });
+    },
+    [queueSaveSettings, setAppSettings],
+  );
+  const handlePetVisibleChange = useCallback(
+    (visible: boolean) => setPetVisibility(visible),
+    [setPetVisibility],
+  );
+  const startPet = useCallback(
+    async (text: string) => {
+      const command = parsePetCommand(text);
+      if (command.action === "toggle") {
+        setPetVisibility("toggle");
+        return;
+      }
+      if (command.action === "show") {
+        setPetVisibility(true);
+        return;
+      }
+      if (command.action === "hide") {
+        setPetVisibility(false);
+        return;
+      }
+      addDebugEntry({
+        id: `${Date.now()}-pet-command`,
+        timestamp: Date.now(),
+        source: command.action === "invalid" ? "error" : "client",
+        label: command.action === "invalid" ? "pet/invalid" : "pet/status",
+        payload:
+          command.action === "invalid"
+            ? `Unknown /pet argument: ${command.argument ?? ""}`
+            : {
+                visible: appSettings.petOverlayVisible,
+                selectedPetId: appSettings.selectedPetId,
+              },
+      });
+    },
+    [
+      addDebugEntry,
+      appSettings.petOverlayVisible,
+      appSettings.selectedPetId,
+      setPetVisibility,
+    ],
+  );
   const activePlan = activeThreadId
     ? planByThread[activeThreadId] ?? null
     : null;
@@ -1273,6 +1333,7 @@ export default function MainApp() {
       startMcp,
       startFast,
       startStatus,
+      startPet,
       addWorktreeAgent,
       handleWorktreeCreated,
       addDebugEntry,
@@ -1948,6 +2009,17 @@ export default function MainApp() {
       appModalsProps,
       showMobileSetupWizard,
       mobileSetupWizardProps,
+      petOverlayNode: appSettings.petOverlayVisible ? (
+        <PetOverlayController
+          selectedPetId={appSettings.selectedPetId}
+          activeWorkspaceId={activeWorkspaceId}
+          activeThreadId={activeThreadId}
+          threadStatusById={threadStatusById}
+          approvals={approvals}
+          userInputRequests={userInputRequests}
+          onVisibleChange={handlePetVisibleChange}
+        />
+      ) : null,
     },
     gitHubPanelDataProps: {
       activeWorkspace,

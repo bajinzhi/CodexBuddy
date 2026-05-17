@@ -13,6 +13,18 @@ vi.mock("@/features/pets/hooks/useAvailablePets", () => ({
   useAvailablePets: () => ({
     pets: [
       {
+        id: "snow-fawn",
+        name: "Snow Fawn",
+        source: "builtin",
+        forms: [
+          {
+            id: "normal",
+            label: "Normal",
+            animations: [{ state: "idle" }, { state: "celebrate" }],
+          },
+        ],
+      },
+      {
         id: "custom-sprite",
         name: "Custom Sprite",
         source: "codex",
@@ -62,10 +74,49 @@ const idleRuntimeState: PetRuntimeState = {
   label: "Idle",
 };
 
+const chargedRuntimeState: PetRuntimeState = {
+  form: "charged",
+  status: "working",
+  label: "Deep work",
+};
+
 describe("PetOverlay", () => {
   afterEach(() => {
     cleanup();
+    vi.clearAllMocks();
     vi.restoreAllMocks();
+  });
+
+  it("renders the Snow Fawn builtin pet without reading custom assets", () => {
+    mockReducedMotion(false);
+
+    const { container } = render(
+      <PetOverlay
+        visible
+        selectedPetId="snow-fawn"
+        runtimeState={idleRuntimeState}
+        onVisibleChange={vi.fn()}
+      />,
+    );
+
+    expect(container.querySelector(".pet-fawn-svg")).not.toBeNull();
+    expect(readPetAsset).not.toHaveBeenCalled();
+  });
+
+  it("renders the Snow Fawn charged decor for deep work", () => {
+    mockReducedMotion(false);
+
+    const { container } = render(
+      <PetOverlay
+        visible
+        selectedPetId="snow-fawn"
+        runtimeState={chargedRuntimeState}
+        onVisibleChange={vi.fn()}
+      />,
+    );
+
+    expect(container.querySelector(".pet-fawn-charge")).not.toBeNull();
+    expect(container.querySelector(".pet-fawn-work-lines")).toBeNull();
   });
 
   it("does not advance sprite frames when reduced motion is enabled", async () => {

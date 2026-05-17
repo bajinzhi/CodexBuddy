@@ -394,6 +394,267 @@
   animation: pet-core-bolt-pop 0.7s steps(2, end) infinite;
 }
 
+.pet-fawn-svg {
+  width: 112px;
+  height: 112px;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.pet-fawn-halo {
+  fill: url(#snow-fawn-halo);
+  opacity: 0.88;
+  filter: blur(1.6px);
+  transform-origin: 60px 57px;
+  animation: pet-fawn-halo-pulse 2.8s ease-in-out infinite;
+}
+
+.pet-fawn-snow circle {
+  fill: #fffdf7;
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.82));
+}
+
+.pet-fawn-leaves path {
+  fill: url(#snow-fawn-leaf);
+  opacity: 0.72;
+  stroke: color-mix(in srgb, #eaffd9 62%, transparent);
+  stroke-width: 1.2;
+}
+
+.pet-fawn-body {
+  transform-origin: 61px 68px;
+  animation: pet-fawn-float 2.6s ease-in-out infinite;
+}
+
+.pet-fawn-torso,
+.pet-fawn-head {
+  fill: url(#snow-fawn-coat);
+  stroke: color-mix(in srgb, #fff8e8 82%, #8f633e);
+  stroke-width: 2;
+}
+
+.pet-fawn-head {
+  stroke-width: 2.2;
+}
+
+.pet-fawn-leg,
+.pet-fawn-tail {
+  fill: #d49c67;
+  stroke: color-mix(in srgb, #fff2de 72%, #8f633e);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
+
+.pet-fawn-tail {
+  fill: none;
+  stroke-width: 5;
+}
+
+.pet-fawn-ear {
+  fill: url(#snow-fawn-ear);
+  stroke: color-mix(in srgb, #fff7ed 78%, #9e6244);
+  stroke-linejoin: round;
+  stroke-width: 2;
+  transform-box: fill-box;
+  transition: transform 0.24s ease;
+}
+
+.pet-fawn-ear--left {
+  transform-origin: 78% 82%;
+}
+
+.pet-fawn-ear--right {
+  transform-origin: 22% 82%;
+}
+
+.pet-fawn-muzzle,
+.pet-fawn-blaze {
+  fill: rgba(255, 252, 240, 0.92);
+}
+
+.pet-fawn-muzzle {
+  stroke: rgba(142, 93, 57, 0.34);
+  stroke-width: 1.2;
+}
+
+.pet-fawn-nose,
+.pet-fawn-mouth-fill {
+  fill: #674232;
+}
+
+.pet-fawn-eye,
+.pet-fawn-brow,
+.pet-fawn-mouth {
+  fill: none;
+  stroke: #563828;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.pet-fawn-eye {
+  fill: #533426;
+  stroke: none;
+}
+
+.pet-fawn-eye--charged {
+  fill: var(--pet-secondary);
+  filter: drop-shadow(0 0 7px color-mix(in srgb, var(--pet-secondary) 78%, transparent));
+}
+
+.pet-fawn-eye--sleep,
+.pet-fawn-eye--happy,
+.pet-fawn-brow {
+  fill: none;
+  stroke-width: 2.5;
+}
+
+.pet-fawn-brow--focus {
+  stroke: #7a4a25;
+  stroke-width: 3;
+}
+
+.pet-fawn-brow--alert {
+  stroke: #683521;
+  stroke-width: 2.8;
+}
+
+.pet-fawn-mouth {
+  stroke-width: 2.3;
+}
+
+.pet-fawn-mouth--happy {
+  stroke-width: 2.8;
+}
+
+.pet-fawn-spots circle {
+  fill: rgba(255, 253, 243, 0.84);
+}
+
+.pet-fawn-bow path,
+.pet-fawn-bow circle {
+  fill: #c92f45;
+  stroke: #fff2e8;
+  stroke-width: 1.3;
+  filter: drop-shadow(0 0 7px rgba(201, 47, 69, 0.38));
+}
+
+.pet-fawn-badge path {
+  filter: drop-shadow(0 0 10px color-mix(in srgb, var(--pet-accent) 62%, transparent));
+}
+
+.pet-fawn-badge text,
+.pet-fawn-sleep-mark text {
+  font-family: var(--code-font-family), var(--ui-font-family), monospace;
+  font-size: 20px;
+  font-weight: 850;
+  letter-spacing: 0;
+  text-anchor: middle;
+  user-select: none;
+}
+
+.pet-fawn-badge--leaf path:first-child {
+  fill: color-mix(in srgb, #b8ff9b 76%, #1c7b4f);
+  stroke: #fffdf2;
+  stroke-width: 2.2;
+}
+
+.pet-fawn-badge--leaf text {
+  fill: #173c2b;
+}
+
+.pet-fawn-badge-vein {
+  fill: none;
+  stroke: rgba(18, 88, 54, 0.58);
+  stroke-linecap: round;
+  stroke-width: 1.8;
+}
+
+.pet-fawn-badge--apple path:not(.pet-fawn-apple-stem) {
+  fill: var(--pet-danger);
+  stroke: color-mix(in srgb, var(--pet-secondary) 72%, #ffffff);
+  stroke-width: 2.2;
+}
+
+.pet-fawn-apple-stem {
+  fill: none;
+  stroke: #5e341f;
+  stroke-linecap: round;
+  stroke-width: 2.2;
+}
+
+.pet-fawn-badge--apple text {
+  fill: #fff9f5;
+}
+
+.pet-fawn-work-lines path {
+  fill: none;
+  stroke: color-mix(in srgb, var(--pet-accent) 70%, #ffffff);
+  stroke-linecap: round;
+  stroke-width: 2.4;
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--pet-accent) 60%, transparent));
+  animation: pet-fawn-line-pulse 0.9s ease-in-out infinite;
+}
+
+.pet-fawn-work-lines path:nth-child(2) {
+  animation-delay: -0.28s;
+}
+
+.pet-fawn-work-lines path:nth-child(3) {
+  animation-delay: -0.48s;
+}
+
+.pet-fawn-particles circle,
+.pet-fawn-particles path {
+  fill: none;
+  stroke: var(--pet-secondary);
+  stroke-linecap: round;
+  stroke-width: 4;
+  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--pet-secondary) 72%, transparent));
+  animation: pet-fawn-particle-pop 0.82s ease-in-out infinite;
+}
+
+.pet-fawn-particles circle {
+  fill: #fffdf0;
+  stroke: none;
+}
+
+.pet-fawn-particles circle:nth-child(2),
+.pet-fawn-particles path:nth-child(4) {
+  animation-delay: -0.34s;
+}
+
+.pet-fawn-charge {
+  transform-origin: 61px 56px;
+}
+
+.pet-fawn-charge ellipse,
+.pet-fawn-charge path {
+  fill: none;
+  stroke: color-mix(in srgb, var(--pet-secondary) 78%, transparent);
+  stroke-linecap: round;
+  stroke-width: 2.1;
+  stroke-dasharray: 9 8;
+  transform-origin: 61px 56px;
+  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--pet-secondary) 58%, transparent));
+  animation: pet-fawn-charge-spin 1.6s linear infinite;
+}
+
+.pet-fawn-charge path:nth-child(2) {
+  fill: color-mix(in srgb, var(--pet-secondary) 72%, #fff9d6);
+  stroke: #fffdf2;
+  stroke-dasharray: none;
+  animation: pet-fawn-particle-pop 0.8s ease-in-out infinite;
+}
+
+.pet-fawn-sleep-mark text {
+  font-size: 16px;
+  fill: var(--pet-secondary);
+  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--pet-secondary) 70%, transparent));
+  transform-origin: 88px 24px;
+  animation: pet-fawn-sleep-mark 2.4s ease-in-out infinite;
+}
+
 .pet-overlay--working .pet-core-drone,
 .pet-overlay--active .pet-core-drone {
   animation: pet-core-work 0.92s ease-in-out infinite;
@@ -455,6 +716,54 @@
 
 .pet-overlay--celebrate .pet-core-halo {
   animation: pet-core-halo-overload 0.72s ease-in-out infinite;
+}
+
+.pet-overlay--working .pet-fawn-body,
+.pet-overlay--active .pet-fawn-body {
+  animation: pet-fawn-work 0.95s ease-in-out infinite;
+}
+
+.pet-overlay--working .pet-fawn-ear--left,
+.pet-overlay--active .pet-fawn-ear--left {
+  animation: pet-fawn-ear-left-focus 0.95s ease-in-out infinite;
+}
+
+.pet-overlay--working .pet-fawn-ear--right,
+.pet-overlay--active .pet-fawn-ear--right {
+  animation: pet-fawn-ear-right-focus 0.95s ease-in-out infinite;
+}
+
+.pet-overlay--charged .pet-fawn-body {
+  animation: pet-fawn-charged 0.78s ease-in-out infinite;
+}
+
+.pet-overlay--charged .pet-fawn-halo {
+  opacity: 1;
+  animation: pet-fawn-halo-overload 0.86s ease-in-out infinite;
+}
+
+.pet-overlay--needs_input .pet-fawn-body,
+.pet-overlay--needs_approval .pet-fawn-body,
+.pet-overlay--alert .pet-fawn-body {
+  animation: pet-fawn-alert 0.58s ease-in-out infinite;
+}
+
+.pet-overlay--sleep .pet-fawn-body,
+.pet-overlay--resting .pet-fawn-body {
+  animation: pet-fawn-sleep 3.8s ease-in-out infinite;
+}
+
+.pet-overlay--sleep .pet-fawn-ear,
+.pet-overlay--resting .pet-fawn-ear {
+  opacity: 0.78;
+}
+
+.pet-overlay--celebrate .pet-fawn-body {
+  animation: pet-fawn-celebrate 0.76s ease-in-out infinite;
+}
+
+.pet-overlay--celebrate .pet-fawn-halo {
+  animation: pet-fawn-halo-overload 0.86s ease-in-out infinite;
 }
 
 @keyframes pet-core-float {
@@ -624,6 +933,155 @@
   }
 }
 
+@keyframes pet-fawn-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-1deg);
+  }
+  50% {
+    transform: translateY(-6px) rotate(1deg);
+  }
+}
+
+@keyframes pet-fawn-work {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-3deg) scale(1);
+  }
+  50% {
+    transform: translateY(-9px) rotate(3deg) scale(1.03);
+  }
+}
+
+@keyframes pet-fawn-charged {
+  0%,
+  100% {
+    transform: translateY(-4px) rotate(-4deg) scale(1.06);
+  }
+  50% {
+    transform: translateY(-13px) rotate(4deg) scale(1.11);
+  }
+}
+
+@keyframes pet-fawn-alert {
+  0%,
+  100% {
+    transform: translateX(0) rotate(0deg);
+  }
+  25% {
+    transform: translateX(-3px) rotate(-3deg);
+  }
+  75% {
+    transform: translateX(3px) rotate(3deg);
+  }
+}
+
+@keyframes pet-fawn-sleep {
+  0%,
+  100% {
+    transform: translateY(7px) scale(0.95) rotate(-1deg);
+  }
+  50% {
+    transform: translateY(10px) scale(0.93) rotate(1deg);
+  }
+}
+
+@keyframes pet-fawn-celebrate {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-7deg) scale(1.02);
+  }
+  50% {
+    transform: translateY(-14px) rotate(8deg) scale(1.08);
+  }
+}
+
+@keyframes pet-fawn-halo-pulse {
+  0%,
+  100% {
+    transform: scale(0.96);
+    opacity: 0.68;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 0.98;
+  }
+}
+
+@keyframes pet-fawn-halo-overload {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.78;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+}
+
+@keyframes pet-fawn-ear-left-focus {
+  0%,
+  100% {
+    transform: rotate(-3deg);
+  }
+  50% {
+    transform: rotate(-12deg) translateY(-2px);
+  }
+}
+
+@keyframes pet-fawn-ear-right-focus {
+  0%,
+  100% {
+    transform: rotate(3deg);
+  }
+  50% {
+    transform: rotate(12deg) translateY(-2px);
+  }
+}
+
+@keyframes pet-fawn-line-pulse {
+  0%,
+  100% {
+    opacity: 0.34;
+    transform: translateX(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateX(3px);
+  }
+}
+
+@keyframes pet-fawn-particle-pop {
+  0%,
+  100% {
+    opacity: 0.42;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.22);
+  }
+}
+
+@keyframes pet-fawn-sleep-mark {
+  0%,
+  100% {
+    opacity: 0.36;
+    transform: translateY(2px) scale(0.92);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-3px) scale(1.06);
+  }
+}
+
+@keyframes pet-fawn-charge-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .pet-core-halo,
   .pet-core-orbits,
@@ -637,7 +1095,17 @@
   .pet-core-particles circle,
   .pet-core-particles path,
   .pet-core-sleep-mark text,
-  .pet-core-bolt {
+  .pet-core-bolt,
+  .pet-fawn-halo,
+  .pet-fawn-body,
+  .pet-fawn-ear--left,
+  .pet-fawn-ear--right,
+  .pet-fawn-work-lines path,
+  .pet-fawn-particles circle,
+  .pet-fawn-particles path,
+  .pet-fawn-charge ellipse,
+  .pet-fawn-charge path,
+  .pet-fawn-sleep-mark text {
     animation-duration: 0.01ms;
     animation-iteration-count: 1;
   }

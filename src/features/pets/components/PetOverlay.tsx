@@ -9,8 +9,13 @@ import {
 } from "react";
 import type { PetAnimationDefinition, PetDefinition, PetFormDefinition } from "@/types";
 import { readPetAsset } from "@/services/tauri";
-import { BUILTIN_PETS, BUILTIN_PET_ID } from "@/features/pets/builtinPets";
+import {
+  BUILTIN_PETS,
+  BUILTIN_PET_ID,
+  SNOW_FAWN_PET_ID,
+} from "@/features/pets/builtinPets";
 import { NeonCorePet } from "@/features/pets/components/NeonCorePet";
+import { SnowFawnPet } from "@/features/pets/components/SnowFawnPet";
 import { useAvailablePets } from "@/features/pets/hooks/useAvailablePets";
 import {
   clampSpriteFps,
@@ -150,6 +155,13 @@ function findAnimation(
   );
 }
 
+function renderBuiltinPet(petId: string, runtimeState: PetRuntimeState) {
+  if (petId === SNOW_FAWN_PET_ID) {
+    return <SnowFawnPet runtimeState={runtimeState} />;
+  }
+  return <NeonCorePet runtimeState={runtimeState} />;
+}
+
 export function PetOverlay({
   visible,
   selectedPetId,
@@ -182,6 +194,7 @@ export function PetOverlay({
     [runtimeState.status, selectedForm],
   );
   const assetPath = selectedAnimation?.assetPath?.trim() || null;
+  const externalAssetDataUrl = selectedPet.source === "builtin" ? null : assetDataUrl;
   const spriteFrameCount = selectedAnimation?.frameCount ?? null;
   const spriteFrameWidth = selectedAnimation?.frameWidth ?? null;
   const spriteFrameHeight =
@@ -193,7 +206,9 @@ export function PetOverlay({
     frameHeight: spriteFrameHeight,
     naturalWidth: assetSize?.width ?? null,
   });
-  const canRenderSprite = Boolean(assetDataUrl && spriteLayout && spriteFrameWidth && spriteFrameHeight);
+  const canRenderSprite = Boolean(
+    externalAssetDataUrl && spriteLayout && spriteFrameWidth && spriteFrameHeight,
+  );
   const spriteFps = clampSpriteFps(selectedAnimation?.fps);
   const spriteScale =
     spriteFrameWidth && spriteFrameHeight
@@ -203,7 +218,7 @@ export function PetOverlay({
     ? ({
         width: spriteFrameWidth,
         height: spriteFrameHeight,
-        backgroundImage: `url("${assetDataUrl}")`,
+        backgroundImage: `url("${externalAssetDataUrl}")`,
         backgroundPosition: `${spriteLayout.x}px ${spriteLayout.y}px`,
         backgroundSize: assetSize
           ? `${assetSize.width}px ${assetSize.height}px`
@@ -394,12 +409,14 @@ export function PetOverlay({
         x
       </button>
       <div className="pet-overlay-stage" aria-hidden="true">
-        {assetDataUrl && canRenderSprite ? (
+        {externalAssetDataUrl && canRenderSprite ? (
           <div className="pet-overlay-sprite-frame">
             <div className="pet-overlay-sprite" style={spriteStyle} />
           </div>
-        ) : assetDataUrl ? (
-          <img className="pet-overlay-image" src={assetDataUrl} alt="" draggable={false} />
+        ) : externalAssetDataUrl ? (
+          <img className="pet-overlay-image" src={externalAssetDataUrl} alt="" draggable={false} />
+        ) : selectedPet.source === "builtin" ? (
+          renderBuiltinPet(selectedPet.id, runtimeState)
         ) : (
           <NeonCorePet runtimeState={runtimeState} />
         )}

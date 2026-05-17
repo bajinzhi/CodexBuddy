@@ -26,15 +26,25 @@ if (mode !== "build" && mode !== "dev") {
   process.exit(1);
 }
 
+function powershellCommand(script) {
+  return [
+    "powershell.exe",
+    "-NoLogo",
+    "-NoProfile",
+    "-EncodedCommand",
+    Buffer.from(script, "utf16le").toString("base64"),
+  ].join(" ");
+}
+
 const shellProjectRoot = projectRoot.replace(/'/g, "''");
 const overrideConfig = JSON.stringify({
   build: {
-    beforeDevCommand:
-      `powershell.exe -NoLogo -NoProfile -Command ` +
-      `"Set-Location -LiteralPath '${shellProjectRoot}'; npm run dev"`,
-    beforeBuildCommand:
-      `powershell.exe -NoLogo -NoProfile -Command ` +
-      `"Set-Location -LiteralPath '${shellProjectRoot}'; npm run build"`,
+    beforeDevCommand: powershellCommand(
+      `Set-Location -LiteralPath '${shellProjectRoot}'; npm run dev`,
+    ),
+    beforeBuildCommand: powershellCommand(
+      `Set-Location -LiteralPath '${shellProjectRoot}'; npm run build`,
+    ),
   },
 });
 

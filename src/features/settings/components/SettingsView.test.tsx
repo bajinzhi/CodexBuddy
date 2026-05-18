@@ -35,9 +35,8 @@ vi.mock("@tauri-apps/plugin-dialog", () => ({
 }));
 
 vi.mock("@services/tauri", async () => {
-  const actual = await vi.importActual<typeof import("@services/tauri")>(
-    "@services/tauri",
-  );
+  const actual =
+    await vi.importActual<typeof import("@services/tauri")>("@services/tauri");
   return {
     ...actual,
     connectWorkspace: vi.fn(),
@@ -221,6 +220,15 @@ const baseSettings: AppSettings = {
   ],
   selectedOpenAppId: "vscode",
   commonLinks: [],
+  aiRadar: {
+    enabled: true,
+    refreshIntervalMinutes: 60,
+    maxItems: 800,
+    retentionDays: 30,
+    translateToChinese: true,
+    defaultSourceVersion: 5,
+    sources: [],
+  },
   globalWorktreesFolder: null,
 };
 
@@ -247,17 +255,19 @@ const createUpdateResult = () => ({
   details: null,
 });
 
-const createUpdateCheckResult = (overrides: Partial<{
-  method: "brew_formula" | "brew_cask" | "npm" | "unknown";
-  package: string | null;
-  beforeVersion: string | null;
-  latestVersion: string | null;
-  canUpdate: boolean;
-  upToDate: boolean;
-  activeSessionCount: number;
-  activeSessions: Array<{ workspaceId: string; workspaceName: string }>;
-  details: string | null;
-}> = {}) => ({
+const createUpdateCheckResult = (
+  overrides: Partial<{
+    method: "brew_formula" | "brew_cask" | "npm" | "unknown";
+    package: string | null;
+    beforeVersion: string | null;
+    latestVersion: string | null;
+    canUpdate: boolean;
+    upToDate: boolean;
+    activeSessionCount: number;
+    activeSessions: Array<{ workspaceId: string; workspaceName: string }>;
+    details: string | null;
+  }> = {},
+) => ({
   method: "npm" as const,
   package: "@openai/codex",
   beforeVersion: "codex-cli 0.118.0",
@@ -274,8 +284,12 @@ const renderDisplaySection = (
   options: {
     appSettings?: Partial<AppSettings>;
     reduceTransparency?: boolean;
-    onUpdateAppSettings?: ComponentProps<typeof SettingsView>["onUpdateAppSettings"];
-    onToggleTransparency?: ComponentProps<typeof SettingsView>["onToggleTransparency"];
+    onUpdateAppSettings?: ComponentProps<
+      typeof SettingsView
+    >["onUpdateAppSettings"];
+    onToggleTransparency?: ComponentProps<
+      typeof SettingsView
+    >["onToggleTransparency"];
   } = {},
 ) => {
   cleanup();
@@ -320,7 +334,9 @@ const renderDisplaySection = (
 const renderComposerSection = (
   options: {
     appSettings?: Partial<AppSettings>;
-    onUpdateAppSettings?: ComponentProps<typeof SettingsView>["onUpdateAppSettings"];
+    onUpdateAppSettings?: ComponentProps<
+      typeof SettingsView
+    >["onUpdateAppSettings"];
   } = {},
 ) => {
   cleanup();
@@ -363,7 +379,9 @@ const renderComposerSection = (
 const renderAboutSection = (
   options: {
     appSettings?: Partial<AppSettings>;
-    onUpdateAppSettings?: ComponentProps<typeof SettingsView>["onUpdateAppSettings"];
+    onUpdateAppSettings?: ComponentProps<
+      typeof SettingsView
+    >["onUpdateAppSettings"];
     onToggleAutomaticAppUpdateChecks?: ComponentProps<
       typeof SettingsView
     >["onToggleAutomaticAppUpdateChecks"];
@@ -413,7 +431,9 @@ const renderAboutSection = (
 const renderFeaturesSection = (
   options: {
     appSettings?: Partial<AppSettings>;
-    onUpdateAppSettings?: ComponentProps<typeof SettingsView>["onUpdateAppSettings"];
+    onUpdateAppSettings?: ComponentProps<
+      typeof SettingsView
+    >["onUpdateAppSettings"];
     experimentalFeaturesResponse?: unknown;
   } = {},
 ) => {
@@ -457,7 +477,13 @@ const renderFeaturesSection = (
       {
         id: null,
         name: "Ungrouped",
-        workspaces: [workspace({ id: "w-features", name: "Features Workspace", connected: true })],
+        workspaces: [
+          workspace({
+            id: "w-features",
+            name: "Features Workspace",
+            connected: true,
+          }),
+        ],
       },
     ],
     ungroupedLabel: "Ungrouped",
@@ -489,7 +515,9 @@ const renderFeaturesSection = (
 const renderCommonLinksSection = (
   options: {
     appSettings?: Partial<AppSettings>;
-    onUpdateAppSettings?: ComponentProps<typeof SettingsView>["onUpdateAppSettings"];
+    onUpdateAppSettings?: ComponentProps<
+      typeof SettingsView
+    >["onUpdateAppSettings"];
   } = {},
 ) => {
   cleanup();
@@ -558,9 +586,15 @@ const workspace = (
 const renderEnvironmentsSection = (
   options: {
     appSettings?: Partial<AppSettings>;
-    groupedWorkspaces?: ComponentProps<typeof SettingsView>["groupedWorkspaces"];
-    onUpdateAppSettings?: ComponentProps<typeof SettingsView>["onUpdateAppSettings"];
-    onUpdateWorkspaceSettings?: ComponentProps<typeof SettingsView>["onUpdateWorkspaceSettings"];
+    groupedWorkspaces?: ComponentProps<
+      typeof SettingsView
+    >["groupedWorkspaces"];
+    onUpdateAppSettings?: ComponentProps<
+      typeof SettingsView
+    >["onUpdateAppSettings"];
+    onUpdateWorkspaceSettings?: ComponentProps<
+      typeof SettingsView
+    >["onUpdateWorkspaceSettings"];
   } = {},
 ) => {
   cleanup();
@@ -568,38 +602,43 @@ const renderEnvironmentsSection = (
     options.onUpdateAppSettings ?? vi.fn().mockResolvedValue(undefined);
   const onUpdateWorkspaceSettings =
     options.onUpdateWorkspaceSettings ?? vi.fn().mockResolvedValue(undefined);
-  const defaultGroupedWorkspaces =
-    options.groupedWorkspaces ??
-    [
-      {
-        id: null,
-        name: "Ungrouped",
-        workspaces: [
-          workspace({
-            id: "w1",
-            name: "Project One",
-            settings: {
-              sidebarCollapsed: false,
-              worktreeSetupScript: "echo one",
-            },
-          }),
-        ],
-      },
-    ];
+  const defaultGroupedWorkspaces = options.groupedWorkspaces ?? [
+    {
+      id: null,
+      name: "Ungrouped",
+      workspaces: [
+        workspace({
+          id: "w1",
+          name: "Project One",
+          settings: {
+            sidebarCollapsed: false,
+            worktreeSetupScript: "echo one",
+          },
+        }),
+      ],
+    },
+  ];
 
   const buildProps = (
     nextOptions: {
       appSettings?: Partial<AppSettings>;
-      groupedWorkspaces?: ComponentProps<typeof SettingsView>["groupedWorkspaces"];
+      groupedWorkspaces?: ComponentProps<
+        typeof SettingsView
+      >["groupedWorkspaces"];
     } = {},
   ): ComponentProps<typeof SettingsView> => ({
     reduceTransparency: false,
     onToggleTransparency: vi.fn(),
-    appSettings: { ...baseSettings, ...options.appSettings, ...nextOptions.appSettings },
+    appSettings: {
+      ...baseSettings,
+      ...options.appSettings,
+      ...nextOptions.appSettings,
+    },
     openAppIconById: {},
     onUpdateAppSettings,
     workspaceGroups: [],
-    groupedWorkspaces: nextOptions.groupedWorkspaces ?? defaultGroupedWorkspaces,
+    groupedWorkspaces:
+      nextOptions.groupedWorkspaces ?? defaultGroupedWorkspaces,
     ungroupedLabel: "Ungrouped",
     onClose: vi.fn(),
     onMoveWorkspace: vi.fn(),
@@ -629,7 +668,9 @@ const renderEnvironmentsSection = (
     rerender: (
       nextOptions: {
         appSettings?: Partial<AppSettings>;
-        groupedWorkspaces?: ComponentProps<typeof SettingsView>["groupedWorkspaces"];
+        groupedWorkspaces?: ComponentProps<
+          typeof SettingsView
+        >["groupedWorkspaces"];
       } = {},
     ) => renderResult.rerender(<SettingsView {...buildProps(nextOptions)} />),
   };
@@ -710,7 +751,9 @@ describe("SettingsView Display", () => {
     if (!row) {
       throw new Error("Expected split center panes row");
     }
-    const toggle = row.querySelector("button.settings-toggle") as HTMLButtonElement | null;
+    const toggle = row.querySelector(
+      "button.settings-toggle",
+    ) as HTMLButtonElement | null;
     if (!toggle) {
       throw new Error("Expected split center panes toggle");
     }
@@ -793,7 +836,9 @@ describe("SettingsView Display", () => {
 
     await waitFor(() => {
       expect(onUpdateAppSettings).toHaveBeenCalledWith(
-        expect.objectContaining({ codeFontFamily: "JetBrains Mono, monospace" }),
+        expect.objectContaining({
+          codeFontFamily: "JetBrains Mono, monospace",
+        }),
       );
     });
   });
@@ -910,7 +955,9 @@ describe("SettingsView Environments", () => {
     const input = screen.getByLabelText("Global worktrees root");
     expect(input).toBeTruthy();
     expect((input as HTMLInputElement).value).toBe("I:/existing-worktrees");
-    expect((input as HTMLInputElement).placeholder).toBe("/path/to/worktrees-root");
+    expect((input as HTMLInputElement).placeholder).toBe(
+      "/path/to/worktrees-root",
+    );
   });
 
   it("saves the global worktrees root through app settings", async () => {
@@ -1030,12 +1077,14 @@ describe("SettingsView Environments", () => {
 
     await waitFor(() => {
       expect(
-        (screen.getByRole("button", { name: "Saving..." }) as HTMLButtonElement).disabled,
+        (screen.getByRole("button", { name: "Saving..." }) as HTMLButtonElement)
+          .disabled,
       ).toBe(true);
     });
-    expect((screen.getByLabelText("Global worktrees root") as HTMLInputElement).disabled).toBe(
-      true,
-    );
+    expect(
+      (screen.getByLabelText("Global worktrees root") as HTMLInputElement)
+        .disabled,
+    ).toBe(true);
     expect(onUpdateAppSettings).toHaveBeenCalledTimes(1);
 
     fireEvent.click(screen.getByRole("button", { name: "Saving..." }));
@@ -1047,9 +1096,10 @@ describe("SettingsView Environments", () => {
     });
 
     await waitFor(() => {
-      expect((screen.getByRole("button", { name: "Save" }) as HTMLButtonElement).disabled).toBe(
-        true,
-      );
+      expect(
+        (screen.getByRole("button", { name: "Save" }) as HTMLButtonElement)
+          .disabled,
+      ).toBe(true);
     });
   });
 
@@ -1067,16 +1117,18 @@ describe("SettingsView Environments", () => {
       appSettings: { globalWorktreesFolder: "I:/loaded-from-settings" },
     });
 
-    expect((screen.getByLabelText("Global worktrees root") as HTMLInputElement).value).toBe(
-      "I:/typing",
-    );
+    expect(
+      (screen.getByLabelText("Global worktrees root") as HTMLInputElement)
+        .value,
+    ).toBe("I:/typing");
 
     fireEvent.click(screen.getByRole("button", { name: "Reset" }));
 
     await waitFor(() => {
-      expect((screen.getByLabelText("Global worktrees root") as HTMLInputElement).value).toBe(
-        "I:/loaded-from-settings",
-      );
+      expect(
+        (screen.getByLabelText("Global worktrees root") as HTMLInputElement)
+          .value,
+      ).toBe("I:/loaded-from-settings");
     });
   });
 
@@ -1180,7 +1232,10 @@ describe("SettingsView Environments", () => {
   });
 
   it("copies the setup script to the clipboard", async () => {
-    const originalDescriptor = Object.getOwnPropertyDescriptor(navigator, "clipboard");
+    const originalDescriptor = Object.getOwnPropertyDescriptor(
+      navigator,
+      "clipboard",
+    );
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, "clipboard", {
       value: { writeText },
@@ -1256,15 +1311,13 @@ describe("SettingsView Codex section", () => {
 
   it("shows already up-to-date when the installed Codex version matches latest", async () => {
     cleanup();
-    const onRunCodexUpdateCheck = vi
-      .fn()
-      .mockResolvedValue(
-        createUpdateCheckResult({
-          beforeVersion: "codex-cli 0.118.0",
-          latestVersion: "0.118.0",
-          upToDate: true,
-        }),
-      );
+    const onRunCodexUpdateCheck = vi.fn().mockResolvedValue(
+      createUpdateCheckResult({
+        beforeVersion: "codex-cli 0.118.0",
+        latestVersion: "0.118.0",
+        upToDate: true,
+      }),
+    );
     const onRunCodexUpdate = vi.fn().mockResolvedValue(createUpdateResult());
 
     render(
@@ -1306,7 +1359,9 @@ describe("SettingsView Codex section", () => {
     await waitFor(() => {
       expect(onRunCodexUpdateCheck).toHaveBeenCalledWith(null, null);
       expect(onRunCodexUpdate).not.toHaveBeenCalled();
-      expect(screen.getByText("Codex is already the latest version")).toBeTruthy();
+      expect(
+        screen.getByText("Codex is already the latest version"),
+      ).toBeTruthy();
       expect(
         screen.getByText(
           "The installed Codex version is already the latest available version. No update is needed.",
@@ -1318,7 +1373,9 @@ describe("SettingsView Codex section", () => {
   it("updates Codex immediately when no active sessions are running", async () => {
     cleanup();
     askMock.mockReset();
-    const onRunCodexUpdateCheck = vi.fn().mockResolvedValue(createUpdateCheckResult());
+    const onRunCodexUpdateCheck = vi
+      .fn()
+      .mockResolvedValue(createUpdateCheckResult());
     const onRunCodexUpdate = vi.fn().mockResolvedValue(createUpdateResult());
 
     render(
@@ -1367,17 +1424,15 @@ describe("SettingsView Codex section", () => {
   it("asks to end active sessions before updating Codex", async () => {
     cleanup();
     askMock.mockResolvedValue(true);
-    const onRunCodexUpdateCheck = vi
-      .fn()
-      .mockResolvedValue(
-        createUpdateCheckResult({
-          activeSessionCount: 2,
-          activeSessions: [
-            { workspaceId: "ws-1", workspaceName: "Workspace One" },
-            { workspaceId: "ws-2", workspaceName: "Workspace Two" },
-          ],
-        }),
-      );
+    const onRunCodexUpdateCheck = vi.fn().mockResolvedValue(
+      createUpdateCheckResult({
+        activeSessionCount: 2,
+        activeSessions: [
+          { workspaceId: "ws-1", workspaceName: "Workspace One" },
+          { workspaceId: "ws-2", workspaceName: "Workspace Two" },
+        ],
+      }),
+    );
     const onRunCodexUpdate = vi.fn().mockResolvedValue(createUpdateResult());
 
     render(
@@ -1425,14 +1480,14 @@ describe("SettingsView Codex section", () => {
   it("exits Codex update when the user declines ending active sessions", async () => {
     cleanup();
     askMock.mockResolvedValue(false);
-    const onRunCodexUpdateCheck = vi
-      .fn()
-      .mockResolvedValue(
-        createUpdateCheckResult({
-          activeSessionCount: 1,
-          activeSessions: [{ workspaceId: "ws-1", workspaceName: "Workspace One" }],
-        }),
-      );
+    const onRunCodexUpdateCheck = vi.fn().mockResolvedValue(
+      createUpdateCheckResult({
+        activeSessionCount: 1,
+        activeSessions: [
+          { workspaceId: "ws-1", workspaceName: "Workspace One" },
+        ],
+      }),
+    );
     const onRunCodexUpdate = vi.fn().mockResolvedValue(createUpdateResult());
 
     render(
@@ -1521,7 +1576,9 @@ describe("SettingsView Codex section", () => {
     await waitFor(() => {
       expect(screen.getByRole("button", { name: "Start daemon" })).toBeTruthy();
       expect(screen.getByRole("button", { name: "Stop daemon" })).toBeTruthy();
-      expect(screen.getByRole("button", { name: "Refresh status" })).toBeTruthy();
+      expect(
+        screen.getByRole("button", { name: "Refresh status" }),
+      ).toBeTruthy();
       expect(screen.getByLabelText("Remote backend host")).toBeTruthy();
       expect(screen.getByLabelText("Remote backend token")).toBeTruthy();
     });
@@ -1596,24 +1653,38 @@ describe("SettingsView Codex section", () => {
       await waitFor(() => {
         expect(screen.getByLabelText("Remote backend host")).toBeTruthy();
         expect(screen.getByLabelText("Remote backend token")).toBeTruthy();
-        expect(screen.getByRole("button", { name: "Connect & test" })).toBeTruthy();
+        expect(
+          screen.getByRole("button", { name: "Connect & test" }),
+        ).toBeTruthy();
       });
 
       expect(screen.queryByLabelText("Backend mode")).toBeNull();
       expect(screen.queryByRole("button", { name: "Start daemon" })).toBeNull();
-      expect(screen.queryByRole("button", { name: "Detect Tailscale" })).toBeNull();
+      expect(
+        screen.queryByRole("button", { name: "Detect Tailscale" }),
+      ).toBeNull();
       expect(screen.queryByRole("button", { name: "Start Runner" })).toBeNull();
       expect(
-        screen.getByText(/get the tailscale hostname and token from your desktop/i),
+        screen.getByText(
+          /get the tailscale hostname and token from your desktop/i,
+        ),
       ).toBeTruthy();
     } finally {
       if (originalPlatformDescriptor) {
-        Object.defineProperty(window.navigator, "platform", originalPlatformDescriptor);
+        Object.defineProperty(
+          window.navigator,
+          "platform",
+          originalPlatformDescriptor,
+        );
       } else {
         Reflect.deleteProperty(window.navigator, "platform");
       }
       if (originalUserAgentDescriptor) {
-        Object.defineProperty(window.navigator, "userAgent", originalUserAgentDescriptor);
+        Object.defineProperty(
+          window.navigator,
+          "userAgent",
+          originalUserAgentDescriptor,
+        );
       } else {
         Reflect.deleteProperty(window.navigator, "userAgent");
       }
@@ -1715,12 +1786,18 @@ describe("SettingsView Codex section", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByRole("list", { name: "Saved remotes" })).toBeTruthy();
+        expect(
+          screen.getByRole("list", { name: "Saved remotes" }),
+        ).toBeTruthy();
         expect(screen.getByLabelText("Remote name")).toBeTruthy();
       });
-      expect(screen.getAllByText(/Last connected: Never/i).length).toBeGreaterThan(0);
+      expect(
+        screen.getAllByText(/Last connected: Never/i).length,
+      ).toBeGreaterThan(0);
 
-      fireEvent.click(screen.getByRole("button", { name: "Use Office Mac remote" }));
+      fireEvent.click(
+        screen.getByRole("button", { name: "Use Office Mac remote" }),
+      );
 
       await waitFor(() => {
         expect(onUpdateAppSettings).toHaveBeenCalledWith(
@@ -1741,7 +1818,8 @@ describe("SettingsView Codex section", () => {
 
       await waitFor(() => {
         expect(
-          screen.getAllByText('A remote named "Home Mac" already exists.').length,
+          screen.getAllByText('A remote named "Home Mac" already exists.')
+            .length,
         ).toBeGreaterThan(0);
       });
 
@@ -1750,7 +1828,9 @@ describe("SettingsView Codex section", () => {
       expect(screen.getByRole("dialog", { name: "Add remote" })).toBeTruthy();
       expect(onUpdateAppSettings).toHaveBeenCalledTimes(0);
 
-      fireEvent.click(screen.getByRole("button", { name: "Close add remote modal" }));
+      fireEvent.click(
+        screen.getByRole("button", { name: "Close add remote modal" }),
+      );
       expect(screen.queryByRole("dialog", { name: "Add remote" })).toBeNull();
 
       fireEvent.click(screen.getByRole("button", { name: "Add remote" }));
@@ -1768,11 +1848,15 @@ describe("SettingsView Codex section", () => {
       await waitFor(() => {
         expect(onUpdateAppSettings).toHaveBeenCalledTimes(2);
       });
-      const trialSettings = onUpdateAppSettings.mock.calls[0]?.[0] as AppSettings;
-      const connectedSettings = onUpdateAppSettings.mock.calls[1]?.[0] as AppSettings;
+      const trialSettings = onUpdateAppSettings.mock
+        .calls[0]?.[0] as AppSettings;
+      const connectedSettings = onUpdateAppSettings.mock
+        .calls[1]?.[0] as AppSettings;
       expect(trialSettings.remoteBackends).toHaveLength(3);
       expect(trialSettings.activeRemoteBackendId).toBeTruthy();
-      expect(trialSettings.remoteBackendHost).toBe("travel-mac.tailnet.ts.net:4732");
+      expect(trialSettings.remoteBackendHost).toBe(
+        "travel-mac.tailnet.ts.net:4732",
+      );
       expect(trialSettings.remoteBackendToken).toBe("token-travel");
       expect(connectedSettings.remoteBackends).toHaveLength(3);
       const connectedEntry = connectedSettings.remoteBackends.find(
@@ -1790,35 +1874,51 @@ describe("SettingsView Codex section", () => {
       fireEvent.click(screen.getByRole("button", { name: "Connect & add" }));
 
       await waitFor(() => {
-        expect(screen.getByText("Remote backend token is required.")).toBeTruthy();
+        expect(
+          screen.getByText("Remote backend token is required."),
+        ).toBeTruthy();
       });
 
       onUpdateAppSettings.mockClear();
-      fireEvent.click(screen.getByRole("button", { name: "Move Home Mac down" }));
+      fireEvent.click(
+        screen.getByRole("button", { name: "Move Home Mac down" }),
+      );
 
       await waitFor(() => {
         expect(onUpdateAppSettings).toHaveBeenCalledTimes(1);
-        const nextSettings = onUpdateAppSettings.mock.calls[0]?.[0] as AppSettings;
+        const nextSettings = onUpdateAppSettings.mock
+          .calls[0]?.[0] as AppSettings;
         expect(nextSettings.remoteBackends[0]?.id).toBe("remote-b");
       });
 
       onUpdateAppSettings.mockClear();
-      fireEvent.click(screen.getByRole("button", { name: "Delete Office Mac" }));
+      fireEvent.click(
+        screen.getByRole("button", { name: "Delete Office Mac" }),
+      );
       fireEvent.click(screen.getByRole("button", { name: "Delete remote" }));
 
       await waitFor(() => {
         expect(onUpdateAppSettings).toHaveBeenCalledTimes(1);
-        const nextSettings = onUpdateAppSettings.mock.calls[0]?.[0] as AppSettings;
+        const nextSettings = onUpdateAppSettings.mock
+          .calls[0]?.[0] as AppSettings;
         expect(nextSettings.remoteBackends.length).toBeGreaterThanOrEqual(1);
       });
     } finally {
       if (originalPlatformDescriptor) {
-        Object.defineProperty(window.navigator, "platform", originalPlatformDescriptor);
+        Object.defineProperty(
+          window.navigator,
+          "platform",
+          originalPlatformDescriptor,
+        );
       } else {
         Reflect.deleteProperty(window.navigator, "platform");
       }
       if (originalUserAgentDescriptor) {
-        Object.defineProperty(window.navigator, "userAgent", originalUserAgentDescriptor);
+        Object.defineProperty(
+          window.navigator,
+          "userAgent",
+          originalUserAgentDescriptor,
+        );
       } else {
         Reflect.deleteProperty(window.navigator, "userAgent");
       }
@@ -1833,7 +1933,6 @@ describe("SettingsView Codex section", () => {
       }
     }
   }, 20_000);
-
 });
 
 describe("SettingsView Codex defaults", () => {
@@ -1882,7 +1981,9 @@ describe("SettingsView Codex defaults", () => {
           {
             id: null,
             name: "Ungrouped",
-            workspaces: [workspace({ id: "w1", name: "Workspace", connected: true })],
+            workspaces: [
+              workspace({ id: "w1", name: "Workspace", connected: true }),
+            ],
           },
         ]}
         ungroupedLabel="Ungrouped"
@@ -1924,8 +2025,12 @@ describe("SettingsView Codex defaults", () => {
       expect(modelSelect.value).toBe("gpt-5.1");
     });
 
-    expect(within(modelSelect).queryByRole("option", { name: /default/i })).toBeNull();
-    expect(within(effortSelect).queryByRole("option", { name: /default/i })).toBeNull();
+    expect(
+      within(modelSelect).queryByRole("option", { name: /default/i }),
+    ).toBeNull();
+    expect(
+      within(effortSelect).queryByRole("option", { name: /default/i }),
+    ).toBeNull();
     expect(effortSelect.value).toBe("medium");
 
     await waitFor(() => {
@@ -1979,7 +2084,9 @@ describe("SettingsView Codex defaults", () => {
           {
             id: null,
             name: "Ungrouped",
-            workspaces: [workspace({ id: "w1", name: "Workspace", connected: true })],
+            workspaces: [
+              workspace({ id: "w1", name: "Workspace", connected: true }),
+            ],
           },
         ]}
         ungroupedLabel="Ungrouped"
@@ -2156,7 +2263,8 @@ describe("SettingsView Features", () => {
             enabled: true,
             defaultEnabled: true,
             displayName: null,
-            description: "Run long-running terminal commands in the background.",
+            description:
+              "Run long-running terminal commands in the background.",
             announcement: null,
           },
         ],
@@ -2204,7 +2312,9 @@ describe("SettingsView Composer", () => {
       },
     });
 
-    const hintTitle = await screen.findByText("Show follow-up hint while processing");
+    const hintTitle = await screen.findByText(
+      "Show follow-up hint while processing",
+    );
     const hintRow = hintTitle.closest(".settings-toggle-row");
     expect(hintRow).not.toBeNull();
     fireEvent.click(within(hintRow as HTMLElement).getByRole("button"));
@@ -2337,9 +2447,7 @@ describe("SettingsView mobile layout", () => {
         />,
       );
 
-      expect(
-        within(rendered.container).queryByText("Sections"),
-      ).toBeNull();
+      expect(within(rendered.container).queryByText("Sections")).toBeNull();
       expect(
         rendered.container.querySelectorAll(".ds-panel-nav-item-disclosure")
           .length,
@@ -2384,12 +2492,20 @@ describe("SettingsView mobile layout", () => {
         Reflect.deleteProperty(window, "matchMedia");
       }
       if (originalPlatformDescriptor) {
-        Object.defineProperty(window.navigator, "platform", originalPlatformDescriptor);
+        Object.defineProperty(
+          window.navigator,
+          "platform",
+          originalPlatformDescriptor,
+        );
       } else {
         Reflect.deleteProperty(window.navigator, "platform");
       }
       if (originalUserAgentDescriptor) {
-        Object.defineProperty(window.navigator, "userAgent", originalUserAgentDescriptor);
+        Object.defineProperty(
+          window.navigator,
+          "userAgent",
+          originalUserAgentDescriptor,
+        );
       } else {
         Reflect.deleteProperty(window.navigator, "userAgent");
       }
@@ -2427,7 +2543,9 @@ describe("SettingsView Common links", () => {
 
     await act(async () => {
       fireEvent.change(labelInput, { target: { value: " Product docs " } });
-      fireEvent.change(urlInput, { target: { value: " https://example.com/product " } });
+      fireEvent.change(urlInput, {
+        target: { value: " https://example.com/product " },
+      });
       fireEvent.blur(urlInput);
     });
 
@@ -2509,7 +2627,11 @@ describe("SettingsView Shortcuts", () => {
 
     await act(async () => {
       window.dispatchEvent(
-        new KeyboardEvent("keydown", { key: "w", metaKey: true, bubbles: true }),
+        new KeyboardEvent("keydown", {
+          key: "w",
+          metaKey: true,
+          bubbles: true,
+        }),
       );
     });
 
@@ -2552,7 +2674,9 @@ describe("SettingsView Shortcuts", () => {
     );
 
     await act(async () => {
-      window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+      window.dispatchEvent(
+        new KeyboardEvent("keydown", { key: "Escape", bubbles: true }),
+      );
     });
 
     await waitFor(() => {
@@ -2661,7 +2785,9 @@ describe("SettingsView Shortcuts", () => {
     });
 
     await act(async () => {
-      fireEvent.change(searchInput, { target: { value: "new shortcut while focused" } });
+      fireEvent.change(searchInput, {
+        target: { value: "new shortcut while focused" },
+      });
     });
     await waitFor(() => {
       expect(screen.getByText("Cycle model")).toBeTruthy();
@@ -2672,7 +2798,9 @@ describe("SettingsView Shortcuts", () => {
       fireEvent.change(searchInput, { target: { value: "no-such-shortcut" } });
     });
     await waitFor(() => {
-      expect(screen.getByText('No shortcuts match "no-such-shortcut".')).toBeTruthy();
+      expect(
+        screen.getByText('No shortcuts match "no-such-shortcut".'),
+      ).toBeTruthy();
     });
 
     await act(async () => {
@@ -2680,7 +2808,9 @@ describe("SettingsView Shortcuts", () => {
     });
     await waitFor(() => {
       expect(screen.getByText("Toggle terminal panel")).toBeTruthy();
-      expect(screen.queryByText('No shortcuts match "no-such-shortcut".')).toBeNull();
+      expect(
+        screen.queryByText('No shortcuts match "no-such-shortcut".'),
+      ).toBeNull();
     });
   }, 10_000);
 });

@@ -3,6 +3,7 @@ import { isCommonLinkTargetUsable } from "@settings/components/settingsViewHelpe
 import { openUrl } from "@tauri-apps/plugin-opener";
 import ExternalLink from "lucide-react/dist/esm/icons/external-link";
 import Link2 from "lucide-react/dist/esm/icons/link-2";
+import Newspaper from "lucide-react/dist/esm/icons/newspaper";
 import ScrollText from "lucide-react/dist/esm/icons/scroll-text";
 import Settings from "lucide-react/dist/esm/icons/settings";
 import User from "lucide-react/dist/esm/icons/user";
@@ -18,6 +19,7 @@ import { useMenuController } from "../hooks/useMenuController";
 type SidebarCornerActionsProps = {
   commonLinks: CommonLink[];
   onOpenSettings: (section?: "common-links") => void;
+  onOpenAiRadar: () => void;
   onOpenDebug: () => void;
   showDebugButton: boolean;
   showAccountSwitcher: boolean;
@@ -33,6 +35,7 @@ type SidebarCornerActionsProps = {
 export function SidebarCornerActions({
   commonLinks,
   onOpenSettings,
+  onOpenAiRadar,
   onOpenDebug,
   showDebugButton,
   showAccountSwitcher,
@@ -136,6 +139,17 @@ export function SidebarCornerActions({
           )}
         </div>
       )}
+      <button
+        className="ghost sidebar-corner-button ds-tooltip-trigger"
+        type="button"
+        onClick={onOpenAiRadar}
+        aria-label={t("sidebar.openAiRadar")}
+        title={t("sidebar.aiRadar")}
+        data-tooltip={t("sidebar.aiRadar")}
+        data-tooltip-align="start"
+      >
+        <Newspaper size={14} aria-hidden />
+      </button>
       <button
         className="ghost sidebar-corner-button ds-tooltip-trigger"
         type="button"

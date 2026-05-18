@@ -1,4 +1,4 @@
-import { lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import successSoundUrl from "@/assets/success-notification.mp3";
 import errorSoundUrl from "@/assets/error-notification.mp3";
@@ -67,6 +67,7 @@ import { useTraySessionUsage } from "@app/hooks/useTraySessionUsage";
 import { useTauriEvent } from "@app/hooks/useTauriEvent";
 import { PetOverlayController } from "@/features/pets/components/PetOverlayController";
 import { parsePetCommand } from "@/features/pets/petCommands";
+import { useAiRadarScheduler } from "@/features/ai-radar/hooks/useAiRadarScheduler";
 import { useAppBootstrapOrchestration } from "@app/bootstrap/useAppBootstrapOrchestration";
 import {
   useThreadCodexBootstrapOrchestration,
@@ -91,6 +92,12 @@ import { setWorkspaceRuntimeCodexArgs } from "@services/tauri";
 const SettingsView = lazy(() =>
   import("@settings/components/SettingsView").then((module) => ({
     default: module.SettingsView,
+  })),
+);
+
+const AiRadarPanel = lazy(() =>
+  import("@/features/ai-radar/components/AiRadarPanel").then((module) => ({
+    default: module.AiRadarPanel,
   })),
 );
 
@@ -129,6 +136,9 @@ export default function MainApp() {
     clearDebugEntries,
     shouldReduceTransparency,
   } = useAppBootstrapOrchestration();
+  const [aiRadarOpen, setAiRadarOpen] = useState(false);
+  const openAiRadar = useCallback(() => setAiRadarOpen(true), []);
+  useAiRadarScheduler(appSettings.aiRadar);
   const {
     threadListSortKey,
     setThreadListSortKey,
@@ -1810,6 +1820,7 @@ export default function MainApp() {
     accountSwitching,
     onSwitchAccount: handleSwitchAccount,
     onCancelSwitchAccount: handleCancelSwitchAccount,
+    onOpenAiRadar: openAiRadar,
     onDecision: handleApprovalDecision,
     onRemember: handleApprovalRemember,
     onUserInputSubmit: handleUserInputSubmit,
@@ -2077,5 +2088,19 @@ export default function MainApp() {
     },
   });
 
-  return <MainAppShell {...mainAppShellProps} />;
+  return (
+    <>
+      <MainAppShell {...mainAppShellProps} />
+      {aiRadarOpen && (
+        <Suspense fallback={null}>
+          <AiRadarPanel
+            onClose={() => setAiRadarOpen(false)}
+            onSettingsChange={(aiRadar) =>
+              setAppSettings((current) => ({ ...current, aiRadar }))
+            }
+          />
+        </Suspense>
+      )}
+    </>
+  );
 }

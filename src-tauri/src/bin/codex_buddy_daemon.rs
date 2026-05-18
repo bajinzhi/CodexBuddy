@@ -81,12 +81,13 @@ use shared::codex_core::CodexLoginCancelState;
 use shared::process_core::kill_child_process_tree;
 use shared::prompts_core::{self, CustomPromptEntry};
 use shared::{
-    agents_config_core, codex_aux_core, codex_core, files_core, git_core, git_ui_core,
-    local_usage_core, model_providers_core, pets_core, settings_core, workspaces_core,
+    agents_config_core, ai_radar_core, codex_aux_core, codex_core, files_core, git_core,
+    git_ui_core, local_usage_core, model_providers_core, pets_core, settings_core, workspaces_core,
     worktree_core,
 };
 use storage::{read_settings, read_workspaces};
 use types::{
+    AiRadarListResponse, AiRadarRefreshRequest, AiRadarSchedulerStatus, AiRadarSettings,
     AppSettings, GitCommitDiff, GitFileDiff, GitHubIssuesResponse, GitHubPullRequestComment,
     GitHubPullRequestDiff, GitHubPullRequestsResponse, GitLogResponse, LocalUsageSnapshot,
     WorkspaceEntry, WorkspaceInfo, WorkspaceSettings, WorktreeSetupStatus,
@@ -587,6 +588,37 @@ impl DaemonState {
     async fn update_app_settings(&self, settings: AppSettings) -> Result<AppSettings, String> {
         settings_core::update_app_settings_core(settings, &self.app_settings, &self.settings_path)
             .await
+    }
+
+    async fn ai_radar_list(&self) -> Result<AiRadarListResponse, String> {
+        ai_radar_core::ai_radar_list_core(&self.app_settings, &self.settings_path).await
+    }
+
+    async fn ai_radar_refresh(
+        &self,
+        request: AiRadarRefreshRequest,
+    ) -> Result<AiRadarListResponse, String> {
+        ai_radar_core::ai_radar_refresh_core(&self.app_settings, &self.settings_path, request).await
+    }
+
+    async fn ai_radar_sources_get(&self) -> AiRadarSettings {
+        ai_radar_core::ai_radar_sources_get_core(&self.app_settings).await
+    }
+
+    async fn ai_radar_sources_update(
+        &self,
+        settings: AiRadarSettings,
+    ) -> Result<AiRadarSettings, String> {
+        ai_radar_core::ai_radar_sources_update_core(
+            &self.app_settings,
+            &self.settings_path,
+            settings,
+        )
+        .await
+    }
+
+    async fn ai_radar_scheduler_status(&self) -> AiRadarSchedulerStatus {
+        ai_radar_core::ai_radar_scheduler_status_core(&self.app_settings, &self.settings_path).await
     }
 
     async fn set_codex_feature_flag(

@@ -169,6 +169,83 @@
     "waiting": "Waiting on a plan...",
     "noActive": "No active plan."
   },
+  "aiRadar": {
+    "title": "AI Radar",
+    "statusLine": "Last fetch {{last}} · Next {{next}}",
+    "notFetched": "Not fetched",
+    "refresh": "Refresh",
+    "refreshing": "Refreshing",
+    "saving": "Saving",
+    "closeAria": "Close AI Radar",
+    "tabsAria": "AI Radar categories",
+    "tabs": {
+      "media": "Media",
+      "github": "GitHub",
+      "models": "Model Rankings",
+      "sources": "Sources"
+    },
+    "sourceKinds": {
+      "rss": "RSS",
+      "atom": "Atom",
+      "jsonFeed": "JSON Feed",
+      "article": "Article",
+      "wechatOfficialAccount": "WeChat Official Account",
+      "toutiaoUser": "Toutiao",
+      "githubSearch": "GitHub",
+      "modelRanking": "Model Ranking"
+    },
+    "sourceTargets": {
+      "githubSearch": "GitHub search query",
+      "wechatOfficialAccount": "WeChat RSSHub route or ID",
+      "toutiaoUser": "Toutiao RSSHub route or user token",
+      "modelRanking": "OpenRouter rankings URL",
+      "publicUrl": "Public source URL"
+    },
+    "defaults": {
+      "githubSearchName": "GitHub Search",
+      "wechatOfficialAccountName": "WeChat Official Account",
+      "toutiaoUserName": "Toutiao Account",
+      "modelRankingName": "OpenRouter Model Ranking",
+      "newMediaName": "New Media Source"
+    },
+    "settings": {
+      "refreshInterval": "Auto-fetch interval",
+      "retentionDays": "Retention days",
+      "autoFetch": "Auto fetch",
+      "translateToChinese": "Chinese translation"
+    },
+    "sources": {
+      "deleteAria": "Delete source",
+      "nameLabel": "Source name"
+    },
+    "sourceState": {
+      "ok": "OK",
+      "failed": "Failed",
+      "items_one": "{{count}} item",
+      "items_other": "{{count}} items"
+    },
+    "sort": {
+      "label": "Sort",
+      "aria": "AI Radar sort mode",
+      "score": "Relevance",
+      "latest": "Latest",
+      "source": "Source",
+      "stars": "Stars",
+      "starDelta24h": "24h Growth",
+      "tokens": "Tokens",
+      "requests": "Calls",
+      "rank": "Rank"
+    },
+    "empty": {
+      "media": "No media stories",
+      "github": "No GitHub projects",
+      "models": "No model rankings"
+    },
+    "metrics": {
+      "tokens": "{{value}} tokens",
+      "requests": "{{value}} calls"
+    }
+  },
   "terminal": {
     "resizePanel": "Resize terminal panel",
     "tabs": "Terminal tabs",
@@ -353,6 +430,8 @@
     },
     "settings": "Settings",
     "openSettings": "Open settings",
+    "aiRadar": "AI news",
+    "openAiRadar": "Open AI news",
     "debugLog": "Debug log",
     "openDebugLog": "Open debug log",
     "addAgentOptions": "Add agent options",

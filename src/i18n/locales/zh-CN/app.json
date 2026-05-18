@@ -169,6 +169,83 @@
     "waiting": "正在等待计划...",
     "noActive": "当前没有活动计划。"
   },
+  "aiRadar": {
+    "title": "AI 资讯",
+    "statusLine": "最近抓取 {{last}} · 下次 {{next}}",
+    "notFetched": "未抓取",
+    "refresh": "刷新",
+    "refreshing": "刷新中",
+    "saving": "保存中",
+    "closeAria": "关闭 AI 资讯",
+    "tabsAria": "AI 资讯分类",
+    "tabs": {
+      "media": "媒体资讯",
+      "github": "GitHub 热门",
+      "models": "模型榜单",
+      "sources": "来源"
+    },
+    "sourceKinds": {
+      "rss": "RSS",
+      "atom": "Atom",
+      "jsonFeed": "JSON Feed",
+      "article": "Article",
+      "wechatOfficialAccount": "微信公众号",
+      "toutiaoUser": "今日头条",
+      "githubSearch": "GitHub",
+      "modelRanking": "模型榜单"
+    },
+    "sourceTargets": {
+      "githubSearch": "GitHub 搜索语句",
+      "wechatOfficialAccount": "微信公众号 RSSHub 路由或 ID",
+      "toutiaoUser": "头条 RSSHub 路由或用户 token",
+      "modelRanking": "OpenRouter 排行榜 URL",
+      "publicUrl": "公开来源 URL"
+    },
+    "defaults": {
+      "githubSearchName": "GitHub 搜索",
+      "wechatOfficialAccountName": "微信公众号",
+      "toutiaoUserName": "今日头条号",
+      "modelRankingName": "OpenRouter 模型调用榜",
+      "newMediaName": "新媒体源"
+    },
+    "settings": {
+      "refreshInterval": "自动抓取间隔",
+      "retentionDays": "保留天数",
+      "autoFetch": "自动抓取",
+      "translateToChinese": "中文翻译"
+    },
+    "sources": {
+      "deleteAria": "删除来源",
+      "nameLabel": "来源名称"
+    },
+    "sourceState": {
+      "ok": "正常",
+      "failed": "失败",
+      "items_one": "{{count}} 条",
+      "items_other": "{{count}} 条"
+    },
+    "sort": {
+      "label": "排序",
+      "aria": "AI 资讯排序方式",
+      "score": "综合",
+      "latest": "最新",
+      "source": "来源",
+      "stars": "Stars",
+      "starDelta24h": "24h 增长",
+      "tokens": "Tokens",
+      "requests": "调用次数",
+      "rank": "排名"
+    },
+    "empty": {
+      "media": "暂无媒体资讯",
+      "github": "暂无 GitHub 项目",
+      "models": "暂无模型榜单"
+    },
+    "metrics": {
+      "tokens": "{{value}} tokens",
+      "requests": "{{value}} 次调用"
+    }
+  },
   "terminal": {
     "resizePanel": "调整终端面板大小",
     "tabs": "终端标签页",
@@ -353,6 +430,8 @@
     },
     "settings": "设置",
     "openSettings": "打开设置",
+    "aiRadar": "AI 资讯",
+    "openAiRadar": "打开 AI 资讯",
     "debugLog": "调试日志",
     "openDebugLog": "打开调试日志",
     "addAgentOptions": "添加智能体选项",

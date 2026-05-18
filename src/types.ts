@@ -123,7 +123,11 @@ export type ConversationItem =
       id: string;
       kind: "explore";
       status: "exploring" | "explored";
-      entries: { kind: "read" | "search" | "list" | "run"; label: string; detail?: string }[];
+      entries: {
+        kind: "read" | "search" | "list" | "run";
+        label: string;
+        detail?: string;
+      }[];
     }
   | {
       id: string;
@@ -208,7 +212,14 @@ export type RemoteBackendTarget = {
 export type ThemePreference = "system" | "light" | "dark" | "dim";
 export type UiLanguagePreference = "system" | "en" | "zh-CN";
 export type SupportedUiLocale = "en" | "zh-CN";
-export type AccentColor = "blue" | "green" | "purple" | "orange" | "pink" | "teal" | "red";
+export type AccentColor =
+  | "blue"
+  | "green"
+  | "purple"
+  | "orange"
+  | "pink"
+  | "teal"
+  | "red";
 export type PersonalityPreference = "friendly" | "pragmatic";
 export type FollowUpMessageBehavior = "queue" | "steer";
 export type ComposerSendIntent = "default" | "queue" | "steer";
@@ -248,6 +259,102 @@ export type CommonLink = {
   id: string;
   label: string;
   url: string;
+};
+
+export type AiRadarChannel = "media" | "github" | "models";
+
+export type AiRadarSourceKind =
+  | "rss"
+  | "atom"
+  | "jsonFeed"
+  | "article"
+  | "wechatOfficialAccount"
+  | "toutiaoUser"
+  | "githubSearch"
+  | "modelRanking";
+
+export type AiRadarSource = {
+  id: string;
+  name: string;
+  kind: AiRadarSourceKind;
+  url?: string | null;
+  query?: string | null;
+  enabled: boolean;
+  channel: AiRadarChannel;
+  createdAtMs?: number | null;
+};
+
+export type AiRadarSettings = {
+  enabled: boolean;
+  refreshIntervalMinutes: number;
+  maxItems: number;
+  retentionDays: number;
+  translateToChinese: boolean;
+  defaultSourceVersion: number;
+  sources: AiRadarSource[];
+};
+
+export type AiRadarItemMetrics = {
+  stars?: number | null;
+  forks?: number | null;
+  openIssues?: number | null;
+  starDelta24h?: number | null;
+  tokens?: number | null;
+  requests?: number | null;
+  rank?: number | null;
+  change?: number | null;
+};
+
+export type AiRadarItem = {
+  id: string;
+  channel: AiRadarChannel;
+  sourceId: string;
+  sourceName: string;
+  title: string;
+  summary?: string | null;
+  titleZh?: string | null;
+  summaryZh?: string | null;
+  url: string;
+  publishedAtMs?: number | null;
+  fetchedAtMs: number;
+  score: number;
+  tags: string[];
+  metrics: AiRadarItemMetrics;
+};
+
+export type AiRadarSourceState = {
+  sourceId: string;
+  sourceName: string;
+  ok: boolean;
+  lastFetchedAtMs?: number | null;
+  lastError?: string | null;
+  itemCount: number;
+};
+
+export type AiRadarStatus = {
+  lastRefreshedAtMs?: number | null;
+  nextRefreshAtMs?: number | null;
+  stale: boolean;
+  sourceStates: AiRadarSourceState[];
+};
+
+export type AiRadarListResponse = {
+  settings: AiRadarSettings;
+  items: AiRadarItem[];
+  status: AiRadarStatus;
+};
+
+export type AiRadarRefreshRequest = {
+  channel?: AiRadarChannel | null;
+  sourceId?: string | null;
+};
+
+export type AiRadarSchedulerStatus = {
+  enabled: boolean;
+  refreshIntervalMinutes: number;
+  lastRefreshedAtMs?: number | null;
+  nextRefreshAtMs?: number | null;
+  due: boolean;
 };
 
 export type PetAnimationDefinition = {
@@ -360,6 +467,7 @@ export type AppSettings = {
   openAppTargets: OpenAppTarget[];
   selectedOpenAppId: string;
   commonLinks: CommonLink[];
+  aiRadar: AiRadarSettings;
 };
 
 export type CodexFeatureStage =
@@ -421,7 +529,11 @@ export type CodexDoctorResult = {
   nodeDetails: string | null;
 };
 
-export type CodexUpdateMethod = "brew_formula" | "brew_cask" | "npm" | "unknown";
+export type CodexUpdateMethod =
+  | "brew_formula"
+  | "brew_cask"
+  | "npm"
+  | "unknown";
 
 export type CodexUpdateActiveSession = {
   workspaceId: string;

@@ -1,5 +1,7 @@
 use super::*;
 
+#[path = "rpc/ai_radar.rs"]
+mod ai_radar;
 #[path = "rpc/codex.rs"]
 mod codex;
 #[path = "rpc/daemon.rs"]

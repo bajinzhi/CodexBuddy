@@ -2,6 +2,10 @@ import { invoke } from "@tauri-apps/api/core";
 import { open, save } from "@tauri-apps/plugin-dialog";
 import type { Options as NotificationOptions } from "@tauri-apps/plugin-notification";
 import type {
+  AiRadarListResponse,
+  AiRadarRefreshRequest,
+  AiRadarSchedulerStatus,
+  AiRadarSettings,
   AppSettings,
   CodexUpdateCheckResult,
   CodexUpdateResult,
@@ -886,6 +890,30 @@ export async function isMobileRuntime(): Promise<boolean> {
 
 export async function updateAppSettings(settings: AppSettings): Promise<AppSettings> {
   return invoke<AppSettings>("update_app_settings", { settings });
+}
+
+export async function aiRadarList(): Promise<AiRadarListResponse> {
+  return invoke<AiRadarListResponse>("ai_radar_list");
+}
+
+export async function aiRadarRefresh(
+  request: AiRadarRefreshRequest = {},
+): Promise<AiRadarListResponse> {
+  return invoke<AiRadarListResponse>("ai_radar_refresh", { request });
+}
+
+export async function aiRadarSourcesGet(): Promise<AiRadarSettings> {
+  return invoke<AiRadarSettings>("ai_radar_sources_get");
+}
+
+export async function aiRadarSourcesUpdate(
+  settings: AiRadarSettings,
+): Promise<AiRadarSettings> {
+  return invoke<AiRadarSettings>("ai_radar_sources_update", { settings });
+}
+
+export async function aiRadarSchedulerStatus(): Promise<AiRadarSchedulerStatus> {
+  return invoke<AiRadarSchedulerStatus>("ai_radar_scheduler_status");
 }
 
 export async function listPets(): Promise<PetDefinition[]> {

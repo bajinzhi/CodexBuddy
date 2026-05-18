@@ -32,23 +32,25 @@ describe("useAppSettings", () => {
   });
 
   it("loads settings and normalizes theme + uiScale", async () => {
-    getAppSettingsMock.mockResolvedValue(
-      ({
-        uiScale: UI_SCALE_MAX + 1,
-        theme: "nope" as unknown as AppSettings["theme"],
-        uiLanguage: "invalid" as unknown as AppSettings["uiLanguage"],
-        backendMode: "remote",
-        remoteBackendHost: "example:1234",
-        personality: "unknown",
-        uiFontFamily: "",
-        codeFontFamily: "  ",
-        codeFontSize: 25,
-        quickCommands: [
-          { id: "", label: "  Quick fix  ", text: "Explain the bug\nand propose a patch." },
-          { id: "", label: 3, text: null },
-        ],
-      } as unknown) as AppSettings,
-    );
+    getAppSettingsMock.mockResolvedValue({
+      uiScale: UI_SCALE_MAX + 1,
+      theme: "nope" as unknown as AppSettings["theme"],
+      uiLanguage: "invalid" as unknown as AppSettings["uiLanguage"],
+      backendMode: "remote",
+      remoteBackendHost: "example:1234",
+      personality: "unknown",
+      uiFontFamily: "",
+      codeFontFamily: "  ",
+      codeFontSize: 25,
+      quickCommands: [
+        {
+          id: "",
+          label: "  Quick fix  ",
+          text: "Explain the bug\nand propose a patch.",
+        },
+        { id: "", label: 3, text: null },
+      ],
+    } as unknown as AppSettings);
 
     const { result } = renderHook(() => useAppSettings());
 
@@ -58,7 +60,9 @@ describe("useAppSettings", () => {
     expect(result.current.settings.theme).toBe("system");
     expect(result.current.settings.uiLanguage).toBe("system");
     expect(result.current.settings.uiFontFamily).toContain("system-ui");
-    expect(result.current.settings.codeFontFamily).toMatch(/^"JetBrainsMono NF"/);
+    expect(result.current.settings.codeFontFamily).toMatch(
+      /^"JetBrainsMono NF"/,
+    );
     expect(result.current.settings.codeFontSize).toBe(16);
     expect(result.current.settings.personality).toBe("friendly");
     expect(result.current.settings.usageShowRemaining).toBe(true);
@@ -70,7 +74,9 @@ describe("useAppSettings", () => {
     expect(result.current.settings.quickCommands[1].id).not.toBe(
       result.current.settings.quickCommands[0].id,
     );
-    expect(result.current.settings.quickCommands[0].text).toContain("propose a patch");
+    expect(result.current.settings.quickCommands[0].text).toContain(
+      "propose a patch",
+    );
     expect(window.localStorage.getItem(UI_LANGUAGE_STORAGE_KEY)).toBe("system");
   });
 
@@ -86,7 +92,9 @@ describe("useAppSettings", () => {
     expect(result.current.settings.uiLanguage).toBe("zh-CN");
     expect(result.current.settings.theme).toBe("system");
     expect(result.current.settings.uiFontFamily).toContain("system-ui");
-    expect(result.current.settings.codeFontFamily).toMatch(/^"JetBrainsMono NF"/);
+    expect(result.current.settings.codeFontFamily).toMatch(
+      /^"JetBrainsMono NF"/,
+    );
     expect(result.current.settings.backendMode).toBe("local");
     expect(result.current.settings.dictationModelId).toBe("base");
     expect(result.current.settings.interruptShortcut).toBeTruthy();
@@ -154,9 +162,9 @@ describe("useAppSettings", () => {
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
-    await expect(result.current.doctor("/bin/codex", "--profile test")).rejects.toThrow(
-      "doctor fail",
-    );
+    await expect(
+      result.current.doctor("/bin/codex", "--profile test"),
+    ).rejects.toThrow("doctor fail");
     expect(runCodexDoctorMock).toHaveBeenCalledWith(
       "/bin/codex",
       "--profile test",
@@ -187,22 +195,20 @@ describe("useAppSettings", () => {
   });
 
   it("normalizes common links and preserves unusable drafts", async () => {
-    getAppSettingsMock.mockResolvedValue(
-      ({
-        commonLinks: [
-          {
-            id: "",
-            label: " Docs ",
-            url: " https://example.com/docs ",
-          },
-          {
-            id: "",
-            label: " Local ",
-            url: " ftp://example.com/files ",
-          },
-        ],
-      } as unknown) as AppSettings,
-    );
+    getAppSettingsMock.mockResolvedValue({
+      commonLinks: [
+        {
+          id: "",
+          label: " Docs ",
+          url: " https://example.com/docs ",
+        },
+        {
+          id: "",
+          label: " Local ",
+          url: " ftp://example.com/files ",
+        },
+      ],
+    } as unknown as AppSettings);
 
     const { result } = renderHook(() => useAppSettings());
 
@@ -220,5 +226,75 @@ describe("useAppSettings", () => {
         url: "ftp://example.com/files",
       },
     ]);
+  });
+
+  it("upgrades legacy AI Radar defaults with media and agent GitHub sources", async () => {
+    getAppSettingsMock.mockResolvedValue({
+      aiRadar: {
+        enabled: true,
+        refreshIntervalMinutes: 60,
+        maxItems: 800,
+        retentionDays: 30,
+        defaultSourceVersion: 2,
+        sources: [
+          {
+            id: "github-ai-agent-topic",
+            name: "GitHub AI agent",
+            kind: "githubSearch",
+            url: null,
+            query: "topic:ai-agent stars:>50 archived:false fork:false",
+            enabled: true,
+            channel: "github",
+            createdAtMs: null,
+          },
+          {
+            id: "github-ai-projects",
+            name: "GitHub AI Projects",
+            kind: "githubSearch",
+            url: null,
+            query: "topic:ai stars:>500 archived:false",
+            enabled: true,
+            channel: "github",
+            createdAtMs: null,
+          },
+          {
+            id: "media-the-decoder",
+            name: "The Decoder",
+            kind: "rss",
+            url: "https://the-decoder.com/feed/",
+            query: null,
+            enabled: true,
+            channel: "media",
+            createdAtMs: null,
+          },
+        ],
+      },
+    } as unknown as AppSettings);
+
+    const { result } = renderHook(() => useAppSettings());
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    const sourceIds = result.current.settings.aiRadar.sources.map(
+      (source) => source.id,
+    );
+    expect(result.current.settings.aiRadar.translateToChinese).toBe(true);
+    expect(result.current.settings.aiRadar.defaultSourceVersion).toBe(7);
+    expect(sourceIds).toContain("media-openai-news");
+    expect(sourceIds).toContain("media-venturebeat-ai");
+    expect(sourceIds).toContain("media-mit-ai");
+    expect(sourceIds).toContain("media-anthropic-news");
+    expect(sourceIds).toContain("media-wechat-jiqizhixin");
+    expect(sourceIds).toContain("media-toutiao-ai-teaching");
+    expect(sourceIds).not.toContain("media-the-decoder");
+    expect(sourceIds).toContain("github-ai-agent-topic");
+    expect(sourceIds).toContain("github-agent-framework-topic");
+    expect(sourceIds).toContain("github-ai-projects");
+    expect(sourceIds).toContain("models-openrouter-weekly");
+    expect(
+      result.current.settings.aiRadar.sources.find(
+        (source) => source.id === "github-ai-agent-topic",
+      )?.query,
+    ).toBe("agent topic:llm stars:>100 archived:false fork:false");
   });
 });

@@ -1,0 +1,393 @@
+.ai-radar-overlay {
+  --ai-radar-surface: var(--ds-modal-card-bg, var(--surface-popover));
+  --ai-radar-surface-muted: var(--surface-card-muted);
+  --ai-radar-surface-raised: var(--surface-card);
+  --ai-radar-surface-control: var(--surface-control);
+  --ai-radar-surface-control-hover: var(--surface-control-hover);
+  --ai-radar-surface-active: var(--surface-active);
+  --ai-radar-text: var(--ds-text-strong, var(--text-strong));
+  --ai-radar-text-muted: var(--ds-text-subtle, var(--text-subtle));
+  --ai-radar-text-faint: var(--ds-text-faint, var(--text-faint));
+  --ai-radar-border: var(--ds-border-subtle, var(--border-subtle));
+  --ai-radar-border-strong: var(--ds-border-strong, var(--border-stronger));
+  --ai-radar-border-accent: var(--border-accent);
+  --ai-radar-border-accent-soft: var(--border-accent-soft);
+  --ai-radar-text-accent: var(--text-accent);
+  --ai-radar-success: var(--status-success);
+  --ai-radar-warning: var(--status-warning);
+  --ai-radar-error: var(--status-error);
+  position: fixed;
+  inset: 0;
+  z-index: var(--ds-layer-modal, 80);
+  display: flex;
+  justify-content: flex-start;
+  align-items: stretch;
+  background: var(
+    --ds-modal-backdrop,
+    color-mix(in srgb, var(--surface-messages) 78%, transparent)
+  );
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.app.reduced-transparency .ai-radar-overlay {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.ai-radar-panel {
+  width: min(760px, calc(100vw - 24px));
+  margin: 12px;
+  display: flex;
+  flex-direction: column;
+  background: var(--ai-radar-surface);
+  color: var(--ai-radar-text);
+  border: 1px solid var(--ai-radar-border-strong);
+  border-radius: 8px;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+}
+
+.ai-radar-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 18px 12px;
+  border-bottom: 1px solid var(--ai-radar-border);
+}
+
+.ai-radar-header h2 {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.25;
+  font-weight: 650;
+  letter-spacing: 0;
+}
+
+.ai-radar-status-line {
+  margin-top: 4px;
+  color: var(--ai-radar-text-muted);
+  font-size: 12px;
+}
+
+.ai-radar-header-actions,
+.ai-radar-settings-row,
+.ai-radar-add-row,
+.ai-radar-source-top,
+.ai-radar-item-meta,
+.ai-radar-tabs button {
+  display: flex;
+  align-items: center;
+}
+
+.ai-radar-header-actions {
+  gap: 8px;
+}
+
+.ai-radar-tabs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  padding: 10px 12px;
+  background: var(--ai-radar-surface-muted);
+  border-bottom: 1px solid var(--ai-radar-border);
+}
+
+.ai-radar-tabs button {
+  justify-content: center;
+  gap: 7px;
+  min-width: 0;
+  min-height: 34px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ai-radar-text-muted);
+  font-size: 13px;
+}
+
+.ai-radar-tabs button.active {
+  background: var(--ai-radar-surface-active);
+  border-color: var(--ai-radar-border-accent-soft);
+  color: var(--ai-radar-text);
+}
+
+.ai-radar-tabs span {
+  min-width: 20px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--ai-radar-surface-control);
+  font-size: 11px;
+}
+
+.ai-radar-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 12px 0;
+  padding: 9px 10px;
+  border: 1px solid color-mix(in srgb, var(--ai-radar-error) 42%, transparent);
+  border-radius: 6px;
+  color: var(--ai-radar-error);
+  background: color-mix(in srgb, var(--ai-radar-error) 12%, transparent);
+  font-size: 12px;
+}
+
+.ai-radar-items,
+.ai-radar-sources {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 12px;
+}
+
+.ai-radar-items {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+}
+
+.ai-radar-list-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 34px;
+  color: var(--ai-radar-text-muted);
+  font-size: 12px;
+}
+
+.ai-radar-sort-options {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 3px;
+  border: 1px solid var(--ai-radar-border);
+  border-radius: 7px;
+  background: var(--ai-radar-surface-raised);
+}
+
+.ai-radar-sort-options button {
+  min-height: 26px;
+  padding: 0 9px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--ai-radar-text-muted);
+  font-size: 12px;
+}
+
+.ai-radar-sort-options button.active {
+  background: var(--ai-radar-surface-active);
+  border-color: var(--ai-radar-border-accent-soft);
+  color: var(--ai-radar-text);
+}
+
+.ai-radar-item {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  text-align: left;
+  padding: 12px;
+  border: 1px solid var(--ai-radar-border);
+  border-radius: 7px;
+  background: var(--ai-radar-surface-raised);
+  color: inherit;
+}
+
+.ai-radar-item:hover {
+  border-color: var(--ai-radar-border-accent);
+  background: var(--ai-radar-surface-muted);
+}
+
+.ai-radar-item-main {
+  min-width: 0;
+}
+
+.ai-radar-item-title {
+  font-size: 14px;
+  font-weight: 620;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.ai-radar-item-summary {
+  margin-top: 6px;
+  color: var(--ai-radar-text-muted);
+  font-size: 12px;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.ai-radar-item-meta {
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+  color: var(--ai-radar-text-muted);
+  font-size: 11px;
+}
+
+.ai-radar-item-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.ai-radar-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 8px;
+}
+
+.ai-radar-tags span {
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: var(--ai-radar-surface-active);
+  color: var(--ai-radar-text-accent);
+  font-size: 11px;
+}
+
+.ai-radar-empty {
+  display: grid;
+  place-items: center;
+  min-height: 220px;
+  color: var(--ai-radar-text-muted);
+  font-size: 13px;
+}
+
+.ai-radar-sources {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+.ai-radar-settings-row {
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid var(--ai-radar-border);
+  border-radius: 7px;
+  background: var(--ai-radar-surface-raised);
+}
+
+.ai-radar-settings-row label {
+  display: grid;
+  gap: 5px;
+  min-width: 120px;
+  color: var(--ai-radar-text-muted);
+  font-size: 11px;
+}
+
+.ai-radar-settings-row input[type="number"],
+.ai-radar-source-card input,
+.ai-radar-source-card select {
+  min-height: 32px;
+  border: 1px solid var(--ai-radar-border);
+  border-radius: 6px;
+  padding: 0 9px;
+  background: var(--ai-radar-surface-control);
+  color: var(--ai-radar-text);
+  color-scheme: inherit;
+}
+
+.ai-radar-settings-row input[type="number"]:focus-visible,
+.ai-radar-source-card input:focus-visible,
+.ai-radar-source-card select:focus-visible {
+  outline: 2px solid
+    color-mix(in srgb, var(--ai-radar-border-accent) 70%, transparent);
+  outline-offset: 1px;
+}
+
+.ai-radar-toggle {
+  display: inline-flex !important;
+  grid-template-columns: none !important;
+  flex-direction: row;
+  align-items: center;
+  gap: 7px !important;
+  min-width: auto !important;
+  color: var(--ai-radar-text) !important;
+}
+
+.ai-radar-add-row {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ai-radar-source-list {
+  display: grid;
+  gap: 8px;
+}
+
+.ai-radar-source-card {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--ai-radar-border);
+  border-radius: 7px;
+  background: var(--ai-radar-surface-raised);
+}
+
+.ai-radar-source-top {
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.ai-radar-source-top select {
+  width: 136px;
+}
+
+.ai-radar-source-state {
+  color: var(--ai-radar-warning);
+  font-size: 11px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.ai-radar-source-state.ok {
+  color: var(--ai-radar-success);
+}
+
+@media (max-width: 720px) {
+  .ai-radar-overlay {
+    align-items: stretch;
+  }
+
+  .ai-radar-panel {
+    width: 100%;
+    margin: 0;
+    border-radius: 0;
+  }
+
+  .ai-radar-header {
+    padding: 14px 12px 10px;
+  }
+
+  .ai-radar-header-actions .secondary {
+    width: 38px;
+    padding-inline: 0;
+    font-size: 0;
+  }
+
+  .ai-radar-tabs button {
+    font-size: 12px;
+  }
+
+  .ai-radar-list-toolbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .ai-radar-sort-options {
+    width: 100%;
+    overflow-x: auto;
+  }
+
+  .ai-radar-sort-options button {
+    flex: 1 0 auto;
+  }
+}

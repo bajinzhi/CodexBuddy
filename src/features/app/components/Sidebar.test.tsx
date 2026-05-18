@@ -47,6 +47,7 @@ const baseProps = {
   accountSwitching: false,
   commonLinks: [],
   onOpenSettings: vi.fn(),
+  onOpenAiRadar: vi.fn(),
   onOpenDebug: vi.fn(),
   showDebugButton: false,
   onAddWorkspace: vi.fn(),

@@ -369,6 +369,167 @@ pub(crate) struct CommonLink {
     pub(crate) url: String,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub(crate) enum AiRadarChannel {
+    Media,
+    Github,
+    Models,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+#[serde(rename_all = "camelCase")]
+pub(crate) enum AiRadarSourceKind {
+    Rss,
+    Atom,
+    JsonFeed,
+    Article,
+    WechatOfficialAccount,
+    ToutiaoUser,
+    GithubSearch,
+    ModelRanking,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub(crate) struct AiRadarSource {
+    pub(crate) id: String,
+    pub(crate) name: String,
+    pub(crate) kind: AiRadarSourceKind,
+    #[serde(default)]
+    pub(crate) url: Option<String>,
+    #[serde(default)]
+    pub(crate) query: Option<String>,
+    #[serde(default = "default_ai_radar_source_enabled")]
+    pub(crate) enabled: bool,
+    pub(crate) channel: AiRadarChannel,
+    #[serde(default, rename = "createdAtMs")]
+    pub(crate) created_at_ms: Option<i64>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub(crate) struct AiRadarSettings {
+    #[serde(default = "default_ai_radar_enabled")]
+    pub(crate) enabled: bool,
+    #[serde(
+        default = "default_ai_radar_refresh_interval_minutes",
+        rename = "refreshIntervalMinutes"
+    )]
+    pub(crate) refresh_interval_minutes: u32,
+    #[serde(default = "default_ai_radar_max_items", rename = "maxItems")]
+    pub(crate) max_items: usize,
+    #[serde(default = "default_ai_radar_retention_days", rename = "retentionDays")]
+    pub(crate) retention_days: u32,
+    #[serde(
+        default = "default_ai_radar_translate_to_chinese",
+        rename = "translateToChinese"
+    )]
+    pub(crate) translate_to_chinese: bool,
+    #[serde(default, rename = "defaultSourceVersion")]
+    pub(crate) default_source_version: u32,
+    #[serde(default = "default_ai_radar_sources")]
+    pub(crate) sources: Vec<AiRadarSource>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub(crate) struct AiRadarItemMetrics {
+    #[serde(default)]
+    pub(crate) stars: Option<i64>,
+    #[serde(default)]
+    pub(crate) forks: Option<i64>,
+    #[serde(default, rename = "openIssues")]
+    pub(crate) open_issues: Option<i64>,
+    #[serde(default, rename = "starDelta24h")]
+    pub(crate) star_delta_24h: Option<i64>,
+    #[serde(default)]
+    pub(crate) tokens: Option<i64>,
+    #[serde(default)]
+    pub(crate) requests: Option<i64>,
+    #[serde(default)]
+    pub(crate) rank: Option<i64>,
+    #[serde(default)]
+    pub(crate) change: Option<f64>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub(crate) struct AiRadarItem {
+    pub(crate) id: String,
+    pub(crate) channel: AiRadarChannel,
+    #[serde(rename = "sourceId")]
+    pub(crate) source_id: String,
+    #[serde(rename = "sourceName")]
+    pub(crate) source_name: String,
+    pub(crate) title: String,
+    #[serde(default)]
+    pub(crate) summary: Option<String>,
+    #[serde(default, rename = "titleZh")]
+    pub(crate) title_zh: Option<String>,
+    #[serde(default, rename = "summaryZh")]
+    pub(crate) summary_zh: Option<String>,
+    pub(crate) url: String,
+    #[serde(default, rename = "publishedAtMs")]
+    pub(crate) published_at_ms: Option<i64>,
+    #[serde(rename = "fetchedAtMs")]
+    pub(crate) fetched_at_ms: i64,
+    pub(crate) score: f64,
+    #[serde(default)]
+    pub(crate) tags: Vec<String>,
+    #[serde(default)]
+    pub(crate) metrics: AiRadarItemMetrics,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub(crate) struct AiRadarSourceState {
+    #[serde(rename = "sourceId")]
+    pub(crate) source_id: String,
+    #[serde(rename = "sourceName")]
+    pub(crate) source_name: String,
+    pub(crate) ok: bool,
+    #[serde(default, rename = "lastFetchedAtMs")]
+    pub(crate) last_fetched_at_ms: Option<i64>,
+    #[serde(default, rename = "lastError")]
+    pub(crate) last_error: Option<String>,
+    #[serde(rename = "itemCount")]
+    pub(crate) item_count: u32,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub(crate) struct AiRadarStatus {
+    #[serde(default, rename = "lastRefreshedAtMs")]
+    pub(crate) last_refreshed_at_ms: Option<i64>,
+    #[serde(default, rename = "nextRefreshAtMs")]
+    pub(crate) next_refresh_at_ms: Option<i64>,
+    pub(crate) stale: bool,
+    #[serde(default, rename = "sourceStates")]
+    pub(crate) source_states: Vec<AiRadarSourceState>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub(crate) struct AiRadarListResponse {
+    pub(crate) settings: AiRadarSettings,
+    pub(crate) items: Vec<AiRadarItem>,
+    pub(crate) status: AiRadarStatus,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
+pub(crate) struct AiRadarRefreshRequest {
+    #[serde(default)]
+    pub(crate) channel: Option<AiRadarChannel>,
+    #[serde(default, rename = "sourceId")]
+    pub(crate) source_id: Option<String>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub(crate) struct AiRadarSchedulerStatus {
+    pub(crate) enabled: bool,
+    #[serde(rename = "refreshIntervalMinutes")]
+    pub(crate) refresh_interval_minutes: u32,
+    #[serde(default, rename = "lastRefreshedAtMs")]
+    pub(crate) last_refreshed_at_ms: Option<i64>,
+    #[serde(default, rename = "nextRefreshAtMs")]
+    pub(crate) next_refresh_at_ms: Option<i64>,
+    pub(crate) due: bool,
+}
+
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub(crate) struct RemoteBackendTarget {
     pub(crate) id: String,
@@ -674,6 +835,8 @@ pub(crate) struct AppSettings {
     pub(crate) selected_open_app_id: String,
     #[serde(default = "default_common_links", rename = "commonLinks")]
     pub(crate) common_links: Vec<CommonLink>,
+    #[serde(default = "default_ai_radar_settings", rename = "aiRadar")]
+    pub(crate) ai_radar: AiRadarSettings,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -1162,6 +1325,199 @@ fn default_common_links() -> Vec<CommonLink> {
     Vec::new()
 }
 
+fn default_ai_radar_source_enabled() -> bool {
+    true
+}
+
+fn default_ai_radar_enabled() -> bool {
+    true
+}
+
+fn default_ai_radar_refresh_interval_minutes() -> u32 {
+    60
+}
+
+fn default_ai_radar_max_items() -> usize {
+    800
+}
+
+fn default_ai_radar_retention_days() -> u32 {
+    30
+}
+
+fn default_ai_radar_translate_to_chinese() -> bool {
+    true
+}
+
+fn default_ai_radar_source_version() -> u32 {
+    7
+}
+
+fn default_ai_radar_sources() -> Vec<AiRadarSource> {
+    vec![
+        AiRadarSource {
+            id: "media-openai-news".to_string(),
+            name: "OpenAI News".to_string(),
+            kind: AiRadarSourceKind::Rss,
+            url: Some("https://openai.com/news/rss.xml".to_string()),
+            query: None,
+            enabled: true,
+            channel: AiRadarChannel::Media,
+            created_at_ms: None,
+        },
+        AiRadarSource {
+            id: "media-google-ai".to_string(),
+            name: "Google AI".to_string(),
+            kind: AiRadarSourceKind::Rss,
+            url: Some("https://blog.google/technology/ai/rss/".to_string()),
+            query: None,
+            enabled: true,
+            channel: AiRadarChannel::Media,
+            created_at_ms: None,
+        },
+        AiRadarSource {
+            id: "media-microsoft-ai".to_string(),
+            name: "Microsoft AI Blog".to_string(),
+            kind: AiRadarSourceKind::Rss,
+            url: Some("https://blogs.microsoft.com/ai/feed/".to_string()),
+            query: None,
+            enabled: true,
+            channel: AiRadarChannel::Media,
+            created_at_ms: None,
+        },
+        AiRadarSource {
+            id: "media-venturebeat-ai".to_string(),
+            name: "VentureBeat AI".to_string(),
+            kind: AiRadarSourceKind::Rss,
+            url: Some("https://venturebeat.com/category/ai/feed/".to_string()),
+            query: None,
+            enabled: true,
+            channel: AiRadarChannel::Media,
+            created_at_ms: None,
+        },
+        AiRadarSource {
+            id: "media-mit-ai".to_string(),
+            name: "MIT Technology Review AI".to_string(),
+            kind: AiRadarSourceKind::Rss,
+            url: Some(
+                "https://www.technologyreview.com/topic/artificial-intelligence/feed".to_string(),
+            ),
+            query: None,
+            enabled: true,
+            channel: AiRadarChannel::Media,
+            created_at_ms: None,
+        },
+        AiRadarSource {
+            id: "media-anthropic-news".to_string(),
+            name: "Anthropic News".to_string(),
+            kind: AiRadarSourceKind::Rss,
+            url: Some("https://rsshub.chn.moe/anthropic/news".to_string()),
+            query: None,
+            enabled: true,
+            channel: AiRadarChannel::Media,
+            created_at_ms: None,
+        },
+        AiRadarSource {
+            id: "media-wechat-jiqizhixin".to_string(),
+            name: "机器之心微信公众号".to_string(),
+            kind: AiRadarSourceKind::WechatOfficialAccount,
+            url: None,
+            query: Some("/wechat/sogou/almosthuman2014".to_string()),
+            enabled: true,
+            channel: AiRadarChannel::Media,
+            created_at_ms: None,
+        },
+        AiRadarSource {
+            id: "media-toutiao-ai-teaching".to_string(),
+            name: "程序员老张 AI教学".to_string(),
+            kind: AiRadarSourceKind::ToutiaoUser,
+            url: None,
+            query: Some(
+                "MS4wLjABAAAAEmbqJP2CmC8XXv1BpMvQ3sQHKAxFsq8wHxj8XVIQWja6tMcB-QEbFkzkRNgMl12M"
+                    .to_string(),
+            ),
+            enabled: true,
+            channel: AiRadarChannel::Media,
+            created_at_ms: None,
+        },
+        AiRadarSource {
+            id: "github-ai-agent-topic".to_string(),
+            name: "GitHub LLM agents".to_string(),
+            kind: AiRadarSourceKind::GithubSearch,
+            url: None,
+            query: Some("agent topic:llm stars:>100 archived:false fork:false".to_string()),
+            enabled: true,
+            channel: AiRadarChannel::Github,
+            created_at_ms: None,
+        },
+        AiRadarSource {
+            id: "github-ai-agents-topic".to_string(),
+            name: "GitHub AI agents".to_string(),
+            kind: AiRadarSourceKind::GithubSearch,
+            url: None,
+            query: Some(
+                "agent topic:artificial-intelligence stars:>100 archived:false fork:false"
+                    .to_string(),
+            ),
+            enabled: true,
+            channel: AiRadarChannel::Github,
+            created_at_ms: None,
+        },
+        AiRadarSource {
+            id: "github-agent-framework-topic".to_string(),
+            name: "GitHub agent frameworks".to_string(),
+            kind: AiRadarSourceKind::GithubSearch,
+            url: None,
+            query: Some("llm-agent stars:>50 archived:false fork:false".to_string()),
+            enabled: true,
+            channel: AiRadarChannel::Github,
+            created_at_ms: None,
+        },
+        AiRadarSource {
+            id: "github-llm-agent-topic".to_string(),
+            name: "GitHub autonomous agents".to_string(),
+            kind: AiRadarSourceKind::GithubSearch,
+            url: None,
+            query: Some("autonomous-agent stars:>50 archived:false fork:false".to_string()),
+            enabled: true,
+            channel: AiRadarChannel::Github,
+            created_at_ms: None,
+        },
+        AiRadarSource {
+            id: "github-multi-agent-topic".to_string(),
+            name: "GitHub multi-agent".to_string(),
+            kind: AiRadarSourceKind::GithubSearch,
+            url: None,
+            query: Some("multi-agent topic:llm stars:>50 archived:false fork:false".to_string()),
+            enabled: true,
+            channel: AiRadarChannel::Github,
+            created_at_ms: None,
+        },
+        AiRadarSource {
+            id: "models-openrouter-weekly".to_string(),
+            name: "OpenRouter Weekly Models".to_string(),
+            kind: AiRadarSourceKind::ModelRanking,
+            url: Some("https://openrouter.ai/rankings?view=week".to_string()),
+            query: None,
+            enabled: true,
+            channel: AiRadarChannel::Models,
+            created_at_ms: None,
+        },
+    ]
+}
+
+fn default_ai_radar_settings() -> AiRadarSettings {
+    AiRadarSettings {
+        enabled: default_ai_radar_enabled(),
+        refresh_interval_minutes: default_ai_radar_refresh_interval_minutes(),
+        max_items: default_ai_radar_max_items(),
+        retention_days: default_ai_radar_retention_days(),
+        translate_to_chinese: default_ai_radar_translate_to_chinese(),
+        default_source_version: default_ai_radar_source_version(),
+        sources: default_ai_radar_sources(),
+    }
+}
+
 fn default_selected_pet_id() -> Option<String> {
     Some("buddy-spark".to_string())
 }
@@ -1251,6 +1607,7 @@ impl Default for AppSettings {
             open_app_targets: default_open_app_targets(),
             selected_open_app_id: default_selected_open_app_id(),
             common_links: default_common_links(),
+            ai_radar: default_ai_radar_settings(),
         }
     }
 }
@@ -1258,9 +1615,26 @@ impl Default for AppSettings {
 #[cfg(test)]
 mod tests {
     use super::{
-        AppSettings, BackendMode, CommonLink, RemoteBackendProvider, WorkspaceEntry,
-        WorkspaceGroup, WorkspaceKind, WorkspaceSettings,
+        AiRadarSettings, AppSettings, BackendMode, CommonLink, RemoteBackendProvider,
+        WorkspaceEntry, WorkspaceGroup, WorkspaceKind, WorkspaceSettings,
     };
+
+    #[test]
+    fn ai_radar_settings_missing_source_version_is_legacy() {
+        let settings: AiRadarSettings = serde_json::from_str(
+            r#"{
+                "enabled": true,
+                "refreshIntervalMinutes": 60,
+                "maxItems": 800,
+                "retentionDays": 30,
+                "sources": []
+            }"#,
+        )
+        .expect("settings deserialize");
+
+        assert_eq!(settings.default_source_version, 0);
+        assert!(settings.translate_to_chinese);
+    }
 
     #[test]
     fn app_settings_defaults_from_empty_json() {

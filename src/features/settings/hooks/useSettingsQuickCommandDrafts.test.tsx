@@ -93,6 +93,15 @@ function buildAppSettings(): AppSettings {
     openAppTargets: [],
     selectedOpenAppId: "vscode",
     commonLinks: [],
+    aiRadar: {
+      enabled: true,
+      refreshIntervalMinutes: 60,
+      maxItems: 800,
+      retentionDays: 30,
+      translateToChinese: true,
+      defaultSourceVersion: 5,
+      sources: [],
+    },
   };
 }
 
@@ -166,7 +175,9 @@ describe("useSettingsQuickCommandDrafts", () => {
       }),
     );
 
-    const addedDraftId = result.current.quickCommandDrafts.find((item) => item.id !== "quick-1")?.id;
+    const addedDraftId = result.current.quickCommandDrafts.find(
+      (item) => item.id !== "quick-1",
+    )?.id;
     expect(addedDraftId).toBeTruthy();
 
     onUpdateAppSettings.mockClear();

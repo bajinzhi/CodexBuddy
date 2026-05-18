@@ -6,6 +6,7 @@ use tauri::RunEvent;
 #[cfg(target_os = "macos")]
 use tauri::WindowEvent;
 
+mod ai_radar;
 mod backend;
 mod codex;
 mod daemon_binary;
@@ -200,6 +201,11 @@ pub fn run() {
             settings::get_app_settings,
             settings::update_app_settings,
             settings::get_codex_config_path,
+            ai_radar::ai_radar_list,
+            ai_radar::ai_radar_refresh,
+            ai_radar::ai_radar_sources_get,
+            ai_radar::ai_radar_sources_update,
+            ai_radar::ai_radar_scheduler_status,
             files::file_read,
             files::file_write,
             files::read_image_as_data_url,

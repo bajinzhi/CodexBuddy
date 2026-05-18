@@ -88,6 +88,7 @@ type SidebarProps = {
   accountSwitching: boolean;
   commonLinks: CommonLink[];
   onOpenSettings: (section?: "common-links") => void;
+  onOpenAiRadar: () => void;
   onOpenDebug: () => void;
   showDebugButton: boolean;
   onAddWorkspace: () => void;
@@ -150,6 +151,7 @@ export const Sidebar = memo(function Sidebar({
   accountSwitching,
   commonLinks,
   onOpenSettings,
+  onOpenAiRadar,
   onOpenDebug,
   showDebugButton,
   onAddWorkspace,
@@ -1204,6 +1206,7 @@ export const Sidebar = memo(function Sidebar({
       <SidebarCornerActions
         commonLinks={commonLinks}
         onOpenSettings={onOpenSettings}
+        onOpenAiRadar={onOpenAiRadar}
         onOpenDebug={onOpenDebug}
         showDebugButton={showDebugButton}
         showAccountSwitcher={showAccountSwitcher}

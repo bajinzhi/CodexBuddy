@@ -279,16 +279,20 @@ describe("useAppSettings", () => {
       (source) => source.id,
     );
     expect(result.current.settings.aiRadar.translateToChinese).toBe(true);
-    expect(result.current.settings.aiRadar.defaultSourceVersion).toBe(7);
+    expect(result.current.settings.aiRadar.defaultSourceVersion).toBe(8);
     expect(sourceIds).toContain("media-openai-news");
     expect(sourceIds).toContain("media-venturebeat-ai");
     expect(sourceIds).toContain("media-mit-ai");
     expect(sourceIds).toContain("media-anthropic-news");
+    expect(sourceIds).toContain("media-arxiv-agent-memory-context");
     expect(sourceIds).toContain("media-wechat-jiqizhixin");
     expect(sourceIds).toContain("media-toutiao-ai-teaching");
     expect(sourceIds).not.toContain("media-the-decoder");
     expect(sourceIds).toContain("github-ai-agent-topic");
     expect(sourceIds).toContain("github-agent-framework-topic");
+    expect(sourceIds).toContain("github-agent-memory-topic");
+    expect(sourceIds).toContain("github-long-context-topic");
+    expect(sourceIds).toContain("github-context-engineering-topic");
     expect(sourceIds).toContain("github-ai-projects");
     expect(sourceIds).toContain("models-openrouter-weekly");
     expect(

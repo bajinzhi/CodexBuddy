@@ -1,13 +1,39 @@
 .ai-radar-overlay {
-  --ai-radar-surface: var(--ds-modal-card-bg, var(--surface-popover));
-  --ai-radar-surface-muted: var(--surface-card-muted);
-  --ai-radar-surface-raised: var(--surface-card);
-  --ai-radar-surface-control: var(--surface-control);
-  --ai-radar-surface-control-hover: var(--surface-control-hover);
+  --ai-radar-surface-base: var(
+    --surface-popover,
+    var(--ds-modal-card-bg, var(--surface-card-strong))
+  );
+  --ai-radar-surface: var(--ai-radar-surface-base);
+  --ai-radar-surface-muted: color-mix(
+    in srgb,
+    var(--ai-radar-surface-base) 88%,
+    var(--surface-card-muted) 12%
+  );
+  --ai-radar-surface-raised: color-mix(
+    in srgb,
+    var(--ai-radar-surface-base) 80%,
+    var(--surface-card-strong) 20%
+  );
+  --ai-radar-surface-control: color-mix(
+    in srgb,
+    var(--ai-radar-surface-base) 68%,
+    var(--surface-control) 32%
+  );
+  --ai-radar-surface-control-hover: color-mix(
+    in srgb,
+    var(--ai-radar-surface-base) 60%,
+    var(--surface-control-hover) 40%
+  );
   --ai-radar-surface-active: var(--surface-active);
   --ai-radar-text: var(--ds-text-strong, var(--text-strong));
-  --ai-radar-text-muted: var(--ds-text-subtle, var(--text-subtle));
-  --ai-radar-text-faint: var(--ds-text-faint, var(--text-faint));
+  --ai-radar-text-muted: var(
+    --text-muted,
+    var(--ds-text-subtle, var(--text-subtle))
+  );
+  --ai-radar-text-faint: var(
+    --text-subtle,
+    var(--ds-text-faint, var(--text-faint))
+  );
   --ai-radar-border: var(--ds-border-subtle, var(--border-subtle));
   --ai-radar-border-strong: var(--ds-border-strong, var(--border-stronger));
   --ai-radar-border-accent: var(--border-accent);
@@ -41,11 +67,23 @@
   display: flex;
   flex-direction: column;
   background: var(--ai-radar-surface);
+  background: linear-gradient(
+    color-mix(in srgb, var(--ai-radar-surface) 92%, transparent),
+    color-mix(in srgb, var(--ai-radar-surface) 92%, transparent)
+  );
   color: var(--ai-radar-text);
   border: 1px solid var(--ai-radar-border-strong);
   border-radius: 8px;
   box-shadow: 0 20px 48px rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(24px) saturate(1.18);
+  -webkit-backdrop-filter: blur(24px) saturate(1.18);
   overflow: hidden;
+}
+
+.app.reduced-transparency .ai-radar-panel {
+  background: var(--ai-radar-surface);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 .ai-radar-header {
@@ -104,6 +142,7 @@
   background: transparent;
   color: var(--ai-radar-text-muted);
   font-size: 13px;
+  font-weight: 560;
 }
 
 .ai-radar-tabs button.active {
@@ -175,6 +214,7 @@
   background: transparent;
   color: var(--ai-radar-text-muted);
   font-size: 12px;
+  font-weight: 560;
 }
 
 .ai-radar-sort-options button.active {
@@ -216,6 +256,7 @@
   margin-top: 6px;
   color: var(--ai-radar-text-muted);
   font-size: 12px;
+  font-weight: 500;
   line-height: 1.45;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -229,6 +270,7 @@
   margin-top: 8px;
   color: var(--ai-radar-text-muted);
   font-size: 11px;
+  font-weight: 520;
 }
 
 .ai-radar-item-meta span {

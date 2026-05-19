@@ -7,9 +7,9 @@ use std::time::Duration;
 
 use chrono::{DateTime, NaiveDateTime, Utc};
 use futures_util::stream::{self, StreamExt};
+use reqwest::Url;
 use reqwest::header::{ACCEPT, CONTENT_TYPE, LOCATION};
 use reqwest::redirect::Policy;
-use reqwest::Url;
 use reqwest::{Client, ClientBuilder};
 use serde::{Deserialize, Serialize};
 use tokio::fs;
@@ -955,8 +955,9 @@ fn extract_openrouter_ranking_rows(payload: &str) -> Result<Vec<OpenRouterRankin
         if !value.starts_with('[') {
             continue;
         }
-        let rows: Vec<OpenRouterRankingRow> =
-            serde_json::from_str(value).map_err(|err| err.to_string())?;
+        let Ok(rows) = serde_json::from_str::<Vec<OpenRouterRankingRow>>(value) else {
+            continue;
+        };
         if rows
             .iter()
             .any(|row| !row.model_permaslug.trim().is_empty() || !row.variant_slug().is_empty())
@@ -1050,8 +1051,9 @@ fn openrouter_ranking_item(
     if let Some(variant) = variant_label {
         tags.push(variant);
     }
+    let id_key = format!("{}:{ranking_type}:{url}", source.id);
     Some(AiRadarItem {
-        id: stable_item_id(&AiRadarChannel::Models, &url),
+        id: stable_item_id(&AiRadarChannel::Models, &id_key),
         channel: AiRadarChannel::Models,
         source_id: source.id.clone(),
         source_name: source.name.clone(),
@@ -1844,13 +1846,13 @@ mod tests {
     use tokio::sync::Mutex;
 
     use super::{
-        ai_radar_refresh_core, apply_translated_item_text, build_response, cache_path,
-        encode_path_segment, encode_query_component, extract_google_translation,
-        extract_next_chunk_paths, extract_openrouter_model_rankings_action_id,
-        extract_openrouter_ranking_rows, is_public_http_url, item_needs_chinese_translation,
-        merge_translations_into_cache, normalize_runtime_settings, now_ms, openrouter_ranking_item,
-        read_cache, sanitize_text, scheduler_status_for_cache, source_feed_url, write_cache,
-        AiRadarCache, OpenRouterRankingRow,
+        AiRadarCache, OpenRouterRankingRow, ai_radar_refresh_core, apply_translated_item_text,
+        build_response, cache_path, encode_path_segment, encode_query_component,
+        extract_google_translation, extract_next_chunk_paths,
+        extract_openrouter_model_rankings_action_id, extract_openrouter_ranking_rows,
+        is_public_http_url, item_needs_chinese_translation, merge_translations_into_cache,
+        normalize_runtime_settings, now_ms, openrouter_ranking_item, read_cache, sanitize_text,
+        scheduler_status_for_cache, source_feed_url, write_cache,
     };
     use crate::types::{
         AiRadarChannel, AiRadarItem, AiRadarItemMetrics, AiRadarRefreshRequest, AiRadarSettings,
@@ -1949,11 +1951,12 @@ mod tests {
         assert_eq!(item.channel, AiRadarChannel::Models);
         assert_eq!(item.metrics.rank, Some(1));
         assert_eq!(item.metrics.tokens, Some(45_848_741_651));
-        assert!(item
-            .summary
-            .as_deref()
-            .unwrap_or("")
-            .contains("本周模型调用榜第 1 名"));
+        assert!(
+            item.summary
+                .as_deref()
+                .unwrap_or("")
+                .contains("本周模型调用榜第 1 名")
+        );
         assert_eq!(
             item.url,
             "https://openrouter.ai/deepseek/deepseek-v4-flash-20260423:free"
@@ -1962,9 +1965,73 @@ mod tests {
     }
 
     #[test]
+    fn openrouter_model_item_ids_include_ranking_source_and_scope() {
+        let weekly_source = AiRadarSource {
+            id: "models-openrouter-weekly".to_string(),
+            name: "OpenRouter Weekly Models".to_string(),
+            kind: AiRadarSourceKind::ModelRanking,
+            url: Some("https://openrouter.ai/rankings?view=week".to_string()),
+            query: None,
+            enabled: true,
+            channel: AiRadarChannel::Models,
+            created_at_ms: None,
+        };
+        let daily_source = AiRadarSource {
+            id: "models-openrouter-daily".to_string(),
+            name: "OpenRouter Daily Models".to_string(),
+            kind: AiRadarSourceKind::ModelRanking,
+            url: Some("https://openrouter.ai/rankings?view=day".to_string()),
+            query: None,
+            enabled: true,
+            channel: AiRadarChannel::Models,
+            created_at_ms: None,
+        };
+        let weekly = openrouter_ranking_item(
+            &weekly_source,
+            OpenRouterRankingRow {
+                date: Some("2026-05-17 00:00:00".to_string()),
+                model_permaslug: "qwen/qwen3".to_string(),
+                variant: Some("free".to_string()),
+                variant_permaslug: Some("qwen/qwen3:free".to_string()),
+                total_prompt_tokens: 3,
+                total_completion_tokens: 2,
+                total_native_tokens_reasoning: 1,
+                count: 4,
+                change: Some(5.0),
+            },
+            1,
+            "week",
+            123,
+        )
+        .expect("weekly item");
+        let daily = openrouter_ranking_item(
+            &daily_source,
+            OpenRouterRankingRow {
+                date: Some("2026-05-17 00:00:00".to_string()),
+                model_permaslug: "qwen/qwen3".to_string(),
+                variant: Some("free".to_string()),
+                variant_permaslug: Some("qwen/qwen3:free".to_string()),
+                total_prompt_tokens: 3,
+                total_completion_tokens: 2,
+                total_native_tokens_reasoning: 1,
+                count: 4,
+                change: Some(5.0),
+            },
+            1,
+            "day",
+            123,
+        )
+        .expect("daily item");
+
+        assert_ne!(weekly.id, daily.id);
+        assert_eq!(weekly.url, daily.url);
+    }
+
+    #[test]
     fn extracts_openrouter_ranking_rows_from_rsc_payload() {
-        let payload = r#"0:{"a":"$@1"}
-1:[{"date":"2026-05-17 00:00:00","model_permaslug":"qwen/qwen3","variant":"free","total_completion_tokens":2,"total_prompt_tokens":3,"total_native_tokens_reasoning":1,"count":4,"variant_permaslug":"qwen/qwen3:free","change":5}]
+        let payload = r#"0:["$@1"]
+1:{"a":"$@1"}
+2:[{"date":"2026-05-17 00:00:00","model_permaslug":"qwen/qwen3","variant":"free","total_completion_tokens":2,"total_prompt_tokens":3,"total_native_tokens_reasoning":1,"count":4,"variant_permaslug":"qwen/qwen3:free","change":5}]
 "#;
 
         let rows = extract_openrouter_ranking_rows(payload).expect("rows");
@@ -2186,11 +2253,15 @@ mod tests {
         assert!(source_ids.contains(&"media-venturebeat-ai"));
         assert!(source_ids.contains(&"media-mit-ai"));
         assert!(source_ids.contains(&"media-anthropic-news"));
+        assert!(source_ids.contains(&"media-arxiv-agent-memory-context"));
         assert!(source_ids.contains(&"media-wechat-jiqizhixin"));
         assert!(source_ids.contains(&"media-toutiao-ai-teaching"));
         assert!(!source_ids.contains(&"media-the-decoder"));
         assert!(source_ids.contains(&"github-ai-agent-topic"));
         assert!(source_ids.contains(&"github-agent-framework-topic"));
+        assert!(source_ids.contains(&"github-agent-memory-topic"));
+        assert!(source_ids.contains(&"github-long-context-topic"));
+        assert!(source_ids.contains(&"github-context-engineering-topic"));
         assert!(source_ids.contains(&"github-ai-projects"));
         assert!(source_ids.contains(&"models-openrouter-weekly"));
     }
@@ -2237,7 +2308,9 @@ mod tests {
         );
         assert_eq!(
             source_feed_url(&toutiao).as_deref(),
-            Ok("https://rsshub.chn.moe/toutiao/user/token/MS4wLjABAAAAEmbqJP2CmC8XXv1BpMvQ3sQHKAxFsq8wHxj8XVIQWja6tMcB-QEbFkzkRNgMl12M")
+            Ok(
+                "https://rsshub.chn.moe/toutiao/user/token/MS4wLjABAAAAEmbqJP2CmC8XXv1BpMvQ3sQHKAxFsq8wHxj8XVIQWja6tMcB-QEbFkzkRNgMl12M"
+            )
         );
         assert_eq!(
             source_feed_url(&route).as_deref(),

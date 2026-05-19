@@ -1350,7 +1350,7 @@ fn default_ai_radar_translate_to_chinese() -> bool {
 }
 
 fn default_ai_radar_source_version() -> u32 {
-    7
+    8
 }
 
 fn default_ai_radar_sources() -> Vec<AiRadarSource> {
@@ -1412,6 +1412,19 @@ fn default_ai_radar_sources() -> Vec<AiRadarSource> {
             name: "Anthropic News".to_string(),
             kind: AiRadarSourceKind::Rss,
             url: Some("https://rsshub.chn.moe/anthropic/news".to_string()),
+            query: None,
+            enabled: true,
+            channel: AiRadarChannel::Media,
+            created_at_ms: None,
+        },
+        AiRadarSource {
+            id: "media-arxiv-agent-memory-context".to_string(),
+            name: "arXiv Agent Memory & Context".to_string(),
+            kind: AiRadarSourceKind::Atom,
+            url: Some(
+                "https://export.arxiv.org/api/query?search_query=all:%22agent%20memory%22%20OR%20all:%22context%20engineering%22%20OR%20all:%22long%20context%22&sortBy=submittedDate&sortOrder=descending&max_results=20"
+                    .to_string(),
+            ),
             query: None,
             enabled: true,
             channel: AiRadarChannel::Media,
@@ -1489,6 +1502,36 @@ fn default_ai_radar_sources() -> Vec<AiRadarSource> {
             kind: AiRadarSourceKind::GithubSearch,
             url: None,
             query: Some("multi-agent topic:llm stars:>50 archived:false fork:false".to_string()),
+            enabled: true,
+            channel: AiRadarChannel::Github,
+            created_at_ms: None,
+        },
+        AiRadarSource {
+            id: "github-agent-memory-topic".to_string(),
+            name: "GitHub agent memory".to_string(),
+            kind: AiRadarSourceKind::GithubSearch,
+            url: None,
+            query: Some("\"agent memory\" stars:>50 archived:false fork:false".to_string()),
+            enabled: true,
+            channel: AiRadarChannel::Github,
+            created_at_ms: None,
+        },
+        AiRadarSource {
+            id: "github-long-context-topic".to_string(),
+            name: "GitHub long context".to_string(),
+            kind: AiRadarSourceKind::GithubSearch,
+            url: None,
+            query: Some("\"long context\" stars:>50 archived:false fork:false".to_string()),
+            enabled: true,
+            channel: AiRadarChannel::Github,
+            created_at_ms: None,
+        },
+        AiRadarSource {
+            id: "github-context-engineering-topic".to_string(),
+            name: "GitHub context engineering".to_string(),
+            kind: AiRadarSourceKind::GithubSearch,
+            url: None,
+            query: Some("\"context engineering\" stars:>20 archived:false fork:false".to_string()),
             enabled: true,
             channel: AiRadarChannel::Github,
             created_at_ms: None,

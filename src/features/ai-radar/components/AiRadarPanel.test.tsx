@@ -61,7 +61,7 @@ function settings(overrides: Partial<AiRadarSettings> = {}): AiRadarSettings {
     maxItems: 800,
     retentionDays: 30,
     translateToChinese: true,
-    defaultSourceVersion: 7,
+    defaultSourceVersion: 8,
     sources: [source()],
     ...overrides,
   };

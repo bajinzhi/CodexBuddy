@@ -135,6 +135,25 @@ describe("useQueuedSend", () => {
     expect(result.current.activeQueue).toHaveLength(0);
   });
 
+  it("queues document attachments while processing even when steer is enabled", async () => {
+    const options = makeOptions({
+      isProcessing: true,
+      steerEnabled: true,
+      followUpMessageBehavior: "steer",
+    });
+    const { result } = renderHook((props) => useQueuedSend(props), {
+      initialProps: options,
+    });
+
+    await act(async () => {
+      await result.current.handleSend("Read this", ["/tmp/spec.pdf"]);
+    });
+
+    expect(options.sendUserMessage).not.toHaveBeenCalled();
+    expect(result.current.activeQueue).toHaveLength(1);
+    expect(result.current.activeQueue[0]?.images).toEqual(["/tmp/spec.pdf"]);
+  });
+
   it("queues send while processing when steer is enabled but turn id is unavailable", async () => {
     const options = makeOptions({
       isProcessing: true,

@@ -63,11 +63,15 @@ export async function pickWorkspacePaths(): Promise<string[]> {
 }
 
 export async function pickImageFiles(): Promise<string[]> {
+  return pickAttachmentFiles();
+}
+
+export async function pickAttachmentFiles(): Promise<string[]> {
   const selection = await open({
     multiple: true,
     filters: [
       {
-        name: "Images",
+        name: "Supported files",
         extensions: [
           "png",
           "jpg",
@@ -79,6 +83,23 @@ export async function pickImageFiles(): Promise<string[]> {
           "tif",
           "heic",
           "heif",
+          "pdf",
+          "txt",
+          "md",
+          "markdown",
+          "json",
+          "jsonl",
+          "yaml",
+          "yml",
+          "xml",
+          "html",
+          "htm",
+          "docx",
+          "pptx",
+          "xlsx",
+          "xls",
+          "csv",
+          "tsv",
         ],
       },
     ],
@@ -205,6 +226,10 @@ async function fileWrite(
 
 export async function readImageAsDataUrl(path: string): Promise<string> {
   return invoke<string>("read_image_as_data_url", { path });
+}
+
+export async function readClipboardFilePaths(): Promise<string[]> {
+  return invoke<string[]>("read_clipboard_file_paths");
 }
 
 export async function readGlobalAgentsMd(): Promise<GlobalAgentsResponse> {
@@ -426,6 +451,34 @@ function isInlineImageUrl(image: string) {
   );
 }
 
+const imageAttachmentExtensions = [
+  ".png",
+  ".jpg",
+  ".jpeg",
+  ".gif",
+  ".webp",
+  ".bmp",
+  ".tiff",
+  ".tif",
+  ".heic",
+  ".heif",
+];
+
+function isImageAttachmentForRpc(attachment: string) {
+  if (attachment.startsWith("data:image/")) {
+    return true;
+  }
+  if (attachment.startsWith("data:")) {
+    return false;
+  }
+  const lower = attachment.toLowerCase();
+  return (
+    lower.startsWith("http://") ||
+    lower.startsWith("https://") ||
+    imageAttachmentExtensions.some((extension) => lower.endsWith(extension))
+  );
+}
+
 async function convertImagesToDataUrls(images: string[]): Promise<string[]> {
   return Promise.all(
     images.map(async (image) => {
@@ -464,6 +517,32 @@ async function normalizeImagesForRpc(images?: string[]): Promise<string[] | null
   return convertImagesToDataUrls(images);
 }
 
+async function normalizeAttachmentsForRpc(attachments?: string[]): Promise<string[] | null> {
+  if (attachments == null) {
+    return null;
+  }
+  if (attachments.length === 0) {
+    return [];
+  }
+  const imageAttachments = attachments.filter(isImageAttachmentForRpc);
+  if (imageAttachments.length === 0) {
+    return attachments;
+  }
+  const normalizedImages = await normalizeImagesForRpc(imageAttachments);
+  if (!normalizedImages) {
+    return attachments;
+  }
+  let imageIndex = 0;
+  return attachments.map((attachment) => {
+    if (!isImageAttachmentForRpc(attachment)) {
+      return attachment;
+    }
+    const normalized = normalizedImages[imageIndex];
+    imageIndex += 1;
+    return normalized ?? attachment;
+  });
+}
+
 export async function sendUserMessage(
   workspaceId: string,
   threadId: string,
@@ -474,11 +553,13 @@ export async function sendUserMessage(
     serviceTier?: "fast" | "flex" | null | undefined;
     accessMode?: "read-only" | "current" | "full-access";
     images?: string[];
+    attachments?: string[];
     collaborationMode?: Record<string, unknown> | null;
     appMentions?: AppMention[];
   },
 ) {
-  const images = await normalizeImagesForRpc(options?.images);
+  const attachments = await normalizeAttachmentsForRpc(options?.attachments);
+  const images = options?.attachments ? null : await normalizeImagesForRpc(options?.images);
   const payload: Record<string, unknown> = {
     workspaceId,
     threadId,
@@ -487,6 +568,7 @@ export async function sendUserMessage(
     effort: options?.effort ?? null,
     accessMode: options?.accessMode ?? null,
     images,
+    attachments,
   };
   if (options?.serviceTier !== undefined) {
     payload.serviceTier = options.serviceTier;
@@ -513,16 +595,17 @@ export async function steerTurn(
   threadId: string,
   turnId: string,
   text: string,
-  images?: string[],
+  attachments?: string[],
   appMentions?: AppMention[],
 ) {
-  const normalizedImages = await normalizeImagesForRpc(images);
+  const normalizedAttachments = await normalizeAttachmentsForRpc(attachments);
   const payload: Record<string, unknown> = {
     workspaceId,
     threadId,
     turnId,
     text,
-    images: normalizedImages,
+    images: null,
+    attachments: normalizedAttachments,
   };
   if (appMentions && appMentions.length > 0) {
     payload.appMentions = appMentions;

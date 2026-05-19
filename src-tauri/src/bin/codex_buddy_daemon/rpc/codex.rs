@@ -193,6 +193,7 @@ pub(super) async fn try_handle(
             let service_tier = parse_optional_nullable_string(params, "serviceTier");
             let access_mode = parse_optional_string(params, "accessMode");
             let images = parse_optional_string_array(params, "images");
+            let attachments = parse_optional_value_array(params, "attachments");
             let app_mentions = parse_optional_value(params, "appMentions")
                 .and_then(|value| value.as_array().cloned());
             let collaboration_mode = parse_optional_value(params, "collaborationMode");
@@ -207,6 +208,7 @@ pub(super) async fn try_handle(
                         service_tier,
                         access_mode,
                         images,
+                        attachments,
                         app_mentions,
                         collaboration_mode,
                     )
@@ -246,11 +248,20 @@ pub(super) async fn try_handle(
                 Err(err) => return Some(Err(err)),
             };
             let images = parse_optional_string_array(params, "images");
+            let attachments = parse_optional_value_array(params, "attachments");
             let app_mentions = parse_optional_value(params, "appMentions")
                 .and_then(|value| value.as_array().cloned());
             Some(
                 state
-                    .turn_steer(workspace_id, thread_id, turn_id, text, images, app_mentions)
+                    .turn_steer(
+                        workspace_id,
+                        thread_id,
+                        turn_id,
+                        text,
+                        images,
+                        attachments,
+                        app_mentions,
+                    )
                     .await,
             )
         }

@@ -25,6 +25,7 @@ type FastCommandAction = "toggle" | "on" | "off" | "status" | "invalid";
 
 type ResolveSendMessageOptionsArgs = {
   options?: SendMessageOptions;
+  attachments?: string[];
   defaults: {
     accessMode?: AccessMode;
     model?: string | null;
@@ -56,6 +57,7 @@ export type TurnStartPayload = {
   collaborationMode?: Record<string, unknown> | null;
   accessMode?: AccessMode;
   images?: string[];
+  attachments?: string[];
   appMentions?: AppMention[];
 };
 
@@ -107,6 +109,38 @@ export function isStaleSteerTurnError(message: string): boolean {
   return normalized.includes("active turn") && normalized.includes("not found");
 }
 
+const imageAttachmentExtensions = [
+  ".png",
+  ".jpg",
+  ".jpeg",
+  ".gif",
+  ".webp",
+  ".bmp",
+  ".tiff",
+  ".tif",
+  ".heic",
+  ".heif",
+];
+
+export function isImageAttachment(path: string): boolean {
+  if (path.startsWith("data:image/")) {
+    return true;
+  }
+  if (path.startsWith("data:")) {
+    return false;
+  }
+  const lower = path.toLowerCase();
+  return (
+    lower.startsWith("http://") ||
+    lower.startsWith("https://") ||
+    imageAttachmentExtensions.some((extension) => lower.endsWith(extension))
+  );
+}
+
+export function hasDocumentAttachment(paths: string[]): boolean {
+  return paths.some((path) => !isImageAttachment(path));
+}
+
 export function parseFastCommand(text: string): FastCommandAction {
   const arg = text.replace(/^\/fast\b/i, "").trim().toLowerCase();
   if (!arg) {
@@ -126,6 +160,7 @@ export function parseFastCommand(text: string): FastCommandAction {
 
 export function resolveSendMessageOptions({
   options,
+  attachments = [],
   defaults,
 }: ResolveSendMessageOptionsArgs): ResolvedSendMessageOptions {
   const resolvedModel =
@@ -149,7 +184,10 @@ export function resolveSendMessageOptions({
   const appMentions = options?.appMentions ?? [];
   const sendIntent = options?.sendIntent ?? "default";
   const canSteerCurrentTurn =
-    defaults.isProcessing && defaults.steerEnabled && Boolean(defaults.activeTurnId);
+    defaults.isProcessing &&
+    defaults.steerEnabled &&
+    Boolean(defaults.activeTurnId) &&
+    !hasDocumentAttachment(attachments);
   const shouldSteer =
     sendIntent === "steer"
       ? canSteerCurrentTurn
@@ -192,7 +230,7 @@ export function buildTurnStartPayload({
     effort,
     collaborationMode,
     accessMode,
-    images,
+    attachments: images,
   };
   if (serviceTier !== undefined) {
     payload.serviceTier = serviceTier;

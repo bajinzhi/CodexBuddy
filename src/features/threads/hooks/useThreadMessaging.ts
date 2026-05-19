@@ -167,6 +167,7 @@ export function useThreadMessaging({
         requestMode,
       } = resolveSendMessageOptions({
         options,
+        attachments: images,
         defaults: {
           accessMode,
           model,
@@ -183,6 +184,7 @@ export function useThreadMessaging({
           workspace_id: workspace.id,
           thread_id: threadId,
           has_images: images.length > 0 ? "true" : "false",
+          has_attachments: images.length > 0 ? "true" : "false",
           text_length: String(finalText.length),
           model: resolvedModel ?? "unknown",
           effort: resolvedEffort ?? "unknown",

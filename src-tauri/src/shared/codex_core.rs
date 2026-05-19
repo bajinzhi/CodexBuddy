@@ -21,6 +21,9 @@ use crate::types::WorkspaceEntry;
 const LOGIN_START_TIMEOUT: Duration = Duration::from_secs(30);
 #[allow(dead_code)]
 const MAX_INLINE_IMAGE_BYTES: u64 = 50 * 1024 * 1024;
+const MAX_IMAGE_ATTACHMENT_BYTES: u64 = 20 * 1024 * 1024;
+const MAX_DATA_ATTACHMENT_BYTES: u64 = 50 * 1024 * 1024;
+const MAX_DOCUMENT_ATTACHMENT_BYTES: u64 = 512 * 1024 * 1024;
 const THREAD_LIST_SOURCE_KINDS: &[&str] = &[
     "cli",
     "vscode",
@@ -51,6 +54,98 @@ fn image_mime_type_for_path(path: &str) -> Option<&'static str> {
         "tiff" | "tif" => Some("image/tiff"),
         _ => None,
     }
+}
+
+fn file_extension_for_path(path: &str) -> Option<String> {
+    Path::new(path)
+        .extension()
+        .and_then(|value| value.to_str())
+        .map(|value| value.to_ascii_lowercase())
+}
+
+fn is_supported_document_extension(extension: &str) -> bool {
+    matches!(
+        extension,
+        "pdf"
+            | "txt"
+            | "md"
+            | "markdown"
+            | "json"
+            | "jsonl"
+            | "yaml"
+            | "yml"
+            | "xml"
+            | "html"
+            | "htm"
+            | "docx"
+            | "pptx"
+            | "xlsx"
+            | "xls"
+            | "csv"
+            | "tsv"
+    )
+}
+
+fn is_supported_image_extension(extension: &str) -> bool {
+    matches!(
+        extension,
+        "png" | "jpg" | "jpeg" | "gif" | "webp" | "bmp" | "tiff" | "tif" | "heic" | "heif"
+    )
+}
+
+fn attachment_mime_for_extension(extension: &str) -> &'static str {
+    match extension {
+        "png" => "image/png",
+        "jpg" | "jpeg" => "image/jpeg",
+        "gif" => "image/gif",
+        "webp" => "image/webp",
+        "bmp" => "image/bmp",
+        "tiff" | "tif" => "image/tiff",
+        "heic" => "image/heic",
+        "heif" => "image/heif",
+        "pdf" => "application/pdf",
+        "txt" => "text/plain",
+        "md" | "markdown" => "text/markdown",
+        "json" | "jsonl" => "application/json",
+        "yaml" | "yml" => "application/yaml",
+        "xml" => "application/xml",
+        "html" | "htm" => "text/html",
+        "docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "pptx" => "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        "xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "xls" => "application/vnd.ms-excel",
+        "csv" => "text/csv",
+        "tsv" => "text/tab-separated-values",
+        _ => "application/octet-stream",
+    }
+}
+
+fn attachment_size_limit(extension: &str) -> u64 {
+    if is_supported_image_extension(extension) {
+        MAX_IMAGE_ATTACHMENT_BYTES
+    } else if matches!(extension, "csv" | "tsv" | "xls" | "xlsx") {
+        MAX_DATA_ATTACHMENT_BYTES
+    } else {
+        MAX_DOCUMENT_ATTACHMENT_BYTES
+    }
+}
+
+fn validate_attachment_extension(
+    name_or_path: &str,
+) -> Result<(String, bool, &'static str), String> {
+    let extension = file_extension_for_path(name_or_path)
+        .ok_or_else(|| format!("Unsupported attachment without file extension: {name_or_path}"))?;
+    if extension == "gdoc" {
+        return Err(
+            "Google Docs shortcut files (.gdoc) are not supported as attachments".to_string(),
+        );
+    }
+    let is_image = is_supported_image_extension(&extension);
+    if !is_image && !is_supported_document_extension(&extension) {
+        return Err(format!("Unsupported attachment file type: .{extension}"));
+    }
+    let mime = attachment_mime_for_extension(&extension);
+    Ok((extension, is_image, mime))
 }
 
 #[allow(dead_code)]
@@ -397,36 +492,341 @@ pub(crate) async fn set_thread_name_core(
         .await
 }
 
-fn build_turn_input_items(
-    text: String,
+fn as_attachment_values(
+    attachments: Option<Vec<Value>>,
     images: Option<Vec<String>>,
+) -> Option<Vec<Value>> {
+    if let Some(values) = attachments {
+        if !values.is_empty() {
+            return Some(values);
+        }
+    }
+    images.map(|paths| paths.into_iter().map(Value::String).collect())
+}
+
+fn attachment_field<'a>(object: &'a Map<String, Value>, key: &str) -> Option<&'a str> {
+    object
+        .get(key)
+        .and_then(Value::as_str)
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+}
+
+fn attachment_display_name(value: &Value, fallback: &str) -> String {
+    if let Some(object) = value.as_object() {
+        if let Some(name) = attachment_field(object, "name") {
+            return name.to_string();
+        }
+    }
+    let normalized = fallback.replace('\\', "/");
+    normalized
+        .rsplit('/')
+        .find(|part| !part.trim().is_empty())
+        .unwrap_or(fallback)
+        .trim()
+        .to_string()
+}
+
+fn safe_path_component(value: &str) -> String {
+    let mut component = value
+        .chars()
+        .map(|ch| {
+            if ch.is_ascii_alphanumeric() || matches!(ch, '.' | '-' | '_') {
+                ch
+            } else {
+                '-'
+            }
+        })
+        .collect::<String>();
+    while component.contains("..") {
+        component = component.replace("..", ".");
+    }
+    let component = component.trim_matches(['.', '-', '_']).to_string();
+    if component.is_empty() {
+        "attachment".to_string()
+    } else {
+        component
+    }
+}
+
+fn attachment_cache_root(workspace_id: &str, thread_id: &str) -> PathBuf {
+    std::env::temp_dir()
+        .join("codex-buddy-attachments")
+        .join(safe_path_component(workspace_id))
+        .join(safe_path_component(thread_id))
+}
+
+fn unique_attachment_path(root: &Path, index: usize, name: &str) -> PathBuf {
+    let safe_name = safe_path_component(name);
+    let ts = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|value| value.as_millis())
+        .unwrap_or_default();
+    root.join(format!("{ts}-{index}-{safe_name}"))
+}
+
+fn inline_attachment_value(value: &Value) -> Option<String> {
+    match value {
+        Value::String(raw) => Some(raw.trim().to_string()),
+        Value::Object(object) => attachment_field(object, "dataUrl")
+            .or_else(|| attachment_field(object, "url"))
+            .or_else(|| attachment_field(object, "path"))
+            .map(str::to_string),
+        _ => None,
+    }
+    .filter(|raw| !raw.is_empty())
+}
+
+fn attachment_content_base64(value: &Value) -> Option<String> {
+    value
+        .as_object()
+        .and_then(|object| attachment_field(object, "contentBase64"))
+        .map(str::to_string)
+}
+
+fn copy_attachment_file(
+    source_path: &str,
+    workspace_id: &str,
+    thread_id: &str,
+    index: usize,
+    name: &str,
+    extension: &str,
+) -> Result<(String, u64, PathBuf), String> {
+    let normalized = normalize_file_path(source_path);
+    let metadata = std::fs::symlink_metadata(&normalized)
+        .map_err(|err| format!("Failed to stat attachment at {normalized}: {err}"))?;
+    if metadata.file_type().is_symlink() {
+        return Err(format!(
+            "Attachment path must not be a symlink: {normalized}"
+        ));
+    }
+    if !metadata.is_file() {
+        return Err(format!("Attachment path is not a file: {normalized}"));
+    }
+    let size = metadata.len();
+    let limit = attachment_size_limit(extension);
+    if size == 0 {
+        return Err(format!("Attachment file is empty: {normalized}"));
+    }
+    if size > limit {
+        return Err(format!(
+            "Attachment exceeds maximum size of {limit} bytes: {normalized}"
+        ));
+    }
+    let root = attachment_cache_root(workspace_id, thread_id);
+    std::fs::create_dir_all(&root)
+        .map_err(|err| format!("Failed to create attachment cache: {err}"))?;
+    let target = unique_attachment_path(&root, index, name);
+    std::fs::copy(&normalized, &target).map_err(|err| {
+        format!(
+            "Failed to stage attachment from {normalized} to {}: {err}",
+            target.display()
+        )
+    })?;
+    Ok((target.display().to_string(), size, root))
+}
+
+fn write_inline_attachment_file(
+    content_base64: &str,
+    workspace_id: &str,
+    thread_id: &str,
+    index: usize,
+    name: &str,
+    extension: &str,
+) -> Result<(String, u64, PathBuf), String> {
+    let bytes = STANDARD
+        .decode(content_base64)
+        .map_err(|err| format!("Invalid attachment content for {name}: {err}"))?;
+    let size = bytes.len() as u64;
+    let limit = attachment_size_limit(extension);
+    if bytes.is_empty() {
+        return Err(format!("Attachment file is empty: {name}"));
+    }
+    if size > limit {
+        return Err(format!(
+            "Attachment exceeds maximum size of {limit} bytes: {name}"
+        ));
+    }
+    let root = attachment_cache_root(workspace_id, thread_id);
+    std::fs::create_dir_all(&root)
+        .map_err(|err| format!("Failed to create attachment cache: {err}"))?;
+    let target = unique_attachment_path(&root, index, name);
+    std::fs::write(&target, bytes)
+        .map_err(|err| format!("Failed to stage attachment {}: {err}", target.display()))?;
+    Ok((target.display().to_string(), size, root))
+}
+
+fn build_file_attachment_line(name: &str, mime: &str, size: u64, path: &str) -> String {
+    format!("- {name} ({mime}, {size} bytes): {path}")
+}
+
+fn process_attachment_value(
+    value: Value,
+    workspace_id: &str,
+    thread_id: &str,
+    index: usize,
+    input: &mut Vec<Value>,
+    file_lines: &mut Vec<String>,
+    cache_roots: &mut Vec<PathBuf>,
+) -> Result<(), String> {
+    let Some(raw_value) = inline_attachment_value(&value) else {
+        return Ok(());
+    };
+    if raw_value.starts_with("data:image/") {
+        input.push(json!({ "type": "image", "url": raw_value }));
+        return Ok(());
+    }
+    if raw_value.starts_with("http://") || raw_value.starts_with("https://") {
+        input.push(json!({ "type": "image", "url": raw_value }));
+        return Ok(());
+    }
+
+    let name = attachment_display_name(&value, &raw_value);
+    let (_, name_is_image, _name_mime) = validate_attachment_extension(&name)?;
+
+    if name_is_image {
+        let trimmed = raw_value.trim();
+        if should_inline_image_path_for_codex(trimmed) {
+            input.push(json!({
+                "type": "image",
+                "url": read_image_as_data_url_core(trimmed)?,
+            }));
+        } else {
+            input.push(json!({ "type": "localImage", "path": normalize_file_path(trimmed) }));
+        }
+        return Ok(());
+    }
+
+    let (extension, _, mime) = validate_attachment_extension(&name)?;
+    let (staged_path, size, root) = if let Some(content_base64) = attachment_content_base64(&value)
+    {
+        write_inline_attachment_file(
+            &content_base64,
+            workspace_id,
+            thread_id,
+            index,
+            &name,
+            &extension,
+        )?
+    } else {
+        copy_attachment_file(
+            &raw_value,
+            workspace_id,
+            thread_id,
+            index,
+            &name,
+            &extension,
+        )?
+    };
+    let mime = value
+        .as_object()
+        .and_then(|object| attachment_field(object, "mime"))
+        .unwrap_or(mime);
+    file_lines.push(build_file_attachment_line(&name, mime, size, &staged_path));
+    cache_roots.push(root);
+    Ok(())
+}
+
+pub(crate) fn prepare_attachments_for_remote(
+    attachments: Option<Vec<Value>>,
+) -> Result<Option<Vec<Value>>, String> {
+    let Some(values) = attachments else {
+        return Ok(None);
+    };
+    let mut prepared = Vec::with_capacity(values.len());
+    for value in values {
+        let Some(raw_value) = inline_attachment_value(&value) else {
+            continue;
+        };
+        if raw_value.starts_with("data:")
+            || raw_value.starts_with("http://")
+            || raw_value.starts_with("https://")
+        {
+            prepared.push(value);
+            continue;
+        }
+        let name = attachment_display_name(&value, &raw_value);
+        let (extension, is_image, mime) = validate_attachment_extension(&name)?;
+        if is_image {
+            prepared.push(json!({
+                "kind": "image",
+                "name": name,
+                "dataUrl": read_image_as_data_url_core(&raw_value)?,
+            }));
+            continue;
+        }
+        let normalized = normalize_file_path(&raw_value);
+        let metadata = std::fs::symlink_metadata(&normalized)
+            .map_err(|err| format!("Failed to stat attachment at {normalized}: {err}"))?;
+        if metadata.file_type().is_symlink() {
+            return Err(format!(
+                "Attachment path must not be a symlink: {normalized}"
+            ));
+        }
+        if !metadata.is_file() {
+            return Err(format!("Attachment path is not a file: {normalized}"));
+        }
+        let limit = attachment_size_limit(&extension);
+        if metadata.len() == 0 {
+            return Err(format!("Attachment file is empty: {normalized}"));
+        }
+        if metadata.len() > limit {
+            return Err(format!(
+                "Attachment exceeds maximum size of {limit} bytes: {normalized}"
+            ));
+        }
+        let bytes = std::fs::read(&normalized)
+            .map_err(|err| format!("Failed to read attachment at {normalized}: {err}"))?;
+        prepared.push(json!({
+            "kind": "file",
+            "name": name,
+            "path": name,
+            "mime": mime,
+            "sizeBytes": bytes.len(),
+            "contentBase64": STANDARD.encode(bytes),
+        }));
+    }
+    Ok(Some(prepared))
+}
+
+struct BuiltTurnInput {
+    input: Vec<Value>,
+    attachment_roots: Vec<PathBuf>,
+}
+
+fn build_turn_input_items(
+    workspace_id: &str,
+    thread_id: &str,
+    text: String,
+    attachments: Option<Vec<Value>>,
     app_mentions: Option<Vec<Value>>,
-) -> Result<Vec<Value>, String> {
+) -> Result<BuiltTurnInput, String> {
     let trimmed_text = text.trim();
     let mut input: Vec<Value> = Vec::new();
+    let mut file_lines: Vec<String> = Vec::new();
+    let mut attachment_roots: Vec<PathBuf> = Vec::new();
     if !trimmed_text.is_empty() {
         input.push(json!({ "type": "text", "text": trimmed_text }));
     }
-    if let Some(paths) = images {
-        for path in paths {
-            let trimmed = path.trim();
-            if trimmed.is_empty() {
-                continue;
-            }
-            if trimmed.starts_with("data:")
-                || trimmed.starts_with("http://")
-                || trimmed.starts_with("https://")
-            {
-                input.push(json!({ "type": "image", "url": trimmed }));
-            } else if should_inline_image_path_for_codex(trimmed) {
-                input.push(json!({
-                    "type": "image",
-                    "url": read_image_as_data_url_core(trimmed)?,
-                }));
-            } else {
-                input.push(json!({ "type": "localImage", "path": trimmed }));
-            }
+    if let Some(values) = attachments {
+        for (index, value) in values.into_iter().enumerate() {
+            process_attachment_value(
+                value,
+                workspace_id,
+                thread_id,
+                index,
+                &mut input,
+                &mut file_lines,
+                &mut attachment_roots,
+            )?;
         }
+    }
+    if !file_lines.is_empty() {
+        let mut attachment_text = String::from(
+            "Attached files are staged as local context. Read them from these paths when needed:\n",
+        );
+        attachment_text.push_str(&file_lines.join("\n"));
+        input.push(json!({ "type": "text", "text": attachment_text }));
     }
     if let Some(mentions) = app_mentions {
         let mut seen_paths: HashSet<String> = HashSet::new();
@@ -458,7 +858,37 @@ fn build_turn_input_items(
     if input.is_empty() {
         return Err("empty user message".to_string());
     }
-    Ok(input)
+    attachment_roots.sort();
+    attachment_roots.dedup();
+    Ok(BuiltTurnInput {
+        input,
+        attachment_roots,
+    })
+}
+
+fn attachment_requires_file_staging(value: &Value) -> Result<bool, String> {
+    let Some(raw_value) = inline_attachment_value(value) else {
+        return Ok(false);
+    };
+    if raw_value.starts_with("data:image/")
+        || raw_value.starts_with("http://")
+        || raw_value.starts_with("https://")
+    {
+        return Ok(false);
+    }
+
+    let name = attachment_display_name(value, &raw_value);
+    let (_, is_image, _) = validate_attachment_extension(&name)?;
+    Ok(!is_image)
+}
+
+fn attachments_require_file_staging(values: &[Value]) -> Result<bool, String> {
+    for value in values {
+        if attachment_requires_file_staging(value)? {
+            return Ok(true);
+        }
+    }
+    Ok(false)
 }
 
 pub(crate) fn insert_optional_nullable_string(
@@ -482,33 +912,46 @@ pub(crate) async fn send_user_message_core(
     service_tier: Option<Option<String>>,
     access_mode: Option<String>,
     images: Option<Vec<String>>,
+    attachments: Option<Vec<Value>>,
     app_mentions: Option<Vec<Value>>,
     collaboration_mode: Option<Value>,
 ) -> Result<Value, String> {
     let session = get_session_clone(sessions, &workspace_id).await?;
     let workspace_path = resolve_workspace_path_core(workspaces, &workspace_id).await?;
     let access_mode = access_mode.unwrap_or_else(|| "current".to_string());
-    let sandbox_policy = match access_mode.as_str() {
-        "full-access" => json!({ "type": "dangerFullAccess" }),
-        "read-only" => json!({ "type": "readOnly" }),
-        _ => json!({
-            "type": "workspaceWrite",
-            "writableRoots": [workspace_path.clone()],
-            "networkAccess": true
-        }),
-    };
-
     let approval_policy = if access_mode == "full-access" {
         "never"
     } else {
         "on-request"
     };
 
-    let input = build_turn_input_items(text, images, app_mentions)?;
+    let built_input = build_turn_input_items(
+        &workspace_id,
+        &thread_id,
+        text,
+        as_attachment_values(attachments, images),
+        app_mentions,
+    )?;
+    let mut writable_roots = vec![workspace_path.clone()];
+    writable_roots.extend(
+        built_input
+            .attachment_roots
+            .iter()
+            .map(|path| path.display().to_string()),
+    );
+    let sandbox_policy = match access_mode.as_str() {
+        "full-access" => json!({ "type": "dangerFullAccess" }),
+        "read-only" => json!({ "type": "readOnly" }),
+        _ => json!({
+            "type": "workspaceWrite",
+            "writableRoots": writable_roots,
+            "networkAccess": true
+        }),
+    };
 
     let mut params = Map::new();
     params.insert("threadId".to_string(), json!(thread_id));
-    params.insert("input".to_string(), json!(input));
+    params.insert("input".to_string(), json!(built_input.input));
     params.insert("cwd".to_string(), json!(workspace_path));
     params.insert("approvalPolicy".to_string(), json!(approval_policy));
     params.insert("sandboxPolicy".to_string(), json!(sandbox_policy));
@@ -532,13 +975,27 @@ pub(crate) async fn turn_steer_core(
     turn_id: String,
     text: String,
     images: Option<Vec<String>>,
+    attachments: Option<Vec<Value>>,
     app_mentions: Option<Vec<Value>>,
 ) -> Result<Value, String> {
     if turn_id.trim().is_empty() {
         return Err("missing active turn id".to_string());
     }
+    let attachment_values = as_attachment_values(attachments, images);
+    if let Some(values) = attachment_values.as_ref() {
+        if attachments_require_file_staging(values)? {
+            return Err("file attachments cannot be sent to an active turn; queue the message so a new turn can read the staged files".to_string());
+        }
+    }
     let session = get_session_clone(sessions, &workspace_id).await?;
-    let input = build_turn_input_items(text, images, app_mentions)?;
+    let built_input = build_turn_input_items(
+        &workspace_id,
+        &thread_id,
+        text,
+        attachment_values,
+        app_mentions,
+    )?;
+    let input = built_input.input;
     let params = json!({
         "threadId": thread_id,
         "expectedTurnId": turn_id,
@@ -1007,6 +1464,61 @@ mod tests {
         assert!(should_inline_image_path_for_codex("/tmp/photo.heic"));
         assert!(should_inline_image_path_for_codex("/tmp/photo.HEIF"));
         assert!(!should_inline_image_path_for_codex("/tmp/photo.png"));
+    }
+
+    #[test]
+    fn http_image_attachments_do_not_require_file_extensions() {
+        let signed_url = "https://cdn.example.com/photo.png?sig=abc";
+        let endpoint_url = "https://cdn.example.com/render?id=1";
+        let built = build_turn_input_items(
+            "workspace-1",
+            "thread-1",
+            "".to_string(),
+            Some(vec![json!(signed_url), json!(endpoint_url)]),
+            None,
+        )
+        .unwrap();
+
+        assert!(built.attachment_roots.is_empty());
+        assert_eq!(
+            built.input,
+            vec![
+                json!({ "type": "image", "url": signed_url }),
+                json!({ "type": "image", "url": endpoint_url }),
+            ]
+        );
+    }
+
+    #[test]
+    fn turn_steer_rejects_file_attachments_before_staging() {
+        let workspace_id = "workspace-steer-preflight";
+        let thread_id = "thread-steer-preflight";
+        let cache_root = attachment_cache_root(workspace_id, thread_id);
+        let _ = std::fs::remove_dir_all(&cache_root);
+        let sessions = Mutex::new(HashMap::new());
+        let runtime = tokio::runtime::Runtime::new().unwrap();
+
+        let result = runtime.block_on(turn_steer_core(
+            &sessions,
+            workspace_id.to_string(),
+            thread_id.to_string(),
+            "turn-1".to_string(),
+            "review this".to_string(),
+            None,
+            Some(vec![json!({
+                "name": "spec.pdf",
+                "path": "spec.pdf",
+                "contentBase64": STANDARD.encode(b"hello"),
+            })]),
+            None,
+        ));
+
+        let err = result.unwrap_err();
+        assert!(err.contains("file attachments cannot be sent to an active turn"));
+        assert!(
+            !cache_root.exists(),
+            "file attachments should be rejected before staging temp files"
+        );
     }
 
     #[test]

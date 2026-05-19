@@ -4,6 +4,8 @@ import { createRoot } from "react-dom/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { useComposerImageDrop } from "./useComposerImageDrop";
 
+const readClipboardFilePathsMock = vi.hoisted(() => vi.fn());
+
 let mockOnDragDropEvent:
   | ((event: {
       payload: {
@@ -19,6 +21,10 @@ vi.mock("../../../services/dragDrop", () => ({
     mockOnDragDropEvent = handler;
     return () => {};
   },
+}));
+
+vi.mock("../../../services/tauri", () => ({
+  readClipboardFilePaths: readClipboardFilePathsMock,
 }));
 
 type HookResult = ReturnType<typeof useComposerImageDrop>;
@@ -81,6 +87,8 @@ function setMockFileReader() {
 describe("useComposerImageDrop", () => {
   beforeEach(() => {
     mockOnDragDropEvent = null;
+    readClipboardFilePathsMock.mockReset();
+    readClipboardFilePathsMock.mockResolvedValue([]);
   });
 
   it("tracks drag over state for file transfers", () => {
@@ -175,6 +183,94 @@ describe("useComposerImageDrop", () => {
     restoreFileReader();
   });
 
+  it("uses file paths on paste when available", async () => {
+    const onAttachImages = vi.fn();
+    const hook = renderImageDropHook({ disabled: false, onAttachImages });
+    const preventDefault = vi.fn();
+
+    const document = new File(["data"], "spec.pdf", { type: "application/pdf" });
+    (document as File & { path?: string }).path = "/tmp/spec.pdf";
+    const unsupported = new File(["data"], "archive.zip", {
+      type: "application/zip",
+    });
+    (unsupported as File & { path?: string }).path = "/tmp/archive.zip";
+    const item = {
+      kind: "file",
+      type: "application/pdf",
+      getAsFile: () => document,
+    };
+
+    await act(async () => {
+      await hook.result.handlePaste({
+        clipboardData: {
+          files: [document, unsupported],
+          items: [item],
+          types: ["Files"],
+        },
+        preventDefault,
+      } as unknown as React.ClipboardEvent<HTMLTextAreaElement>);
+    });
+
+    expect(preventDefault).toHaveBeenCalled();
+    expect(onAttachImages).toHaveBeenCalledWith(["/tmp/spec.pdf"]);
+    expect(readClipboardFilePathsMock).not.toHaveBeenCalled();
+
+    hook.unmount();
+  });
+
+  it("falls back to native clipboard file paths when web clipboard has no text", async () => {
+    readClipboardFilePathsMock.mockResolvedValue([
+      "/tmp/spec.pdf",
+      "/tmp/shortcut.gdoc",
+      "/tmp/photo.png",
+    ]);
+    const onAttachImages = vi.fn();
+    const hook = renderImageDropHook({ disabled: false, onAttachImages });
+    const preventDefault = vi.fn();
+
+    await act(async () => {
+      await hook.result.handlePaste({
+        clipboardData: {
+          files: [],
+          items: [],
+          types: [],
+          getData: () => "",
+        },
+        preventDefault,
+      } as unknown as React.ClipboardEvent<HTMLTextAreaElement>);
+    });
+
+    expect(preventDefault).toHaveBeenCalled();
+    expect(readClipboardFilePathsMock).toHaveBeenCalledTimes(1);
+    expect(onAttachImages).toHaveBeenCalledWith(["/tmp/spec.pdf", "/tmp/photo.png"]);
+
+    hook.unmount();
+  });
+
+  it("leaves text paste alone instead of reading the native clipboard", async () => {
+    const onAttachImages = vi.fn();
+    const hook = renderImageDropHook({ disabled: false, onAttachImages });
+    const preventDefault = vi.fn();
+
+    await act(async () => {
+      await hook.result.handlePaste({
+        clipboardData: {
+          files: [],
+          items: [],
+          types: ["text/plain"],
+          getData: () => "hello",
+        },
+        preventDefault,
+      } as unknown as React.ClipboardEvent<HTMLTextAreaElement>);
+    });
+
+    expect(preventDefault).not.toHaveBeenCalled();
+    expect(readClipboardFilePathsMock).not.toHaveBeenCalled();
+    expect(onAttachImages).not.toHaveBeenCalled();
+
+    hook.unmount();
+  });
+
   it("filters tauri drag-drop paths and respects drop target", async () => {
     const onAttachImages = vi.fn();
     const hook = renderImageDropHook({ disabled: false, onAttachImages });
@@ -214,7 +310,7 @@ describe("useComposerImageDrop", () => {
         payload: {
           type: "drop",
           position: { x: 40, y: 40 },
-          paths: [" /tmp/photo.png ", "/tmp/note.txt"],
+          paths: [" /tmp/photo.png ", "/tmp/archive.zip"],
         },
       });
     });
@@ -252,6 +348,38 @@ describe("useComposerImageDrop", () => {
     });
 
     expect(onAttachImages).toHaveBeenCalledWith(["/tmp/screenshot.heic"]);
+
+    hook.unmount();
+  });
+
+  it("accepts supported document paths from tauri drag-drop", async () => {
+    const onAttachImages = vi.fn();
+    const hook = renderImageDropHook({ disabled: false, onAttachImages });
+
+    const target = document.createElement("div");
+    target.getBoundingClientRect = () =>
+      ({ left: 0, top: 0, right: 100, bottom: 100 } as DOMRect);
+    hook.result.dropTargetRef.current = target;
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    if (!mockOnDragDropEvent) {
+      throw new Error("Drag drop handler not registered");
+    }
+
+    act(() => {
+      mockOnDragDropEvent?.({
+        payload: {
+          type: "drop",
+          position: { x: 40, y: 40 },
+          paths: ["/tmp/spec.pdf", "/tmp/shortcut.gdoc"],
+        },
+      });
+    });
+
+    expect(onAttachImages).toHaveBeenCalledWith(["/tmp/spec.pdf"]);
 
     hook.unmount();
   });

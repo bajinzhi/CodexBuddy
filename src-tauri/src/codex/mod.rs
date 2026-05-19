@@ -370,12 +370,14 @@ pub(crate) async fn send_user_message(
     service_tier: Option<Option<String>>,
     access_mode: Option<String>,
     images: Option<Vec<String>>,
+    attachments: Option<Vec<Value>>,
     app_mentions: Option<Vec<Value>>,
     collaboration_mode: Option<Value>,
     state: State<'_, AppState>,
     app: AppHandle,
 ) -> Result<Value, String> {
     if remote_backend::is_remote_mode(&*state).await {
+        let attachments = codex_core::prepare_attachments_for_remote(attachments)?;
         let images = images.map(|paths| {
             paths
                 .into_iter()
@@ -391,6 +393,7 @@ pub(crate) async fn send_user_message(
         insert_optional_nullable_string(&mut payload, "serviceTier", service_tier);
         payload.insert("accessMode".to_string(), json!(access_mode));
         payload.insert("images".to_string(), json!(images));
+        payload.insert("attachments".to_string(), json!(attachments));
         payload.insert("appMentions".to_string(), json!(app_mentions));
         if let Some(mode) = collaboration_mode {
             if !mode.is_null() {
@@ -417,6 +420,7 @@ pub(crate) async fn send_user_message(
         service_tier,
         access_mode,
         images,
+        attachments,
         app_mentions,
         collaboration_mode,
     )
@@ -430,11 +434,13 @@ pub(crate) async fn turn_steer(
     turn_id: String,
     text: String,
     images: Option<Vec<String>>,
+    attachments: Option<Vec<Value>>,
     app_mentions: Option<Vec<Value>>,
     state: State<'_, AppState>,
     app: AppHandle,
 ) -> Result<Value, String> {
     if remote_backend::is_remote_mode(&*state).await {
+        let attachments = codex_core::prepare_attachments_for_remote(attachments)?;
         let images = images.map(|paths| {
             paths
                 .into_iter()
@@ -451,6 +457,7 @@ pub(crate) async fn turn_steer(
                 "turnId": turn_id,
                 "text": text,
                 "images": images,
+                "attachments": attachments,
                 "appMentions": app_mentions,
             }),
         )
@@ -464,6 +471,7 @@ pub(crate) async fn turn_steer(
         turn_id,
         text,
         images,
+        attachments,
         app_mentions,
     )
     .await

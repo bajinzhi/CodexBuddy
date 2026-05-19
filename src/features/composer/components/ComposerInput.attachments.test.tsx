@@ -134,11 +134,14 @@ function dispatchDrop(
 function dispatchPaste(
   element: HTMLElement,
   items: Array<{ type: string; getAsFile: () => File | null }>,
+  files: File[] = [],
 ) {
   const event = new Event("paste", { bubbles: true, cancelable: true });
   Object.defineProperty(event, "clipboardData", {
     value: {
+      files,
       items,
+      types: files.length > 0 ? ["Files"] : [],
     },
   });
   element.dispatchEvent(event);
@@ -163,7 +166,7 @@ function setMockFileReader() {
 }
 
 describe("Composer attachments integration", () => {
-  it("attaches dropped image files, filters non-images, and dedupes paths", async () => {
+  it("attaches dropped supported files, filters unsupported files, and dedupes paths", async () => {
     const harness = renderComposerHarness({
       activeThreadId: "thread-1",
       activeWorkspaceId: "ws-1",
@@ -172,14 +175,16 @@ describe("Composer attachments integration", () => {
 
     const image = new File(["data"], "photo.png", { type: "image/png" });
     (image as File & { path?: string }).path = "/tmp/photo.png";
-    const nonImage = new File(["data"], "notes.txt", { type: "text/plain" });
-    (nonImage as File & { path?: string }).path = "/tmp/notes.txt";
+    const document = new File(["data"], "notes.pdf", { type: "application/pdf" });
+    (document as File & { path?: string }).path = "/tmp/notes.pdf";
+    const unsupported = new File(["data"], "archive.zip", { type: "application/zip" });
+    (unsupported as File & { path?: string }).path = "/tmp/archive.zip";
 
     await act(async () => {
-      dispatchDrop(textarea, [image, nonImage]);
+      dispatchDrop(textarea, [image, document, unsupported]);
     });
 
-    expect(getAttachmentNames(harness.container)).toEqual(["photo.png"]);
+    expect(getAttachmentNames(harness.container)).toEqual(["photo.png", "notes.pdf"]);
 
     const imageTwo = new File(["data"], "second.jpg", { type: "image/jpeg" });
     (imageTwo as File & { path?: string }).path = "/tmp/second.jpg";
@@ -190,6 +195,7 @@ describe("Composer attachments integration", () => {
 
     expect(getAttachmentNames(harness.container)).toEqual([
       "photo.png",
+      "notes.pdf",
       "second.jpg",
     ]);
 
@@ -216,6 +222,29 @@ describe("Composer attachments integration", () => {
 
     harness.unmount();
     restoreFileReader();
+  });
+
+  it("attaches pasted supported files from clipboard paths", async () => {
+    const harness = renderComposerHarness({
+      activeThreadId: "thread-1",
+      activeWorkspaceId: "ws-1",
+    });
+    const textarea = getTextarea(harness.container);
+
+    const document = new File(["data"], "spec.pdf", { type: "application/pdf" });
+    (document as File & { path?: string }).path = "/tmp/spec.pdf";
+    const unsupported = new File(["data"], "archive.zip", {
+      type: "application/zip",
+    });
+    (unsupported as File & { path?: string }).path = "/tmp/archive.zip";
+
+    await act(async () => {
+      dispatchPaste(textarea, [], [document, unsupported]);
+    });
+
+    expect(getAttachmentNames(harness.container)).toEqual(["spec.pdf"]);
+
+    harness.unmount();
   });
 
   it("removes attachments and clears drafts", async () => {

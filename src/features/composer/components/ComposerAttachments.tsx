@@ -1,6 +1,8 @@
 import { convertFileSrc } from "@tauri-apps/api/core";
+import FileText from "lucide-react/dist/esm/icons/file-text";
 import Image from "lucide-react/dist/esm/icons/image";
 import X from "lucide-react/dist/esm/icons/x";
+import { getFileTypeIconUrl } from "../../../utils/fileTypeIcons";
 
 type ComposerAttachmentsProps = {
   attachments: string[];
@@ -20,7 +22,34 @@ function fileTitle(path: string) {
   return parts.length ? parts[parts.length - 1] : path;
 }
 
+const imageExtensions = [
+  ".png",
+  ".jpg",
+  ".jpeg",
+  ".gif",
+  ".webp",
+  ".bmp",
+  ".tiff",
+  ".tif",
+  ".heic",
+  ".heif",
+];
+
+function isImageAttachment(path: string) {
+  if (path.startsWith("data:image/")) {
+    return true;
+  }
+  if (path.startsWith("data:")) {
+    return false;
+  }
+  const lower = path.toLowerCase();
+  return imageExtensions.some((ext) => lower.endsWith(ext));
+}
+
 function attachmentPreviewSrc(path: string) {
+  if (!isImageAttachment(path)) {
+    return "";
+  }
   if (path.startsWith("data:")) {
     return path;
   }
@@ -29,6 +58,17 @@ function attachmentPreviewSrc(path: string) {
   }
   try {
     return convertFileSrc(path);
+  } catch {
+    return "";
+  }
+}
+
+function fileIconSrc(path: string) {
+  if (isImageAttachment(path)) {
+    return "";
+  }
+  try {
+    return getFileTypeIconUrl(fileTitle(path));
   } catch {
     return "";
   }
@@ -49,6 +89,7 @@ export function ComposerAttachments({
         const title = fileTitle(path);
         const titleAttr = path.startsWith("data:") ? "Pasted image" : path;
         const previewSrc = attachmentPreviewSrc(path);
+        const iconSrc = fileIconSrc(path);
         return (
           <div
             key={path}
@@ -64,9 +105,13 @@ export function ComposerAttachments({
               <span className="composer-attachment-thumb" aria-hidden>
                 <img src={previewSrc} alt="" />
               </span>
+            ) : iconSrc ? (
+              <span className="composer-attachment-thumb composer-attachment-thumb--file" aria-hidden>
+                <img src={iconSrc} alt="" />
+              </span>
             ) : (
               <span className="composer-icon" aria-hidden>
-                <Image size={14} />
+                {isImageAttachment(path) ? <Image size={14} /> : <FileText size={14} />}
               </span>
             )}
             <span className="composer-attachment-name">{title}</span>

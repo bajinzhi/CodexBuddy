@@ -278,6 +278,15 @@
   object-fit: cover;
 }
 
+.composer-attachment-thumb--file {
+  padding: 2px;
+  background: var(--surface-control);
+}
+
+.composer-attachment-thumb--file img {
+  object-fit: contain;
+}
+
 .composer-attachment-name {
   overflow: hidden;
   text-overflow: ellipsis;

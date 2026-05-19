@@ -42,12 +42,14 @@ import {
   tailscaleDaemonStop,
   tailscaleStatus,
   pickImageFiles,
+  pickAttachmentFiles,
   pickWorkspacePaths,
   writeGlobalAgentsMd,
   writeGlobalCodexConfigToml,
   createAgent,
   updateAgent,
   deleteAgent,
+  readClipboardFilePaths,
   readAgentConfigToml,
   readImageAsDataUrl,
   generateAgentDescription,
@@ -120,20 +122,20 @@ describe("tauri invoke wrappers", () => {
     await expect(pickWorkspacePaths()).resolves.toEqual(["/tmp/one", "/tmp/two"]);
   });
 
-  it("includes heic and heif in the image picker filter", async () => {
+  it("includes supported attachment types in the file picker filter", async () => {
     const openMock = vi.mocked(open);
-    openMock.mockResolvedValueOnce(["/tmp/photo.heic", "/tmp/photo.heif"]);
+    openMock.mockResolvedValueOnce(["/tmp/photo.heic", "/tmp/spec.pdf"]);
 
-    await expect(pickImageFiles()).resolves.toEqual([
+    await expect(pickAttachmentFiles()).resolves.toEqual([
       "/tmp/photo.heic",
-      "/tmp/photo.heif",
+      "/tmp/spec.pdf",
     ]);
 
     expect(openMock).toHaveBeenCalledWith({
       multiple: true,
       filters: [
         {
-          name: "Images",
+          name: "Supported files",
           extensions: [
             "png",
             "jpg",
@@ -145,10 +147,34 @@ describe("tauri invoke wrappers", () => {
             "tif",
             "heic",
             "heif",
+            "pdf",
+            "txt",
+            "md",
+            "markdown",
+            "json",
+            "jsonl",
+            "yaml",
+            "yml",
+            "xml",
+            "html",
+            "htm",
+            "docx",
+            "pptx",
+            "xlsx",
+            "xls",
+            "csv",
+            "tsv",
           ],
         },
       ],
     });
+  });
+
+  it("keeps pickImageFiles as a compatibility alias for the attachment picker", async () => {
+    const openMock = vi.mocked(open);
+    openMock.mockResolvedValueOnce(["/tmp/notes.pdf"]);
+
+    await expect(pickImageFiles()).resolves.toEqual(["/tmp/notes.pdf"]);
   });
 
   it("returns null when markdown export is cancelled", async () => {
@@ -730,6 +756,7 @@ describe("tauri invoke wrappers", () => {
       effort: null,
       accessMode: "full-access",
       images: ["image.png"],
+      attachments: null,
     });
   });
 
@@ -750,6 +777,7 @@ describe("tauri invoke wrappers", () => {
       serviceTier: null,
       accessMode: null,
       images: null,
+      attachments: null,
     });
   });
 
@@ -762,6 +790,14 @@ describe("tauri invoke wrappers", () => {
     expect(invokeMock).toHaveBeenCalledWith("read_image_as_data_url", {
       path: "/tmp/image.png",
     });
+  });
+
+  it("maps read_clipboard_file_paths", async () => {
+    const invokeMock = vi.mocked(invoke);
+    invokeMock.mockResolvedValueOnce(["C:\\tmp\\spec.pdf"]);
+
+    await expect(readClipboardFilePaths()).resolves.toEqual(["C:\\tmp\\spec.pdf"]);
+    expect(invokeMock).toHaveBeenCalledWith("read_clipboard_file_paths");
   });
 
   it("converts image paths before send_user_message in remote mode", async () => {
@@ -794,6 +830,27 @@ describe("tauri invoke wrappers", () => {
       effort: null,
       accessMode: null,
       images: ["data:image/png;base64,abc"],
+      attachments: null,
+    });
+  });
+
+  it("passes attachments in the send_user_message payload", async () => {
+    const invokeMock = vi.mocked(invoke);
+    invokeMock.mockResolvedValueOnce({});
+
+    await sendUserMessage("ws-4", "thread-1", "hello", {
+      attachments: ["/tmp/notes.pdf", "/tmp/photo.png"],
+    });
+
+    expect(invokeMock).toHaveBeenLastCalledWith("send_user_message", {
+      workspaceId: "ws-4",
+      threadId: "thread-1",
+      text: "hello",
+      model: null,
+      effort: null,
+      accessMode: null,
+      images: null,
+      attachments: ["/tmp/notes.pdf", "/tmp/photo.png"],
     });
   });
 
@@ -813,6 +870,7 @@ describe("tauri invoke wrappers", () => {
       effort: null,
       accessMode: null,
       images: null,
+      attachments: null,
       appMentions: [{ name: "Calendar", path: "app://connector_calendar" }],
     });
   });
@@ -828,36 +886,24 @@ describe("tauri invoke wrappers", () => {
       threadId: "thread-1",
       turnId: "turn-2",
       text: "continue",
-      images: ["image.png"],
+      images: null,
+      attachments: ["image.png"],
     });
   });
 
-  it("converts image paths before turn_steer in remote mode", async () => {
+  it("passes attachment paths to turn_steer for backend preparation", async () => {
     const invokeMock = vi.mocked(invoke);
-    invokeMock.mockImplementation(async (command: string) => {
-      if (command === "is_macos_debug_build") {
-        return false;
-      }
-      if (command === "get_app_settings") {
-        return { backendMode: "remote" };
-      }
-      if (command === "is_mobile_runtime") {
-        return false;
-      }
-      if (command === "read_image_as_data_url") {
-        return "data:image/jpeg;base64,xyz";
-      }
-      return undefined;
-    });
+    invokeMock.mockResolvedValueOnce({});
 
-    await steerTurn("ws-4", "thread-1", "turn-2", "continue", ["/tmp/image.jpg"]);
+    await steerTurn("ws-4", "thread-1", "turn-2", "continue", ["/tmp/spec.pdf"]);
 
     expect(invokeMock).toHaveBeenCalledWith("turn_steer", {
       workspaceId: "ws-4",
       threadId: "thread-1",
       turnId: "turn-2",
       text: "continue",
-      images: ["data:image/jpeg;base64,xyz"],
+      images: null,
+      attachments: ["/tmp/spec.pdf"],
     });
   });
 
@@ -891,6 +937,79 @@ describe("tauri invoke wrappers", () => {
       effort: null,
       accessMode: null,
       images: ["data:image/png;base64,mobile"],
+      attachments: null,
+    });
+  });
+
+  it("converts image attachments on mobile while preserving document attachments", async () => {
+    const invokeMock = vi.mocked(invoke);
+    invokeMock.mockImplementation(async (command: string) => {
+      if (command === "is_macos_debug_build") {
+        return false;
+      }
+      if (command === "get_app_settings") {
+        return { backendMode: "local" };
+      }
+      if (command === "is_mobile_runtime") {
+        return true;
+      }
+      if (command === "read_image_as_data_url") {
+        return "data:image/png;base64,mobile-attachment";
+      }
+      return undefined;
+    });
+
+    await sendUserMessage("ws-4", "thread-1", "hello", {
+      attachments: ["/private/var/mobile/spec.pdf", "/private/var/mobile/sample.png"],
+    });
+
+    expect(invokeMock).toHaveBeenCalledWith("read_image_as_data_url", {
+      path: "/private/var/mobile/sample.png",
+    });
+    expect(invokeMock).toHaveBeenLastCalledWith("send_user_message", {
+      workspaceId: "ws-4",
+      threadId: "thread-1",
+      text: "hello",
+      model: null,
+      effort: null,
+      accessMode: null,
+      images: null,
+      attachments: [
+        "/private/var/mobile/spec.pdf",
+        "data:image/png;base64,mobile-attachment",
+      ],
+    });
+  });
+
+  it("converts image attachments before turn_steer on mobile", async () => {
+    const invokeMock = vi.mocked(invoke);
+    invokeMock.mockImplementation(async (command: string) => {
+      if (command === "is_macos_debug_build") {
+        return false;
+      }
+      if (command === "get_app_settings") {
+        return { backendMode: "local" };
+      }
+      if (command === "is_mobile_runtime") {
+        return true;
+      }
+      if (command === "read_image_as_data_url") {
+        return "data:image/jpeg;base64,mobile-steer";
+      }
+      return undefined;
+    });
+
+    await steerTurn("ws-4", "thread-1", "turn-2", "continue", [
+      "/private/var/mobile/photo.jpg",
+    ]);
+
+    expect(invokeMock).toHaveBeenLastCalledWith("turn_steer", {
+      workspaceId: "ws-4",
+      threadId: "thread-1",
+      turnId: "turn-2",
+      text: "continue",
+      images: null,
+      attachments: ["data:image/jpeg;base64,mobile-steer"],
     });
   });
 

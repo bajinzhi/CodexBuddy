@@ -600,6 +600,7 @@
     },
     "input": {
       "addImage": "添加图片",
+      "addFile": "添加文件",
       "moreActions": "更多操作",
       "expandInput": "展开输入框",
       "collapseInput": "收起输入框",
@@ -613,8 +614,8 @@
     },
     "queue": {
       "title": "排队中",
-      "imageCount_one": "{{count}} 张图片",
-      "imageCount_other": "{{count}} 张图片",
+      "imageCount_one": "{{count}} 个附件",
+      "imageCount_other": "{{count}} 个附件",
       "itemMenuAria": "排队项菜单"
     },
     "context": {

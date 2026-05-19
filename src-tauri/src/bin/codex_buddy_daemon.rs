@@ -853,6 +853,7 @@ impl DaemonState {
         service_tier: Option<Option<String>>,
         access_mode: Option<String>,
         images: Option<Vec<String>>,
+        attachments: Option<Vec<Value>>,
         app_mentions: Option<Vec<Value>>,
         collaboration_mode: Option<Value>,
     ) -> Result<Value, String> {
@@ -867,6 +868,7 @@ impl DaemonState {
             service_tier,
             access_mode,
             images,
+            attachments,
             app_mentions,
             collaboration_mode,
         )
@@ -880,6 +882,7 @@ impl DaemonState {
         turn_id: String,
         text: String,
         images: Option<Vec<String>>,
+        attachments: Option<Vec<Value>>,
         app_mentions: Option<Vec<Value>>,
     ) -> Result<Value, String> {
         codex_core::turn_steer_core(
@@ -889,6 +892,7 @@ impl DaemonState {
             turn_id,
             text,
             images,
+            attachments,
             app_mentions,
         )
         .await

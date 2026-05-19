@@ -8,6 +8,7 @@ use tauri::WindowEvent;
 
 mod ai_radar;
 mod backend;
+mod clipboard;
 mod codex;
 mod daemon_binary;
 mod dictation;
@@ -210,6 +211,7 @@ pub fn run() {
             files::file_write,
             files::read_image_as_data_url,
             files::write_text_file,
+            clipboard::read_clipboard_file_paths,
             pets::list_pets,
             pets::read_pet_asset,
             codex::get_config_model,

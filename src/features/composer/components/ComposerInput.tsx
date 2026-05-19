@@ -8,7 +8,7 @@ import type {
 } from "react";
 import { useTranslation } from "react-i18next";
 import type { AutocompleteItem } from "../hooks/useComposerAutocomplete";
-import ImagePlus from "lucide-react/dist/esm/icons/image-plus";
+import Paperclip from "lucide-react/dist/esm/icons/paperclip";
 import ChevronDown from "lucide-react/dist/esm/icons/chevron-down";
 import ChevronUp from "lucide-react/dist/esm/icons/chevron-up";
 import Mic from "lucide-react/dist/esm/icons/mic";
@@ -524,10 +524,10 @@ export function ComposerInput({
             className="composer-attach"
             onClick={onAddAttachment}
             disabled={disabled || !onAddAttachment}
-            aria-label={t("composer.input.addImage")}
-            title={t("composer.input.addImage")}
+            aria-label={t("composer.input.addFile")}
+            title={t("composer.input.addFile")}
           >
-            <ImagePlus size={14} aria-hidden />
+            <Paperclip size={14} aria-hidden />
           </button>
           <div
             className={`composer-mobile-menu${mobileActionsOpen ? " is-open" : ""}`}
@@ -550,9 +550,9 @@ export function ComposerInput({
                 <PopoverMenuItem
                   onClick={handleMobileAttachClick}
                   disabled={disabled || !onAddAttachment}
-                  icon={<ImagePlus size={14} />}
+                  icon={<Paperclip size={14} />}
                 >
-                  {t("composer.input.addImage")}
+                  {t("composer.input.addFile")}
                 </PopoverMenuItem>
                 {onToggleExpand && (
                   <PopoverMenuItem

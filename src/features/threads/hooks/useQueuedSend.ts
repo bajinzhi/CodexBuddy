@@ -7,6 +7,7 @@ import type {
   SendMessageResult,
   WorkspaceInfo,
 } from "@/types";
+import { hasDocumentAttachment } from "./threadMessagingHelpers";
 
 type UseQueuedSendOptions = {
   activeThreadId: string | null;
@@ -266,8 +267,9 @@ export function useQueuedSend({
       const command = parseSlashCommand(trimmed, appsEnabled);
       const nextImages = command ? [] : images;
       const nextMentions = command ? [] : appMentions;
+      const hasSteerUnsafeAttachment = hasDocumentAttachment(nextImages);
       const canSteerCurrentTurn =
-        isProcessing && steerEnabled && Boolean(activeTurnId);
+        isProcessing && steerEnabled && Boolean(activeTurnId) && !hasSteerUnsafeAttachment;
       const effectiveIntent: ComposerSendIntent = !isProcessing
         ? "default"
         : submitIntent === "queue"

@@ -641,6 +641,7 @@ dependencies = [
  "toml_edit 0.20.2",
  "uuid",
  "whisper-rs",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]

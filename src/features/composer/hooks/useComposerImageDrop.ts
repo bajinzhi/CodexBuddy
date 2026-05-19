@@ -14,9 +14,47 @@ const imageExtensions = [
   ".heif",
 ];
 
-function isImagePath(path: string) {
+const documentExtensions = [
+  ".pdf",
+  ".txt",
+  ".md",
+  ".markdown",
+  ".json",
+  ".jsonl",
+  ".yaml",
+  ".yml",
+  ".xml",
+  ".html",
+  ".htm",
+  ".docx",
+  ".pptx",
+  ".xlsx",
+  ".xls",
+  ".csv",
+  ".tsv",
+];
+
+function isSupportedAttachmentPath(path: string) {
   const lower = path.toLowerCase();
-  return imageExtensions.some((ext) => lower.endsWith(ext));
+  if (lower.endsWith(".gdoc")) {
+    return false;
+  }
+  return (
+    imageExtensions.some((ext) => lower.endsWith(ext)) ||
+    documentExtensions.some((ext) => lower.endsWith(ext))
+  );
+}
+
+function uniqueNonEmptyStrings(values: string[]) {
+  return Array.from(new Set(values.map((value) => value.trim()).filter(Boolean)));
+}
+
+function getFilePath(file: File) {
+  return (file as File & { path?: string }).path ?? "";
+}
+
+function getSupportedAttachmentPaths(files: File[]) {
+  return uniqueNonEmptyStrings(files.map(getFilePath)).filter(isSupportedAttachmentPath);
 }
 
 function isDragFileTransfer(types: readonly string[] | undefined) {
@@ -28,6 +66,44 @@ function isDragFileTransfer(types: readonly string[] | undefined) {
     types.includes("public.file-url") ||
     types.includes("application/x-moz-file")
   );
+}
+
+function getTransferTypes(types: readonly string[] | undefined) {
+  if (!types || types.length === 0) {
+    return [];
+  }
+  return Array.from(types);
+}
+
+function hasTextualClipboardData(clipboardData: DataTransfer | null | undefined) {
+  if (!clipboardData) {
+    return false;
+  }
+  const getData = (clipboardData as DataTransfer & {
+    getData?: (format: string) => string;
+  }).getData;
+  if (typeof getData === "function") {
+    try {
+      if (getData.call(clipboardData, "text/plain").length > 0) {
+        return true;
+      }
+    } catch {
+      // Some webviews expose clipboard metadata without allowing text reads.
+    }
+  }
+  return getTransferTypes(clipboardData.types).some((type) =>
+    type.toLowerCase().startsWith("text/"),
+  );
+}
+
+async function readNativeClipboardAttachmentPaths() {
+  try {
+    const { readClipboardFilePaths } = await import("../../../services/tauri");
+    const paths = await readClipboardFilePaths();
+    return uniqueNonEmptyStrings(paths).filter(isSupportedAttachmentPath);
+  } catch {
+    return [];
+  }
 }
 
 function readFilesAsDataUrls(files: File[]) {
@@ -114,12 +190,12 @@ export function useComposerImageDrop({
         if (!isInside) {
           return;
         }
-        const imagePaths = (event.payload.paths ?? [])
+        const attachmentPaths = (event.payload.paths ?? [])
           .map((path) => path.trim())
           .filter(Boolean)
-          .filter(isImagePath);
-        if (imagePaths.length > 0) {
-          onAttachImages?.(imagePaths);
+          .filter(isSupportedAttachmentPath);
+        if (attachmentPaths.length > 0) {
+          onAttachImages?.(attachmentPaths);
         }
       }
     });
@@ -165,12 +241,9 @@ export function useComposerImageDrop({
       .filter((item) => item.kind === "file")
       .map((item) => item.getAsFile())
       .filter((file): file is File => Boolean(file));
-    const filePaths = [...files, ...itemFiles]
-      .map((file) => (file as File & { path?: string }).path ?? "")
-      .filter(Boolean);
-    const imagePaths = filePaths.filter(isImagePath);
-    if (imagePaths.length > 0) {
-      onAttachImages?.(imagePaths);
+    const attachmentPaths = getSupportedAttachmentPaths([...files, ...itemFiles]);
+    if (attachmentPaths.length > 0) {
+      onAttachImages?.(attachmentPaths);
       return;
     }
     const fileImages = [...files, ...itemFiles].filter((file) =>
@@ -189,33 +262,47 @@ export function useComposerImageDrop({
     if (disabled) {
       return;
     }
-    const items = Array.from(event.clipboardData?.items ?? []);
-    const imageItems = items.filter((item) => item.type.startsWith("image/"));
-    if (imageItems.length === 0) {
+    const clipboardData = event.clipboardData;
+    if (!clipboardData) {
       return;
     }
-    event.preventDefault();
-    const files = imageItems
+    const files = Array.from(clipboardData.files ?? []);
+    const items = Array.from(clipboardData.items ?? []);
+    const itemFiles = items
+      .filter((item) => item.kind === "file")
       .map((item) => item.getAsFile())
       .filter((file): file is File => Boolean(file));
-    if (!files.length) {
+    const attachmentPaths = getSupportedAttachmentPaths([...files, ...itemFiles]);
+    if (attachmentPaths.length > 0) {
+      event.preventDefault();
+      onAttachImages?.(attachmentPaths);
       return;
     }
-    const dataUrls = await Promise.all(
-      files.map(
-        (file) =>
-          new Promise<string>((resolve) => {
-            const reader = new FileReader();
-            reader.onload = () =>
-              resolve(typeof reader.result === "string" ? reader.result : "");
-            reader.onerror = () => resolve("");
-            reader.readAsDataURL(file);
-          }),
-      ),
-    );
-    const valid = dataUrls.filter(Boolean);
-    if (valid.length > 0) {
-      onAttachImages?.(valid);
+
+    const imageItems = items.filter((item) => item.type.startsWith("image/"));
+    if (imageItems.length > 0) {
+      event.preventDefault();
+      const imageFiles = imageItems
+        .map((item) => item.getAsFile())
+        .filter((file): file is File => Boolean(file));
+      if (!imageFiles.length) {
+        return;
+      }
+      const dataUrls = await readFilesAsDataUrls(imageFiles);
+      if (dataUrls.length > 0) {
+        onAttachImages?.(dataUrls);
+      }
+      return;
+    }
+
+    if (hasTextualClipboardData(clipboardData)) {
+      return;
+    }
+
+    event.preventDefault();
+    const nativeAttachmentPaths = await readNativeClipboardAttachmentPaths();
+    if (nativeAttachmentPaths.length > 0) {
+      onAttachImages?.(nativeAttachmentPaths);
     }
   };
 

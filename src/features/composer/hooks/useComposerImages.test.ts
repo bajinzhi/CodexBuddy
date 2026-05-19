@@ -6,6 +6,7 @@ import { useComposerImages } from "./useComposerImages";
 
 vi.mock("../../../services/tauri", () => ({
   pickImageFiles: vi.fn().mockResolvedValue([]),
+  pickAttachmentFiles: vi.fn().mockResolvedValue([]),
 }));
 
 type HookResult = ReturnType<typeof useComposerImages>;

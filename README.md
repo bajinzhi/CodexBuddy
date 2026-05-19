@@ -17,7 +17,7 @@ CodexBuddy is a Tauri app for orchestrating multiple Codex agents across local w
 
 ### Composer & Agent Controls
 
-- Compose with image attachments (picker, drag/drop, paste) and configurable follow-up behavior (`Queue` vs `Steer` while a run is active).
+- Compose with file attachments (picker, drag/drop, image paste) and configurable follow-up behavior (`Queue` vs `Steer` while a run is active).
 - Use `Shift+Cmd+Enter` (macOS) or `Shift+Ctrl+Enter` (Windows/Linux) to send the opposite follow-up action for a single message.
 - Autocomplete for skills (`$`), prompts (`/prompts:`), reviews (`/review`), and file paths (`@`).
 - Model picker, collaboration modes (when enabled), reasoning effort, access mode, and context usage ring.

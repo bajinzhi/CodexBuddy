@@ -138,6 +138,13 @@ pub(super) fn parse_string_array(value: &Value, key: &str) -> Result<Vec<String>
     parse_optional_string_array(value, key).ok_or_else(|| format!("missing `{key}`"))
 }
 
+pub(super) fn parse_optional_value_array(value: &Value, key: &str) -> Option<Vec<Value>> {
+    match value {
+        Value::Object(map) => map.get(key).and_then(|value| value.as_array()).cloned(),
+        _ => None,
+    }
+}
+
 pub(super) fn parse_optional_value(value: &Value, key: &str) -> Option<Value> {
     match value {
         Value::Object(map) => map.get(key).cloned(),

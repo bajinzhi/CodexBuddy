@@ -100,6 +100,58 @@ describe("SettingsModelProvidersSection", () => {
     );
   });
 
+  it("allows editing built-in provider connection settings while locking identity", async () => {
+    getModelProviderSettingsMock.mockResolvedValueOnce(settings());
+    saveModelProviderSettingsMock.mockImplementation(async (input) => ({
+      ...settings(),
+      activeProviderId: input.activeProviderId,
+      activeModel: input.activeModel,
+      providers: input.providers,
+    }));
+
+    render(<SettingsModelProvidersSection />);
+
+    fireEvent.change(await screen.findByLabelText("Model provider"), {
+      target: { value: "openai" },
+    });
+
+    expect((screen.getByLabelText("Provider ID") as HTMLInputElement).disabled).toBe(
+      true,
+    );
+    expect((screen.getByRole("button", { name: "Delete" }) as HTMLButtonElement).disabled).toBe(
+      true,
+    );
+
+    fireEvent.change(screen.getByLabelText("Display name"), {
+      target: { value: "OpenAI Proxy" },
+    });
+    fireEvent.change(screen.getByLabelText("Base URL"), {
+      target: { value: "https://proxy.example.com/v1" },
+    });
+    fireEvent.change(screen.getByLabelText("API key"), {
+      target: { value: "openai-key" },
+    });
+    fireEvent.change(screen.getByLabelText("Models"), {
+      target: { value: "gpt-proxy\nmini-proxy" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+    await waitFor(() => {
+      expect(saveModelProviderSettingsMock).toHaveBeenCalled();
+    });
+    const input = saveModelProviderSettingsMock.mock.calls[0]?.[0];
+    const openai = input?.providers.find((provider) => provider.id === "openai");
+    expect(openai).toMatchObject({
+      id: "openai",
+      name: "OpenAI Proxy",
+      baseUrl: "https://proxy.example.com/v1",
+      apiKey: "openai-key",
+      models: ["gpt-proxy", "mini-proxy"],
+      isBuiltin: true,
+      isReserved: true,
+    });
+  });
+
   it("can restart active sessions when saving provider changes", async () => {
     getModelProviderSettingsMock.mockResolvedValueOnce(settings(1));
     askMock.mockResolvedValueOnce(true);

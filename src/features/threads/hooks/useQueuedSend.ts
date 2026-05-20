@@ -43,6 +43,7 @@ type UseQueuedSendOptions = {
   startApps: (text: string) => Promise<void>;
   startMcp: (text: string) => Promise<void>;
   startFast: (text: string) => Promise<void>;
+  startGoal: (text: string) => Promise<void>;
   startStatus: (text: string) => Promise<void>;
   startPet: (text: string) => Promise<void>;
   clearActiveImages: () => void;
@@ -70,6 +71,7 @@ type SlashCommandKind =
   | "compact"
   | "fast"
   | "fork"
+  | "goal"
   | "mcp"
   | "new"
   | "pet"
@@ -83,6 +85,9 @@ function parseSlashCommand(text: string, appsEnabled: boolean): SlashCommandKind
   }
   if (/^\/fork\b/i.test(text)) {
     return "fork";
+  }
+  if (/^\/goal\b/i.test(text)) {
+    return "goal";
   }
   if (/^\/fast\b/i.test(text)) {
     return "fast";
@@ -114,7 +119,7 @@ function parseSlashCommand(text: string, appsEnabled: boolean): SlashCommandKind
 function isImmediateSlashCommand(
   command: SlashCommandKind | null,
 ): command is SlashCommandKind {
-  return command === "pet";
+  return command === "goal" || command === "pet";
 }
 
 export function useQueuedSend({
@@ -138,6 +143,7 @@ export function useQueuedSend({
   startApps,
   startMcp,
   startFast,
+  startGoal,
   startStatus,
   startPet,
   clearActiveImages,
@@ -224,6 +230,10 @@ export function useQueuedSend({
         await startFast(trimmed);
         return;
       }
+      if (command === "goal") {
+        await startGoal(trimmed);
+        return;
+      }
       if (command === "status") {
         await startStatus(trimmed);
         return;
@@ -250,6 +260,7 @@ export function useQueuedSend({
       startApps,
       startMcp,
       startFast,
+      startGoal,
       startStatus,
       startPet,
       startThreadForWorkspace,

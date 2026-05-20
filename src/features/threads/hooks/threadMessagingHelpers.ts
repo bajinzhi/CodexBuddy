@@ -1,6 +1,7 @@
 import type {
   AccessMode,
   AppMention,
+  CodexFeature,
   ComposerSendIntent,
   RateLimitSnapshot,
   ReviewTarget,
@@ -8,6 +9,7 @@ import type {
 } from "@/types";
 import { translate } from "@/i18n/translate";
 import { clampThreadName } from "@threads/utils/threadNaming";
+import type { ThreadGoal } from "@threads/utils/threadStorage";
 import { formatRelativeTime } from "@utils/time";
 
 export type SendMessageOptions = {
@@ -22,6 +24,15 @@ export type SendMessageOptions = {
 };
 
 type FastCommandAction = "toggle" | "on" | "off" | "status" | "invalid";
+export const MAX_GOAL_OBJECTIVE_LENGTH = 4000;
+
+export type GoalCommand =
+  | { action: "view" }
+  | { action: "pause" }
+  | { action: "resume" }
+  | { action: "clear" }
+  | { action: "set"; objective: string }
+  | { action: "invalid"; message: string };
 
 type ResolveSendMessageOptionsArgs = {
   options?: SendMessageOptions;
@@ -156,6 +167,81 @@ export function parseFastCommand(text: string): FastCommandAction {
     return "status";
   }
   return "invalid";
+}
+
+export function parseGoalCommand(text: string): GoalCommand {
+  const arg = text.replace(/^\/goal\b/i, "").trim();
+  if (!arg) {
+    return { action: "view" };
+  }
+  const normalized = arg.toLowerCase();
+  if (normalized === "view" || normalized === "status") {
+    return { action: "view" };
+  }
+  if (normalized === "pause") {
+    return { action: "pause" };
+  }
+  if (normalized === "resume") {
+    return { action: "resume" };
+  }
+  if (normalized === "clear") {
+    return { action: "clear" };
+  }
+  if (arg.length > MAX_GOAL_OBJECTIVE_LENGTH) {
+    return {
+      action: "invalid",
+      message:
+        "Goal objectives must be non-empty and at most 4,000 characters. Put longer instructions in a file and point the goal at that file.",
+    };
+  }
+  return { action: "set", objective: arg };
+}
+
+export function buildGoalAugmentedPrompt(text: string, goal: ThreadGoal | null): string {
+  const objective = goal?.objective.trim() ?? "";
+  if (!objective || goal?.status !== "active" || goal.backendSynced) {
+    return text;
+  }
+  return [
+    "Current thread goal:",
+    objective,
+    "Keep this goal in mind while answering the user's current request. If the request conflicts with the goal, explain the conflict briefly.",
+    "User request:",
+    text,
+  ].join("\n\n");
+}
+
+export function parseCodexFeatureListPage(response: unknown): {
+  data: Pick<CodexFeature, "name" | "enabled">[];
+  nextCursor: string | null;
+} {
+  if (!response || typeof response !== "object") {
+    return { data: [], nextCursor: null };
+  }
+  const root = response as Record<string, unknown>;
+  const result =
+    root.result && typeof root.result === "object"
+      ? (root.result as Record<string, unknown>)
+      : root;
+  const dataRaw = Array.isArray(result.data) ? result.data : [];
+  const data = dataRaw.flatMap((item) => {
+    if (!item || typeof item !== "object") {
+      return [];
+    }
+    const record = item as Record<string, unknown>;
+    const name = String(record.name ?? "").trim();
+    if (!name) {
+      return [];
+    }
+    return [{ name, enabled: Boolean(record.enabled) }];
+  });
+  const nextCursor =
+    typeof result.nextCursor === "string"
+      ? result.nextCursor
+      : typeof result.next_cursor === "string"
+        ? result.next_cursor
+        : null;
+  return { data, nextCursor };
 }
 
 export function resolveSendMessageOptions({

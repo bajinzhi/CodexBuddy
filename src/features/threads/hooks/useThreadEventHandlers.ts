@@ -14,6 +14,10 @@ import { useThreadHookEvents } from "./useThreadHookEvents";
 import { useThreadItemEvents } from "./useThreadItemEvents";
 import { useThreadTurnEvents } from "./useThreadTurnEvents";
 import { useThreadUserInputEvents } from "./useThreadUserInputEvents";
+import {
+  clearThreadGoal,
+  storeThreadGoalFromRaw,
+} from "../utils/threadStorage";
 import type { ThreadAction } from "./useThreadsReducer";
 
 type ThreadEventHandlersOptions = {
@@ -195,6 +199,17 @@ export function useThreadEventHandlers({
     [dispatch],
   );
 
+  const onThreadGoalUpdated = useCallback(
+    (workspaceId: string, threadId: string, goal: Record<string, unknown>) => {
+      storeThreadGoalFromRaw(workspaceId, threadId, goal, { backendSynced: true });
+    },
+    [],
+  );
+
+  const onThreadGoalCleared = useCallback((workspaceId: string, threadId: string) => {
+    clearThreadGoal(workspaceId, threadId);
+  }, []);
+
   const onAppServerEvent = useCallback(
     (event: AppServerEvent) => {
       const method = getAppServerRawMethod(event) ?? "";
@@ -232,6 +247,8 @@ export function useThreadEventHandlers({
       onFileChangeOutputDelta,
       onThreadStarted,
       onThreadNameUpdated,
+      onThreadGoalUpdated,
+      onThreadGoalCleared,
       onThreadArchived,
       onThreadUnarchived,
       onTurnStarted,
@@ -265,6 +282,8 @@ export function useThreadEventHandlers({
       onFileChangeOutputDelta,
       onThreadStarted,
       onThreadNameUpdated,
+      onThreadGoalUpdated,
+      onThreadGoalCleared,
       onThreadArchived,
       onThreadUnarchived,
       onTurnStarted,

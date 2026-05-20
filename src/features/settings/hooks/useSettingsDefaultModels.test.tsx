@@ -219,6 +219,37 @@ describe("useSettingsDefaultModels", () => {
     });
   });
 
+  it("uses built-in provider catalog models when no workspace is available", async () => {
+    getModelProviderSettingsMock.mockResolvedValueOnce({
+      ...providerSettings(),
+      activeModel: "gpt-local",
+      providers: [
+        {
+          ...providerSettings().providers[0],
+          models: ["gpt-local"],
+        },
+      ],
+    });
+
+    const { result } = renderHook(
+      ({ projects }: { projects: WorkspaceInfo[] }) => useSettingsDefaultModels(projects),
+      {
+        initialProps: {
+          projects: [],
+        },
+      },
+    );
+
+    await waitFor(() => {
+      expect(result.current.models[0]).toMatchObject({
+        model: "gpt-local",
+        source: "providerCatalog",
+        providerId: "openai",
+      });
+      expect(getModelListMock).not.toHaveBeenCalled();
+    });
+  });
+
   it("re-localizes the synthetic config model without refetching", async () => {
     getModelListMock.mockResolvedValueOnce(modelListResponse("gpt-5.1"));
     getConfigModelMock.mockResolvedValueOnce("custom-model");

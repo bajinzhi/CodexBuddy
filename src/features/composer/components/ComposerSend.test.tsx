@@ -12,6 +12,7 @@ import type {
   ComposerSendIntent,
   FollowUpMessageBehavior,
 } from "../../../types";
+import type { ThreadGoal } from "../../threads/utils/threadStorage";
 
 vi.mock("../../../services/dragDrop", () => ({
   subscribeWindowDragDrop: vi.fn(() => () => {}),
@@ -45,6 +46,8 @@ type HarnessProps = {
   selectedServiceTier?: "fast" | "flex" | null;
   quickCommands?: ComposerQuickCommand[];
   onOpenQuickCommandsSettings?: () => void;
+  threadGoal?: ThreadGoal | null;
+  onGoalCommand?: (command: string) => void;
 };
 
 function ComposerHarness({
@@ -56,6 +59,8 @@ function ComposerHarness({
   selectedServiceTier = null,
   quickCommands = [],
   onOpenQuickCommandsSettings,
+  threadGoal = null,
+  onGoalCommand,
 }: HarnessProps) {
   const [draftText, setDraftText] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -93,6 +98,8 @@ function ComposerHarness({
       dictationEnabled={false}
       quickCommands={quickCommands}
       onOpenQuickCommandsSettings={onOpenQuickCommandsSettings}
+      threadGoal={threadGoal}
+      onGoalCommand={onGoalCommand}
     />
   );
 }
@@ -165,6 +172,64 @@ describe("Composer send triggers", () => {
     fireEvent.click(screen.getByRole("button", { name: /Bug triage/i }));
 
     expect(textarea.value).toBe("Start: Summarize the issue, identify root cause, and suggest a fix.");
+  });
+
+  it("shows thread goal status and exposes goal controls", () => {
+    const onSend = vi.fn();
+    const onGoalCommand = vi.fn();
+    render(
+      <ComposerHarness
+        onSend={onSend}
+        onGoalCommand={onGoalCommand}
+        threadGoal={{
+          threadId: "thread-1",
+          objective: "ship the goal UI",
+          status: "active",
+          backendSynced: true,
+          createdAt: 1,
+          updatedAt: 2,
+        }}
+      />,
+    );
+
+    expect(screen.getByText("Goal")).toBeTruthy();
+    expect(screen.getByText("active")).toBeTruthy();
+    expect(screen.getByText("ship the goal UI")).toBeTruthy();
+    expect(screen.getByText("Synced")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "View goal" }).textContent).toContain("View");
+    expect(screen.getByRole("button", { name: "Pause goal" }).textContent).toContain("Pause");
+    expect(screen.getByRole("button", { name: "Clear goal" }).textContent).toContain("Clear");
+
+    fireEvent.click(screen.getByLabelText("Pause goal"));
+    expect(onGoalCommand).toHaveBeenCalledWith("/goal pause");
+
+    fireEvent.click(screen.getByLabelText("Clear goal"));
+    expect(onGoalCommand).toHaveBeenCalledWith("/goal clear");
+  });
+
+  it("does not show pause or resume controls for completed goals", () => {
+    const onSend = vi.fn();
+    const onGoalCommand = vi.fn();
+    render(
+      <ComposerHarness
+        onSend={onSend}
+        onGoalCommand={onGoalCommand}
+        threadGoal={{
+          threadId: "thread-1",
+          objective: "ship the goal UI",
+          status: "complete",
+          backendSynced: true,
+          createdAt: 1,
+          updatedAt: 2,
+        }}
+      />,
+    );
+
+    expect(screen.getByText("complete")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "View goal" }).textContent).toContain("View");
+    expect(screen.getByRole("button", { name: "Clear goal" }).textContent).toContain("Clear");
+    expect(screen.queryByRole("button", { name: "Pause goal" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Resume goal" })).toBeNull();
   });
 
   it("localizes the quick commands popover in Chinese", async () => {

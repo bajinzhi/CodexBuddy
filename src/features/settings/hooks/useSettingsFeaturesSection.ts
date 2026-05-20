@@ -17,6 +17,8 @@ type UseSettingsFeaturesSectionArgs = {
 const HIDDEN_DYNAMIC_FEATURE_KEYS = new Set<string>([
   "personality",
   "collab",
+  "collaboration_modes",
+  "multi_agent",
   "steer",
 ]);
 

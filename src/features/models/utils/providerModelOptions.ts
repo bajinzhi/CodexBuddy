@@ -14,7 +14,7 @@ export function buildProviderCatalogModelOptions(
   settings: ModelProviderSettings | null,
 ): ModelOption[] {
   const provider = getActiveModelProvider(settings);
-  if (!provider || provider.isBuiltin) {
+  if (!provider) {
     return [];
   }
   const seen = new Set<string>();
@@ -51,9 +51,32 @@ export function mergeProviderCatalogModels(
   if (providerModels.length === 0) {
     return appServerModels;
   }
-  const seen = new Set(providerModels.map((model) => model.model.toLowerCase()));
-  return [
-    ...providerModels,
-    ...appServerModels.filter((model) => !seen.has(model.model.toLowerCase())),
-  ];
+  const mergedModels = appServerModels.map((model) => ({ ...model }));
+  const indexBySlug = new Map<string, number>();
+
+  mergedModels.forEach((model, index) => {
+    const key = model.model.toLowerCase();
+    if (!indexBySlug.has(key)) {
+      indexBySlug.set(key, index);
+    }
+  });
+
+  for (const providerModel of providerModels) {
+    const key = providerModel.model.toLowerCase();
+    const existingIndex = indexBySlug.get(key);
+    if (existingIndex === undefined) {
+      indexBySlug.set(key, mergedModels.length);
+      mergedModels.push(providerModel);
+      continue;
+    }
+
+    if (providerModel.isDefault && !mergedModels[existingIndex].isDefault) {
+      mergedModels[existingIndex] = {
+        ...mergedModels[existingIndex],
+        isDefault: true,
+      };
+    }
+  }
+
+  return mergedModels;
 }

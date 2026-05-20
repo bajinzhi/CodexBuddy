@@ -10,8 +10,12 @@ import {
   getAppsList as getAppsListService,
   listMcpServerStatus as listMcpServerStatusService,
   compactThread as compactThreadService,
+  threadGoalClear as threadGoalClearService,
+  threadGoalGet as threadGoalGetService,
+  threadGoalSet as threadGoalSetService,
 } from "@services/tauri";
 import type { WorkspaceInfo } from "@/types";
+import { setThreadGoal, STORAGE_KEY_THREAD_GOALS } from "@threads/utils/threadStorage";
 import { useThreadMessaging } from "./useThreadMessaging";
 
 vi.mock("@sentry/react", () => ({
@@ -28,6 +32,9 @@ vi.mock("@services/tauri", () => ({
   getAppsList: vi.fn(),
   listMcpServerStatus: vi.fn(),
   compactThread: vi.fn(),
+  threadGoalClear: vi.fn(),
+  threadGoalGet: vi.fn(),
+  threadGoalSet: vi.fn(),
 }));
 
 vi.mock("./useReviewPrompt", () => ({
@@ -95,6 +102,62 @@ describe("useThreadMessaging telemetry", () => {
     vi.mocked(compactThreadService).mockResolvedValue(
       {} as Awaited<ReturnType<typeof compactThreadService>>,
     );
+    vi.mocked(threadGoalGetService).mockResolvedValue(
+      {
+        goal: null,
+      } as Awaited<ReturnType<typeof threadGoalGetService>>,
+    );
+    vi.mocked(threadGoalSetService).mockImplementation(async (_workspaceId, threadId, options) => ({
+      goal:
+        options.objective && typeof options.objective === "string"
+          ? {
+            threadId,
+            objective: options.objective,
+            status: options.status ?? "active",
+            createdAt: 1,
+            updatedAt: 2,
+          }
+          : null,
+    }) as Awaited<ReturnType<typeof threadGoalSetService>>);
+    vi.mocked(threadGoalClearService).mockResolvedValue(
+      {
+        cleared: true,
+      } as Awaited<ReturnType<typeof threadGoalClearService>>,
+    );
+    window.localStorage.clear();
+  });
+
+  const makeThreadMessagingOptions = (
+    overrides: Partial<Parameters<typeof useThreadMessaging>[0]> = {},
+  ): Parameters<typeof useThreadMessaging>[0] => ({
+    activeWorkspace: workspace,
+    activeThreadId: "thread-1",
+    accessMode: "current",
+    model: null,
+    effort: null,
+    collaborationMode: null,
+    reviewDeliveryMode: "inline",
+    steerEnabled: false,
+    customPrompts: [],
+    threadStatusById: {},
+    activeTurnIdByThread: {},
+    rateLimitsByWorkspace: {},
+    pendingInterruptsRef: { current: new Set<string>() },
+    dispatch: vi.fn(),
+    getCustomName: vi.fn(() => undefined),
+    markProcessing: vi.fn(),
+    markReviewing: vi.fn(),
+    setActiveTurnId: vi.fn(),
+    recordThreadActivity: vi.fn(),
+    safeMessageActivity: vi.fn(),
+    onDebug: vi.fn(),
+    pushThreadErrorMessage: vi.fn(),
+    ensureThreadForActiveWorkspace: vi.fn(async () => "thread-1"),
+    ensureThreadForWorkspace: vi.fn(async () => "thread-1"),
+    refreshThread: vi.fn(async () => null),
+    forkThreadForWorkspace: vi.fn(async () => null),
+    updateThreadParent: vi.fn(),
+    ...overrides,
   });
 
   it("records prompt_sent once for one message send", async () => {
@@ -157,6 +220,62 @@ describe("useThreadMessaging telemetry", () => {
     );
     expect(ensureWorkspaceRuntimeCodexArgs).toHaveBeenCalledTimes(1);
     expect(ensureWorkspaceRuntimeCodexArgs).toHaveBeenCalledWith("ws-1", "thread-1");
+  });
+
+  it("injects an active local fallback goal into the next turn/start", async () => {
+    setThreadGoal("ws-1", "thread-1", "ship the release", {
+      backendSynced: false,
+    });
+    const { result } = renderHook(() =>
+      useThreadMessaging(makeThreadMessagingOptions()),
+    );
+
+    await act(async () => {
+      await result.current.sendUserMessageToThread(
+        workspace,
+        "thread-1",
+        "write the checklist",
+        [],
+      );
+    });
+
+    expect(sendUserMessageService).toHaveBeenCalledWith(
+      "ws-1",
+      "thread-1",
+      expect.stringContaining("Current thread goal:\n\nship the release"),
+      expect.any(Object),
+    );
+    expect(sendUserMessageService).toHaveBeenCalledWith(
+      "ws-1",
+      "thread-1",
+      expect.stringContaining("User request:\n\nwrite the checklist"),
+      expect.any(Object),
+    );
+  });
+
+  it("does not inject a goal that is already synced to Codex", async () => {
+    setThreadGoal("ws-1", "thread-1", "ship the release", {
+      backendSynced: true,
+    });
+    const { result } = renderHook(() =>
+      useThreadMessaging(makeThreadMessagingOptions()),
+    );
+
+    await act(async () => {
+      await result.current.sendUserMessageToThread(
+        workspace,
+        "thread-1",
+        "write the checklist",
+        [],
+      );
+    });
+
+    expect(sendUserMessageService).toHaveBeenCalledWith(
+      "ws-1",
+      "thread-1",
+      "write the checklist",
+      expect.any(Object),
+    );
   });
 
   it("forwards explicit app mentions to turn/start", async () => {
@@ -396,6 +515,151 @@ describe("useThreadMessaging telemetry", () => {
       type: "addAssistantMessage",
       threadId: "thread-1",
       text: "Fast mode enabled.",
+    });
+  });
+
+  it("sets, pauses, resumes, and clears a thread goal", async () => {
+    const dispatch = vi.fn();
+    let objective = "";
+    vi.mocked(threadGoalSetService).mockImplementation(async (_workspaceId, threadId, options) => {
+      if (typeof options.objective === "string") {
+        objective = options.objective;
+      }
+      return {
+        goal: objective
+          ? {
+            threadId,
+            objective,
+            status: options.status ?? "active",
+            createdAt: 1,
+            updatedAt: 2,
+          }
+          : null,
+      } as Awaited<ReturnType<typeof threadGoalSetService>>;
+    });
+    const { result } = renderHook(() =>
+      useThreadMessaging(makeThreadMessagingOptions({ dispatch })),
+    );
+
+    await act(async () => {
+      await result.current.startGoal("/goal ship the next release");
+    });
+
+    expect(threadGoalSetService).toHaveBeenLastCalledWith("ws-1", "thread-1", {
+      objective: "ship the next release",
+      status: "active",
+    });
+    const persisted = JSON.parse(
+      window.localStorage.getItem(STORAGE_KEY_THREAD_GOALS) ?? "{}",
+    ) as Record<string, { objective?: string; status?: string; backendSynced?: boolean }>;
+    expect(persisted["ws-1:thread-1"]).toEqual(
+      expect.objectContaining({
+        objective: "ship the next release",
+        status: "active",
+        backendSynced: true,
+      }),
+    );
+    expect(dispatch).toHaveBeenLastCalledWith({
+      type: "addAssistantMessage",
+      threadId: "thread-1",
+      text: expect.stringContaining("Goal set for this thread."),
+    });
+
+    await act(async () => {
+      await result.current.startGoal("/goal pause");
+    });
+    expect(threadGoalSetService).toHaveBeenLastCalledWith("ws-1", "thread-1", {
+      status: "paused",
+    });
+    expect(dispatch).toHaveBeenLastCalledWith({
+      type: "addAssistantMessage",
+      threadId: "thread-1",
+      text: expect.stringContaining("- Status: paused"),
+    });
+
+    await act(async () => {
+      await result.current.startGoal("/goal resume");
+    });
+    expect(threadGoalSetService).toHaveBeenLastCalledWith("ws-1", "thread-1", {
+      status: "active",
+    });
+    expect(dispatch).toHaveBeenLastCalledWith({
+      type: "addAssistantMessage",
+      threadId: "thread-1",
+      text: expect.stringContaining("- Status: active"),
+    });
+
+    await act(async () => {
+      await result.current.startGoal("/goal clear");
+    });
+    expect(threadGoalClearService).toHaveBeenLastCalledWith("ws-1", "thread-1");
+    expect(dispatch).toHaveBeenLastCalledWith({
+      type: "addAssistantMessage",
+      threadId: "thread-1",
+      text: "Goal cleared for this thread.",
+    });
+    expect(
+      JSON.parse(window.localStorage.getItem(STORAGE_KEY_THREAD_GOALS) ?? "{}")[
+        "ws-1:thread-1"
+      ],
+    ).toBeUndefined();
+  });
+
+  it("falls back to a local goal when the Codex goal RPC is unavailable", async () => {
+    vi.mocked(threadGoalSetService).mockRejectedValueOnce(new Error("method not found"));
+    const dispatch = vi.fn();
+    const { result } = renderHook(() =>
+      useThreadMessaging(makeThreadMessagingOptions({ dispatch })),
+    );
+
+    await act(async () => {
+      await result.current.startGoal("/goal ship the next release");
+    });
+
+    const persisted = JSON.parse(
+      window.localStorage.getItem(STORAGE_KEY_THREAD_GOALS) ?? "{}",
+    ) as Record<string, { objective?: string; status?: string; backendSynced?: boolean }>;
+    expect(persisted["ws-1:thread-1"]).toEqual(
+      expect.objectContaining({
+        objective: "ship the next release",
+        status: "active",
+        backendSynced: false,
+      }),
+    );
+    expect(dispatch).toHaveBeenLastCalledWith({
+      type: "addAssistantMessage",
+      threadId: "thread-1",
+      text: expect.stringContaining("Future messages will include it automatically."),
+    });
+  });
+
+  it("falls back to a local goal when the goal RPC returns an error payload", async () => {
+    vi.mocked(threadGoalSetService).mockResolvedValueOnce({
+      error: { message: "method not found" },
+    } as unknown as Awaited<ReturnType<typeof threadGoalSetService>>);
+    const dispatch = vi.fn();
+    const { result } = renderHook(() =>
+      useThreadMessaging(makeThreadMessagingOptions({ dispatch })),
+    );
+
+    await act(async () => {
+      await result.current.startGoal("/goal ship the next release");
+    });
+
+    const persisted = JSON.parse(
+      window.localStorage.getItem(STORAGE_KEY_THREAD_GOALS) ?? "{}",
+    ) as Record<string, { objective?: string; status?: string; backendSynced?: boolean }>;
+    expect(persisted["ws-1:thread-1"]).toEqual(
+      expect.objectContaining({
+        objective: "ship the next release",
+        status: "active",
+        backendSynced: false,
+      }),
+    );
+    expect(dispatch).toHaveBeenLastCalledWith({
+      type: "addAssistantMessage",
+      threadId: "thread-1",
+      text: expect.stringContaining("Future messages will include it automatically."),
     });
   });
 

@@ -570,6 +570,7 @@
         "compact": "压缩当前线程上下文",
         "fast": "切换后续轮次的 Fast 模式",
         "fork": "分叉到一个新线程",
+        "goal": "设置或查看线程目标",
         "mcp": "列出已配置的 MCP 工具",
         "new": "开始一个新的聊天",
         "resume": "刷新当前线程",
@@ -585,6 +586,30 @@
     "followUpBehaviorEnterAndShortcutQueue": "Enter 和 {{shortcut}} 都会把这条消息加入队列。",
     "followUpBehaviorDefaultMode": "默认：{{mode}}。",
     "followUpBehaviorPressToAction": "按 {{shortcut}} {{action}} 这条消息。",
+    "goal": {
+      "title": "目标",
+      "actions": "目标操作",
+      "synced": "已同步",
+      "syncedTitle": "已写入 Codex 线程目标状态",
+      "localFallback": "本地兜底",
+      "localFallbackTitle": "当前 Codex 不支持 goal RPC；后续新轮次会本地带上目标",
+      "view": "查看目标",
+      "viewShort": "查看",
+      "pause": "暂停目标",
+      "pauseShort": "暂停",
+      "resume": "恢复目标",
+      "resumeShort": "恢复",
+      "clear": "清除目标",
+      "clearShort": "清除",
+      "status": {
+        "active": "运行中",
+        "paused": "已暂停",
+        "blocked": "已阻塞",
+        "usageLimited": "用量受限",
+        "budgetLimited": "预算受限",
+        "complete": "已完成"
+      }
+    },
     "reviewTools": "审查工具",
     "meta": {
       "planModeAria": "计划模式",

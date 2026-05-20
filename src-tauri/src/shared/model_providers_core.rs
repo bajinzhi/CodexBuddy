@@ -139,7 +139,7 @@ fn resolve_config_root() -> Result<PathBuf, String> {
 fn read_settings_from_document(document: &Document) -> ModelProviderSettings {
     let active_provider_id = config_toml_core::read_top_level_string(document, "model_provider");
     let active_model = config_toml_core::read_top_level_string(document, "model");
-    let mut providers = builtin_provider_configs();
+    let mut providers = builtin_provider_configs(document);
     providers.extend(read_custom_providers(document));
     providers.sort_by(|left, right| {
         left.is_builtin
@@ -156,25 +156,45 @@ fn read_settings_from_document(document: &Document) -> ModelProviderSettings {
     }
 }
 
-fn builtin_provider_configs() -> Vec<ModelProviderConfig> {
+fn builtin_provider_configs(document: &Document) -> Vec<ModelProviderConfig> {
     BUILT_IN_PROVIDERS
         .iter()
-        .map(|(id, name)| ModelProviderConfig {
-            id: (*id).to_string(),
-            name: (*name).to_string(),
-            base_url: None,
-            env_key: None,
-            wire_api: DEFAULT_WIRE_API.to_string(),
-            models: Vec::new(),
-            api_key: None,
-            query_params: Vec::new(),
-            http_headers: Vec::new(),
-            env_http_headers: Vec::new(),
-            request_max_retries: None,
-            stream_max_retries: None,
-            stream_idle_timeout_ms: None,
-            is_builtin: true,
-            is_reserved: true,
+        .map(|(id, default_name)| {
+            let table = document
+                .get(MODEL_PROVIDERS_TABLE)
+                .and_then(Item::as_table_like)
+                .and_then(|providers| providers.get(*id))
+                .and_then(Item::as_table_like);
+            ModelProviderConfig {
+                id: (*id).to_string(),
+                name: table
+                    .and_then(|table| read_string_from_table(table, "name"))
+                    .unwrap_or_else(|| (*default_name).to_string()),
+                base_url: table.and_then(|table| read_string_from_table(table, "base_url")),
+                env_key: table.and_then(|table| read_string_from_table(table, "env_key")),
+                wire_api: table
+                    .and_then(|table| read_string_from_table(table, "wire_api"))
+                    .unwrap_or_else(|| DEFAULT_WIRE_API.to_string()),
+                models: read_provider_models(document, id),
+                api_key: read_provider_secret(document, id),
+                query_params: table
+                    .map(|table| read_key_value_list(table.get("query_params")))
+                    .unwrap_or_default(),
+                http_headers: table
+                    .map(|table| read_key_value_list(table.get("http_headers")))
+                    .unwrap_or_default(),
+                env_http_headers: table
+                    .map(|table| read_key_value_list(table.get("env_http_headers")))
+                    .unwrap_or_default(),
+                request_max_retries: table
+                    .and_then(|table| read_u32_from_table(table, "request_max_retries")),
+                stream_max_retries: table
+                    .and_then(|table| read_u32_from_table(table, "stream_max_retries")),
+                stream_idle_timeout_ms: table
+                    .and_then(|table| read_u64_from_table(table, "stream_idle_timeout_ms")),
+                is_builtin: true,
+                is_reserved: true,
+            }
         })
         .collect()
 }
@@ -328,7 +348,7 @@ fn write_settings_to_document(
     let desired_custom_ids = input
         .providers
         .iter()
-        .filter(|provider| !provider.is_builtin && !is_reserved_provider_id(&provider.id))
+        .filter(|provider| !is_reserved_provider_id(&provider.id))
         .map(|provider| normalize_provider_id(provider).to_string())
         .collect::<HashSet<_>>();
 
@@ -336,7 +356,14 @@ fn write_settings_to_document(
     for provider in input
         .providers
         .iter()
-        .filter(|provider| !provider.is_builtin && !is_reserved_provider_id(&provider.id))
+        .filter(|provider| provider.is_builtin && is_reserved_provider_id(&provider.id))
+    {
+        write_builtin_provider_override(document, provider)?;
+    }
+    for provider in input
+        .providers
+        .iter()
+        .filter(|provider| !is_reserved_provider_id(&provider.id))
     {
         write_custom_provider(document, provider)?;
     }
@@ -437,6 +464,107 @@ fn write_custom_provider(
     Ok(())
 }
 
+fn write_builtin_provider_override(
+    document: &mut Document,
+    provider: &ModelProviderConfig,
+) -> Result<(), String> {
+    let provider_id = normalize_provider_id(provider);
+    if !is_reserved_provider_id(provider_id) {
+        return Ok(());
+    }
+
+    write_builtin_provider_table_override(document, provider)?;
+    if normalize_string_list(&provider.models).is_empty() {
+        remove_provider_from_codex_buddy_child_table(document, MODEL_CATALOG_TABLE, provider_id);
+    } else {
+        write_provider_models(document, provider_id, &provider.models)?;
+    }
+    write_provider_secret(document, provider_id, provider.api_key.as_deref())?;
+    remove_empty_builtin_provider_table(document, provider_id);
+    Ok(())
+}
+
+fn write_builtin_provider_table_override(
+    document: &mut Document,
+    provider: &ModelProviderConfig,
+) -> Result<(), String> {
+    let provider_id = normalize_provider_id(provider);
+    let default_name = builtin_provider_name(provider_id).unwrap_or(provider_id);
+    let name_override = provider
+        .name
+        .trim()
+        .is_empty()
+        .then_some(default_name)
+        .unwrap_or_else(|| provider.name.trim());
+    let has_name_override = name_override != default_name;
+    let builtin_env_key_override = builtin_provider_env_key(provider);
+    let has_table_override = has_name_override
+        || provider
+            .base_url
+            .as_deref()
+            .map(str::trim)
+            .is_some_and(|value| !value.is_empty())
+        || builtin_env_key_override.is_some()
+        || provider.request_max_retries.is_some()
+        || provider.stream_max_retries.is_some()
+        || provider.stream_idle_timeout_ms.is_some()
+        || !normalize_key_values(&provider.query_params)?.is_empty()
+        || !normalize_key_values(&provider.http_headers)?.is_empty()
+        || !normalize_key_values(&provider.env_http_headers)?.is_empty();
+
+    let has_existing_table = document
+        .get(MODEL_PROVIDERS_TABLE)
+        .and_then(Item::as_table_like)
+        .and_then(|providers| providers.get(provider_id))
+        .and_then(Item::as_table_like)
+        .is_some();
+    if !has_table_override && !has_existing_table {
+        return Ok(());
+    }
+
+    let providers = config_toml_core::ensure_table(document, MODEL_PROVIDERS_TABLE)?;
+    let provider_table = ensure_child_table(providers, provider_id)?;
+    set_table_string(
+        provider_table,
+        "name",
+        has_name_override.then_some(name_override),
+    );
+    set_table_string(provider_table, "base_url", provider.base_url.as_deref());
+    set_table_string(
+        provider_table,
+        "wire_api",
+        has_table_override.then_some(DEFAULT_WIRE_API),
+    );
+    set_table_string(
+        provider_table,
+        "env_key",
+        builtin_env_key_override.as_deref(),
+    );
+    set_table_u32(
+        provider_table,
+        "request_max_retries",
+        provider.request_max_retries,
+    );
+    set_table_u32(
+        provider_table,
+        "stream_max_retries",
+        provider.stream_max_retries,
+    );
+    set_table_u64(
+        provider_table,
+        "stream_idle_timeout_ms",
+        provider.stream_idle_timeout_ms,
+    );
+    set_key_value_table(provider_table, "query_params", &provider.query_params)?;
+    set_key_value_table(provider_table, "http_headers", &provider.http_headers)?;
+    set_key_value_table(
+        provider_table,
+        "env_http_headers",
+        &provider.env_http_headers,
+    )?;
+    Ok(())
+}
+
 fn ensure_child_table<'a>(parent: &'a mut Table, key: &str) -> Result<&'a mut Table, String> {
     if parent.get(key).is_none() {
         parent[key] = Item::Table(Table::new());
@@ -529,6 +657,25 @@ fn write_provider_secret(
     Ok(())
 }
 
+fn remove_empty_builtin_provider_table(document: &mut Document, provider_id: &str) {
+    let is_empty = document
+        .get(MODEL_PROVIDERS_TABLE)
+        .and_then(Item::as_table_like)
+        .and_then(|providers| providers.get(provider_id))
+        .and_then(Item::as_table_like)
+        .map(|table| table.is_empty())
+        .unwrap_or(false);
+    if !is_empty {
+        return;
+    }
+    if let Some(providers) = document
+        .get_mut(MODEL_PROVIDERS_TABLE)
+        .and_then(Item::as_table_mut)
+    {
+        let _ = providers.remove(provider_id);
+    }
+}
+
 fn ensure_codex_buddy_child_table<'a>(
     document: &'a mut Document,
     key: &str,
@@ -553,6 +700,33 @@ fn provider_env_key(provider: &ModelProviderConfig) -> Option<String> {
         Some(generated_env_key(normalize_provider_id(provider)))
     } else {
         existing_env_key
+    }
+}
+
+fn builtin_provider_env_key(provider: &ModelProviderConfig) -> Option<String> {
+    let provider_id = normalize_provider_id(provider);
+    let generated = generated_env_key(provider_id);
+    let existing_env_key = provider
+        .env_key
+        .as_deref()
+        .map(str::trim)
+        .filter(|value| !value.is_empty())
+        .map(str::to_string);
+    if let Some(existing_env_key) = existing_env_key {
+        if !existing_env_key.eq_ignore_ascii_case(&generated) {
+            return Some(existing_env_key);
+        }
+    }
+
+    let has_plaintext_key = provider
+        .api_key
+        .as_deref()
+        .map(str::trim)
+        .is_some_and(|value| !value.is_empty());
+    if has_plaintext_key {
+        Some(generated)
+    } else {
+        None
     }
 }
 
@@ -603,29 +777,40 @@ fn validate_settings_input(input: &SaveModelProviderSettingsInput) -> Result<(),
     }
 
     let mut seen_ids = HashSet::new();
-    let mut custom_provider_models = HashMap::new();
-    for provider in input
-        .providers
-        .iter()
-        .filter(|provider| !provider.is_builtin)
-    {
-        validate_provider(provider)?;
+    let mut provider_models = HashMap::new();
+    for provider in &input.providers {
         let provider_id = normalize_provider_id(provider);
+        if provider_id.is_empty() {
+            return Err("Provider ID is required.".to_string());
+        }
         if !seen_ids.insert(provider_id.to_ascii_lowercase()) {
             return Err(format!("Duplicate model provider `{}`.", provider.id));
         }
-        custom_provider_models.insert(
+        if is_reserved_provider_id(provider_id) {
+            if !provider.is_builtin {
+                return Err(format!("`{provider_id}` is a reserved provider ID."));
+            }
+            validate_builtin_provider(provider)?;
+        } else {
+            if provider.is_builtin {
+                return Err(format!(
+                    "Provider `{provider_id}` is not a built-in provider."
+                ));
+            }
+            validate_provider(provider)?;
+        }
+        provider_models.insert(
             provider_id.to_string(),
             normalize_string_list(&provider.models),
         );
     }
-    validate_active_model(input, &custom_provider_models)?;
+    validate_active_model(input, &provider_models)?;
     Ok(())
 }
 
 fn validate_active_model(
     input: &SaveModelProviderSettingsInput,
-    custom_provider_models: &HashMap<String, Vec<String>>,
+    provider_models: &HashMap<String, Vec<String>>,
 ) -> Result<(), String> {
     let Some(active_model) = input
         .active_model
@@ -644,18 +829,21 @@ fn validate_active_model(
         return Ok(());
     };
 
-    if let Some(models) = custom_provider_models.get(active_provider_id) {
-        if models.iter().any(|model| model == active_model) {
-            return Ok(());
+    if let Some(models) = provider_models.get(active_provider_id) {
+        if !models.is_empty() {
+            if models.iter().any(|model| model == active_model) {
+                return Ok(());
+            }
+            return Err(format!(
+                "Active model `{active_model}` is not listed for model provider `{active_provider_id}`."
+            ));
         }
-        return Err(format!(
-            "Active model `{active_model}` is not listed for model provider `{active_provider_id}`."
-        ));
     }
 
     if is_reserved_provider_id(active_provider_id) {
-        if let Some((provider_id, _)) = custom_provider_models
+        if let Some((provider_id, _)) = provider_models
             .iter()
+            .filter(|(provider_id, _)| provider_id.as_str() != active_provider_id)
             .find(|(_, models)| models.iter().any(|model| model == active_model))
         {
             return Err(format!(
@@ -664,6 +852,34 @@ fn validate_active_model(
         }
     }
 
+    Ok(())
+}
+
+fn validate_builtin_provider(provider: &ModelProviderConfig) -> Result<(), String> {
+    let id = provider.id.trim();
+    if id.is_empty() {
+        return Err("Provider ID is required.".to_string());
+    }
+    if !is_reserved_provider_id(id) {
+        return Err(format!("Provider `{id}` is not a built-in provider."));
+    }
+    if provider.name.trim().is_empty() {
+        return Err(format!("Provider `{id}` requires a display name."));
+    }
+    if let Some(base_url) = provider.base_url.as_deref().map(str::trim) {
+        if !base_url.is_empty()
+            && !base_url.starts_with("http://")
+            && !base_url.starts_with("https://")
+        {
+            return Err(format!("Provider `{id}` requires an http(s) base URL."));
+        }
+    }
+    if provider.wire_api.trim() != DEFAULT_WIRE_API {
+        return Err("Only Responses API providers are supported in this version.".to_string());
+    }
+    let _ = normalize_key_values(&provider.query_params)?;
+    let _ = normalize_key_values(&provider.http_headers)?;
+    let _ = normalize_key_values(&provider.env_http_headers)?;
     Ok(())
 }
 
@@ -743,6 +959,13 @@ fn is_reserved_provider_id(provider_id: &str) -> bool {
         .any(|(id, _)| id.eq_ignore_ascii_case(provider_id.trim()))
 }
 
+fn builtin_provider_name(provider_id: &str) -> Option<&'static str> {
+    BUILT_IN_PROVIDERS
+        .iter()
+        .find(|(id, _)| id.eq_ignore_ascii_case(provider_id.trim()))
+        .map(|(_, name)| *name)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -768,6 +991,26 @@ mod tests {
             stream_idle_timeout_ms: Some(300000),
             is_builtin: false,
             is_reserved: false,
+        }
+    }
+
+    fn builtin_provider(id: &str) -> ModelProviderConfig {
+        ModelProviderConfig {
+            id: id.to_string(),
+            name: builtin_provider_name(id).unwrap_or(id).to_string(),
+            base_url: None,
+            env_key: None,
+            wire_api: DEFAULT_WIRE_API.to_string(),
+            models: Vec::new(),
+            api_key: None,
+            query_params: Vec::new(),
+            http_headers: Vec::new(),
+            env_http_headers: Vec::new(),
+            request_max_retries: None,
+            stream_max_retries: None,
+            stream_idle_timeout_ms: None,
+            is_builtin: true,
+            is_reserved: true,
         }
     }
 
@@ -806,6 +1049,48 @@ api_key = "sk-test"
     }
 
     #[test]
+    fn reads_builtin_provider_overrides() {
+        let document = parse(
+            r#"
+model_provider = "lmstudio"
+model = "local-large"
+
+[model_providers.lmstudio]
+name = "Local Studio"
+base_url = "http://localhost:1234/v1"
+env_key = "LMSTUDIO_API_KEY"
+wire_api = "responses"
+request_max_retries = 1
+
+[codex_buddy.model_catalog.lmstudio]
+models = ["local-large", "local-small"]
+
+[codex_buddy.provider_secrets.lmstudio]
+api_key = "local-secret"
+"#,
+        );
+
+        let settings = read_settings_from_document(&document);
+        let lmstudio = settings
+            .providers
+            .iter()
+            .find(|provider| provider.id == "lmstudio")
+            .expect("builtin provider");
+
+        assert!(lmstudio.is_builtin);
+        assert!(lmstudio.is_reserved);
+        assert_eq!(lmstudio.name, "Local Studio");
+        assert_eq!(
+            lmstudio.base_url.as_deref(),
+            Some("http://localhost:1234/v1")
+        );
+        assert_eq!(lmstudio.env_key.as_deref(), Some("LMSTUDIO_API_KEY"));
+        assert_eq!(lmstudio.api_key.as_deref(), Some("local-secret"));
+        assert_eq!(lmstudio.models, vec!["local-large", "local-small"]);
+        assert_eq!(lmstudio.request_max_retries, Some(1));
+    }
+
+    #[test]
     fn writes_provider_without_dropping_unrelated_config() {
         let mut document = parse(
             r#"
@@ -831,6 +1116,140 @@ steer = true
         assert!(rendered.contains("model = \"custom-large\""));
         assert!(rendered.contains("env_key = \"CODEXBUDDY_PROVIDER_ACME_API_KEY\""));
         assert!(rendered.contains("api_key = \"secret-key\""));
+    }
+
+    #[test]
+    fn writes_builtin_provider_overrides() {
+        let mut document = parse(
+            r#"
+personality = "friendly"
+"#,
+        );
+        let mut lmstudio = builtin_provider("lmstudio");
+        lmstudio.name = "Local Studio".to_string();
+        lmstudio.base_url = Some("http://localhost:1234/v1".to_string());
+        lmstudio.models = vec!["local-large".to_string()];
+        lmstudio.api_key = Some("local-secret".to_string());
+        lmstudio.stream_idle_timeout_ms = Some(120000);
+        let input = SaveModelProviderSettingsInput {
+            active_provider_id: Some("lmstudio".to_string()),
+            active_model: Some("local-large".to_string()),
+            providers: vec![lmstudio],
+            restart_active_sessions: false,
+        };
+
+        write_settings_to_document(&mut document, &input).expect("write builtin provider");
+        let rendered = document.to_string();
+
+        assert!(rendered.contains("personality = \"friendly\""));
+        assert!(rendered.contains("model_provider = \"lmstudio\""));
+        assert!(rendered.contains("model = \"local-large\""));
+        assert!(rendered.contains("[model_providers.lmstudio]"));
+        assert!(rendered.contains("name = \"Local Studio\""));
+        assert!(rendered.contains("base_url = \"http://localhost:1234/v1\""));
+        assert!(rendered.contains("env_key = \"CODEXBUDDY_PROVIDER_LMSTUDIO_API_KEY\""));
+        assert!(rendered.contains("stream_idle_timeout_ms = 120000"));
+        assert!(rendered.contains("[codex_buddy.model_catalog.lmstudio]"));
+        assert!(rendered.contains("models = [\"local-large\"]"));
+        assert!(rendered.contains("[codex_buddy.provider_secrets.lmstudio]"));
+        assert!(rendered.contains("api_key = \"local-secret\""));
+    }
+
+    #[test]
+    fn preserves_case_only_builtin_name_overrides() {
+        let mut document = parse("");
+        let mut openai = builtin_provider("openai");
+        openai.name = "openai".to_string();
+        let input = SaveModelProviderSettingsInput {
+            active_provider_id: Some("openai".to_string()),
+            active_model: None,
+            providers: vec![openai],
+            restart_active_sessions: false,
+        };
+
+        write_settings_to_document(&mut document, &input).expect("write builtin provider");
+
+        let settings = read_settings_from_document(&document);
+        let provider = settings
+            .providers
+            .iter()
+            .find(|provider| provider.id == "openai")
+            .expect("builtin provider");
+        assert_eq!(provider.name, "openai");
+    }
+
+    #[test]
+    fn clears_generated_env_key_when_builtin_secret_is_removed() {
+        let mut document = parse(
+            r#"
+model_provider = "lmstudio"
+model = "local-large"
+
+[model_providers.lmstudio]
+name = "Local Studio"
+base_url = "http://localhost:1234/v1"
+env_key = "CODEXBUDDY_PROVIDER_LMSTUDIO_API_KEY"
+wire_api = "responses"
+
+[codex_buddy.model_catalog.lmstudio]
+models = ["local-large"]
+
+[codex_buddy.provider_secrets.lmstudio]
+api_key = "local-secret"
+"#,
+        );
+        let mut settings = read_settings_from_document(&document);
+        let provider = settings
+            .providers
+            .iter_mut()
+            .find(|provider| provider.id == "lmstudio")
+            .expect("builtin provider");
+        provider.api_key = None;
+        let input = SaveModelProviderSettingsInput {
+            active_provider_id: settings.active_provider_id,
+            active_model: settings.active_model,
+            providers: settings.providers,
+            restart_active_sessions: false,
+        };
+
+        write_settings_to_document(&mut document, &input).expect("write builtin provider");
+
+        assert!(read_provider_env_key(&document, "lmstudio").is_none());
+        assert!(read_provider_secret(&document, "lmstudio").is_none());
+    }
+
+    #[test]
+    fn preserves_external_env_key_for_builtin_provider_without_plaintext_secret() {
+        let mut document = parse(
+            r#"
+model_provider = "openai"
+model = "gpt-5"
+
+[model_providers.openai]
+name = "OpenAI Proxy"
+base_url = "https://proxy.example.com/v1"
+env_key = "OPENAI_API_KEY"
+wire_api = "responses"
+
+[codex_buddy.model_catalog.openai]
+models = ["gpt-5"]
+"#,
+        );
+        let settings = read_settings_from_document(&document);
+        let input = SaveModelProviderSettingsInput {
+            active_provider_id: settings.active_provider_id,
+            active_model: settings.active_model,
+            providers: settings.providers,
+            restart_active_sessions: false,
+        };
+
+        write_settings_to_document(&mut document, &input).expect("write builtin provider");
+
+        assert_eq!(
+            read_provider_env_key(&document, "openai").as_deref(),
+            Some("OPENAI_API_KEY")
+        );
+        assert!(read_provider_secret(&document, "openai").is_none());
     }
 
     #[test]
@@ -987,6 +1406,21 @@ api_key = "keep-me"
 
         let error = validate_settings_input(&input).expect_err("stale custom model");
         assert!(error.contains("belongs to custom model provider"));
+    }
+
+    #[test]
+    fn rejects_active_builtin_provider_model_outside_configured_catalog() {
+        let mut openai = builtin_provider("openai");
+        openai.models = vec!["gpt-local".to_string()];
+        let input = SaveModelProviderSettingsInput {
+            active_provider_id: Some("openai".to_string()),
+            active_model: Some("other-model".to_string()),
+            providers: vec![openai],
+            restart_active_sessions: false,
+        };
+
+        let error = validate_settings_input(&input).expect_err("model mismatch");
+        assert!(error.contains("not listed"));
     }
 
     #[test]

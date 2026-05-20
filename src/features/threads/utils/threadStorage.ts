@@ -4,6 +4,8 @@ const STORAGE_KEY_THREAD_ACTIVITY = "codexbuddy.threadLastUserActivity";
 export const STORAGE_KEY_PINNED_THREADS = "codexbuddy.pinnedThreads";
 export const STORAGE_KEY_CUSTOM_NAMES = "codexbuddy.threadCustomNames";
 export const STORAGE_KEY_THREAD_CODEX_PARAMS = "codexbuddy.threadCodexParams";
+export const STORAGE_KEY_THREAD_GOALS = "codexbuddy.threadGoals";
+export const THREAD_GOALS_CHANGED_EVENT = "codexbuddy:threadGoalsChanged";
 export const STORAGE_KEY_DETACHED_REVIEW_LINKS = "codexbuddy.detachedReviewLinks";
 export const MAX_PINS_SOFT_LIMIT = 5;
 
@@ -31,6 +33,28 @@ export type ThreadCodexParams = {
 };
 
 export type ThreadCodexParamsMap = Record<string, ThreadCodexParams>;
+
+export type ThreadGoalStatus =
+  | "active"
+  | "paused"
+  | "blocked"
+  | "usageLimited"
+  | "budgetLimited"
+  | "complete";
+
+export type ThreadGoal = {
+  threadId?: string;
+  objective: string;
+  status: ThreadGoalStatus;
+  tokenBudget?: number | null;
+  tokensUsed?: number;
+  timeUsedSeconds?: number;
+  backendSynced?: boolean;
+  createdAt: number;
+  updatedAt: number;
+};
+
+export type ThreadGoalsMap = Record<string, ThreadGoal>;
 
 export function makeThreadCodexParamsKey(workspaceId: string, threadId: string): string {
   return `${workspaceId}:${threadId}`;
@@ -67,6 +91,228 @@ export function saveThreadCodexParams(next: ThreadCodexParamsMap): void {
   } catch {
     // Best-effort persistence.
   }
+}
+
+const THREAD_GOAL_STATUSES = new Set<ThreadGoalStatus>([
+  "active",
+  "paused",
+  "blocked",
+  "usageLimited",
+  "budgetLimited",
+  "complete",
+]);
+
+function isThreadGoalStatus(value: unknown): value is ThreadGoalStatus {
+  return typeof value === "string" && THREAD_GOAL_STATUSES.has(value as ThreadGoalStatus);
+}
+
+function normalizeThreadGoalStatus(value: unknown): ThreadGoalStatus {
+  if (isThreadGoalStatus(value)) {
+    return value;
+  }
+  if (value === "usage_limited") {
+    return "usageLimited";
+  }
+  if (value === "budget_limited") {
+    return "budgetLimited";
+  }
+  return "active";
+}
+
+function timestampFromUnknown(value: unknown, fallback: number): number {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === "string") {
+    const parsed = Date.parse(value);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+  return fallback;
+}
+
+function optionalFiniteNumber(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+}
+
+export function normalizeThreadGoal(
+  value: unknown,
+  options: {
+    threadId?: string;
+    backendSynced?: boolean;
+  } = {},
+): ThreadGoal | null {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+  const entry = value as Record<string, unknown>;
+  const objective = typeof entry.objective === "string" ? entry.objective.trim() : "";
+  if (!objective) {
+    return null;
+  }
+  const now = Date.now();
+  const status = normalizeThreadGoalStatus(entry.status);
+  const tokenBudget =
+    (entry.tokenBudget ?? entry.token_budget) === null
+      ? null
+      : optionalFiniteNumber(entry.tokenBudget ?? entry.token_budget);
+  return {
+    threadId:
+      typeof entry.threadId === "string"
+        ? entry.threadId
+        : typeof entry.thread_id === "string"
+          ? entry.thread_id
+          : options.threadId,
+    objective,
+    status,
+    tokenBudget,
+    tokensUsed: optionalFiniteNumber(entry.tokensUsed ?? entry.tokens_used),
+    timeUsedSeconds: optionalFiniteNumber(entry.timeUsedSeconds ?? entry.time_used_seconds),
+    backendSynced: options.backendSynced ?? Boolean(entry.backendSynced),
+    createdAt: timestampFromUnknown(entry.createdAt ?? entry.created_at, now),
+    updatedAt: timestampFromUnknown(entry.updatedAt ?? entry.updated_at, now),
+  };
+}
+
+function emitThreadGoalsChanged(): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+  try {
+    window.dispatchEvent(new CustomEvent(THREAD_GOALS_CHANGED_EVENT));
+  } catch {
+    // Best-effort same-window notification.
+  }
+}
+
+export function loadThreadGoals(): ThreadGoalsMap {
+  if (typeof window === "undefined") {
+    return {};
+  }
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY_THREAD_GOALS);
+    if (!raw) {
+      return {};
+    }
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    if (!parsed || typeof parsed !== "object") {
+      return {};
+    }
+    return Object.fromEntries(
+      Object.entries(parsed).flatMap(([key, value]) => {
+        const goal = normalizeThreadGoal(value);
+        return goal ? [[key, goal]] : [];
+      }),
+    );
+  } catch {
+    return {};
+  }
+}
+
+export function saveThreadGoals(next: ThreadGoalsMap): void {
+  if (typeof window === "undefined") {
+    return;
+  }
+  try {
+    window.localStorage.setItem(STORAGE_KEY_THREAD_GOALS, JSON.stringify(next));
+  } catch {
+    // Best-effort persistence.
+  }
+  emitThreadGoalsChanged();
+}
+
+export function getThreadGoal(
+  workspaceId: string,
+  threadId: string,
+): ThreadGoal | null {
+  const key = makeThreadCodexParamsKey(workspaceId, threadId);
+  return loadThreadGoals()[key] ?? null;
+}
+
+export function setThreadGoal(
+  workspaceId: string,
+  threadId: string,
+  objective: string,
+  options: Partial<Omit<ThreadGoal, "objective">> = {},
+): ThreadGoal {
+  const goals = loadThreadGoals();
+  const key = makeThreadCodexParamsKey(workspaceId, threadId);
+  const now = Date.now();
+  const current = goals[key] ?? null;
+  const goal: ThreadGoal = {
+    threadId: options.threadId ?? current?.threadId,
+    objective: objective.trim(),
+    status: options.status ?? "active",
+    tokenBudget: options.tokenBudget,
+    tokensUsed: options.tokensUsed,
+    timeUsedSeconds: options.timeUsedSeconds,
+    backendSynced: options.backendSynced ?? false,
+    createdAt: options.createdAt ?? current?.createdAt ?? now,
+    updatedAt: options.updatedAt ?? now,
+  };
+  saveThreadGoals({ ...goals, [key]: goal });
+  return goal;
+}
+
+export function storeThreadGoal(
+  workspaceId: string,
+  threadId: string,
+  goal: ThreadGoal,
+): ThreadGoal {
+  const goals = loadThreadGoals();
+  const key = makeThreadCodexParamsKey(workspaceId, threadId);
+  saveThreadGoals({ ...goals, [key]: goal });
+  return goal;
+}
+
+export function storeThreadGoalFromRaw(
+  workspaceId: string,
+  threadId: string,
+  value: unknown,
+  options: { backendSynced?: boolean } = {},
+): ThreadGoal | null {
+  const goal = normalizeThreadGoal(value, {
+    threadId,
+    backendSynced: options.backendSynced,
+  });
+  if (!goal) {
+    return null;
+  }
+  return storeThreadGoal(workspaceId, threadId, goal);
+}
+
+export function updateThreadGoalStatus(
+  workspaceId: string,
+  threadId: string,
+  status: ThreadGoalStatus,
+  options: Pick<Partial<ThreadGoal>, "backendSynced" | "updatedAt"> = {},
+): ThreadGoal | null {
+  const goals = loadThreadGoals();
+  const key = makeThreadCodexParamsKey(workspaceId, threadId);
+  const current = goals[key] ?? null;
+  if (!current) {
+    return null;
+  }
+  const goal: ThreadGoal = {
+    ...current,
+    status,
+    backendSynced: options.backendSynced ?? current.backendSynced,
+    updatedAt: options.updatedAt ?? Date.now(),
+  };
+  saveThreadGoals({ ...goals, [key]: goal });
+  return goal;
+}
+
+export function clearThreadGoal(workspaceId: string, threadId: string): boolean {
+  const goals = loadThreadGoals();
+  const key = makeThreadCodexParamsKey(workspaceId, threadId);
+  if (!(key in goals)) {
+    return false;
+  }
+  const { [key]: _removed, ...rest } = goals;
+  saveThreadGoals(rest);
+  return true;
 }
 
 export function loadThreadActivity(): ThreadActivityMap {

@@ -570,6 +570,7 @@
         "compact": "compact the active thread context",
         "fast": "toggle Fast mode for upcoming turns",
         "fork": "branch into a new thread",
+        "goal": "set or view the thread goal",
         "mcp": "list configured MCP tools",
         "new": "start a new chat",
         "resume": "refresh the active thread",
@@ -585,6 +586,30 @@
     "followUpBehaviorEnterAndShortcutQueue": "Both Enter and {{shortcut}} will queue this message.",
     "followUpBehaviorDefaultMode": "Default: {{mode}}.",
     "followUpBehaviorPressToAction": "Press {{shortcut}} to {{action}} this message.",
+    "goal": {
+      "title": "Goal",
+      "actions": "Goal actions",
+      "synced": "Synced",
+      "syncedTitle": "Stored in Codex thread goal state",
+      "localFallback": "Local fallback",
+      "localFallbackTitle": "Codex goal RPC is unavailable; future turns include this goal locally",
+      "view": "View goal",
+      "viewShort": "View",
+      "pause": "Pause goal",
+      "pauseShort": "Pause",
+      "resume": "Resume goal",
+      "resumeShort": "Resume",
+      "clear": "Clear goal",
+      "clearShort": "Clear",
+      "status": {
+        "active": "active",
+        "paused": "paused",
+        "blocked": "blocked",
+        "usageLimited": "usage limited",
+        "budgetLimited": "budget limited",
+        "complete": "complete"
+      }
+    },
     "reviewTools": "Review tools",
     "meta": {
       "planModeAria": "Plan mode",

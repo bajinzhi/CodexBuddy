@@ -1,4 +1,4 @@
-# App-Server Events Reference (Codex `19702e190ebf16f789617ca5f16bfc373c238fe7`)
+# App-Server Events Reference (Codex `59507b849126f598ed7c624bbaf75d7ebc5588c2`)
 
 This document helps agents quickly answer:
 - Which app-server events CodexBuddy supports right now.
@@ -76,6 +76,8 @@ subscriptions.
 - `item/started`
 - `thread/archived`
 - `thread/closed`
+- `thread/goal/cleared`
+- `thread/goal/updated`
 - `thread/name/updated`
 - `thread/started`
 - `thread/status/changed`
@@ -154,6 +156,9 @@ These are v2 request methods CodexBuddy currently sends to Codex app-server:
 - `thread/list`
 - `thread/archive`
 - `thread/compact/start`
+- `thread/goal/clear`
+- `thread/goal/get`
+- `thread/goal/set`
 - `thread/name/set`
 - `turn/start`
 - `turn/steer` (used for explicit steer follow-ups while a turn is active)
@@ -172,6 +177,7 @@ These are v2 request methods CodexBuddy currently sends to Codex app-server:
 
 Notes:
 - `turn/start` now forwards the optional `serviceTier` override (`"fast"` for `/fast`, `null` for default/off) alongside `model`, `effort`, and `collaborationMode`.
+- `/goal` uses `thread/goal/get`, `thread/goal/set`, and `thread/goal/clear` when Codex supports them. Older Codex versions fall back to a local active-goal prefix on future `turn/start` messages.
 
 ## Missing Client Requests (Codex v2 ClientRequest Methods)
 

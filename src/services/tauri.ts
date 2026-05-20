@@ -844,6 +844,65 @@ export async function getExperimentalFeatureList(
   return invoke<any>("experimental_feature_list", { workspaceId, cursor, limit });
 }
 
+export type ThreadGoalStatus =
+  | "active"
+  | "paused"
+  | "blocked"
+  | "usageLimited"
+  | "budgetLimited"
+  | "complete";
+
+export type ThreadGoalDto = {
+  threadId?: string;
+  objective: string;
+  status: ThreadGoalStatus;
+  tokenBudget?: number | null;
+  tokensUsed?: number;
+  timeUsedSeconds?: number;
+  createdAt?: string | number;
+  updatedAt?: string | number;
+};
+
+export type ThreadGoalResponse = {
+  goal: ThreadGoalDto | null;
+};
+
+export async function threadGoalGet(
+  workspaceId: string,
+  threadId: string,
+): Promise<ThreadGoalResponse> {
+  return invoke("thread_goal_get", { workspaceId, threadId });
+}
+
+export async function threadGoalSet(
+  workspaceId: string,
+  threadId: string,
+  options: {
+    objective?: string | null;
+    status?: ThreadGoalStatus | null;
+    tokenBudget?: number | null;
+  },
+): Promise<ThreadGoalResponse> {
+  const payload: Record<string, unknown> = { workspaceId, threadId };
+  if ("objective" in options) {
+    payload.objective = options.objective;
+  }
+  if ("status" in options) {
+    payload.status = options.status;
+  }
+  if ("tokenBudget" in options) {
+    payload.tokenBudget = options.tokenBudget;
+  }
+  return invoke("thread_goal_set", payload);
+}
+
+export async function threadGoalClear(
+  workspaceId: string,
+  threadId: string,
+): Promise<{ cleared?: boolean; goal?: null }> {
+  return invoke("thread_goal_clear", { workspaceId, threadId });
+}
+
 export async function setCodexFeatureFlag(
   featureKey: string,
   enabled: boolean,

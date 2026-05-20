@@ -51,6 +51,8 @@ describe("useAppServerEvents", () => {
       onHookCompleted: vi.fn(),
       onThreadStarted: vi.fn(),
       onThreadNameUpdated: vi.fn(),
+      onThreadGoalUpdated: vi.fn(),
+      onThreadGoalCleared: vi.fn(),
       onThreadStatusChanged: vi.fn(),
       onThreadClosed: vi.fn(),
       onThreadArchived: vi.fn(),
@@ -189,6 +191,41 @@ describe("useAppServerEvents", () => {
       threadId: "thread-2",
       threadName: "Renamed from server",
     });
+
+    act(() => {
+      listener?.({
+        workspace_id: "ws-1",
+        message: {
+          method: "thread/goal/updated",
+          params: {
+            threadId: "thread-2",
+            goal: {
+              objective: "ship the goal UI",
+              status: "active",
+            },
+          },
+        },
+      });
+    });
+    expect(handlers.onThreadGoalUpdated).toHaveBeenCalledWith(
+      "ws-1",
+      "thread-2",
+      {
+        objective: "ship the goal UI",
+        status: "active",
+      },
+    );
+
+    act(() => {
+      listener?.({
+        workspace_id: "ws-1",
+        message: {
+          method: "thread/goal/cleared",
+          params: { thread_id: "thread-2" },
+        },
+      });
+    });
+    expect(handlers.onThreadGoalCleared).toHaveBeenCalledWith("ws-1", "thread-2");
 
     act(() => {
       listener?.({

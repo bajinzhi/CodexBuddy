@@ -34,6 +34,7 @@ const makeOptions = (
   startApps: vi.fn().mockResolvedValue(undefined),
   startMcp: vi.fn().mockResolvedValue(undefined),
   startFast: vi.fn().mockResolvedValue(undefined),
+  startGoal: vi.fn().mockResolvedValue(undefined),
   startStatus: vi.fn().mockResolvedValue(undefined),
   startPet: vi.fn().mockResolvedValue(undefined),
   clearActiveImages: vi.fn(),
@@ -413,6 +414,56 @@ describe("useQueuedSend", () => {
     expect(startFast).toHaveBeenCalledWith("/fast on");
     expect(options.sendUserMessage).not.toHaveBeenCalled();
     expect(options.startReview).not.toHaveBeenCalled();
+  });
+
+  it("routes /goal to the goal handler", async () => {
+    const startGoal = vi.fn().mockResolvedValue(undefined);
+    const options = makeOptions({ startGoal });
+    const { result } = renderHook((props) => useQueuedSend(props), {
+      initialProps: options,
+    });
+
+    await act(async () => {
+      await result.current.handleSend("/goal ship the release", ["img-1"]);
+    });
+
+    expect(startGoal).toHaveBeenCalledWith("/goal ship the release");
+    expect(options.sendUserMessage).not.toHaveBeenCalled();
+    expect(options.startReview).not.toHaveBeenCalled();
+  });
+
+  it("runs /goal immediately while processing instead of queueing it", async () => {
+    const startGoal = vi.fn().mockResolvedValue(undefined);
+    const options = makeOptions({ startGoal, isProcessing: true });
+    const { result } = renderHook((props) => useQueuedSend(props), {
+      initialProps: options,
+    });
+
+    await act(async () => {
+      await result.current.handleSend("/goal ship the release", ["img-1"]);
+    });
+
+    expect(startGoal).toHaveBeenCalledWith("/goal ship the release");
+    expect(result.current.activeQueue).toHaveLength(0);
+    expect(options.sendUserMessage).not.toHaveBeenCalled();
+    expect(options.clearActiveImages).toHaveBeenCalled();
+  });
+
+  it("runs queued /goal immediately instead of adding an in-flight queue item", async () => {
+    const startGoal = vi.fn().mockResolvedValue(undefined);
+    const options = makeOptions({ startGoal, isProcessing: true });
+    const { result } = renderHook((props) => useQueuedSend(props), {
+      initialProps: options,
+    });
+
+    await act(async () => {
+      await result.current.queueMessage("/goal ship the release", ["img-1"]);
+    });
+
+    expect(startGoal).toHaveBeenCalledWith("/goal ship the release");
+    expect(result.current.activeQueue).toHaveLength(0);
+    expect(options.sendUserMessage).not.toHaveBeenCalled();
+    expect(options.clearActiveImages).toHaveBeenCalled();
   });
 
   it("routes /pet to the pet handler and strips attachments", async () => {

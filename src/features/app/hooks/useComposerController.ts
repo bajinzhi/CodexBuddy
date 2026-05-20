@@ -32,6 +32,7 @@ export function useComposerController({
   startApps,
   startMcp,
   startFast,
+  startGoal,
   startStatus,
   startPet,
 }: {
@@ -69,6 +70,7 @@ export function useComposerController({
   startApps: (text: string) => Promise<void>;
   startMcp: (text: string) => Promise<void>;
   startFast: (text: string) => Promise<void>;
+  startGoal: (text: string) => Promise<void>;
   startStatus: (text: string) => Promise<void>;
   startPet: (text: string) => Promise<void>;
 }) {
@@ -116,6 +118,7 @@ export function useComposerController({
     startApps,
     startMcp,
     startFast,
+    startGoal,
     startStatus,
     startPet,
     clearActiveImages,
@@ -148,6 +151,13 @@ export function useComposerController({
       void handleSend(text, [], appMentions);
     },
     [handleSend],
+  );
+
+  const handleGoalCommand = useCallback(
+    (command: string) => {
+      void startGoal(command);
+    },
+    [startGoal],
   );
 
   const handleEditQueued = useCallback(
@@ -201,6 +211,7 @@ export function useComposerController({
     activeDraft,
     handleDraftChange,
     handleSendPrompt,
+    handleGoalCommand,
     handleEditQueued,
     handleDeleteQueued,
     clearDraftForThread,

@@ -8,6 +8,7 @@ import {
   type CSSProperties,
   type ClipboardEvent,
 } from "react";
+import { Eye, Pause, Play, Target, X } from "lucide-react";
 import type {
   AppMention,
   AppOption,
@@ -49,6 +50,7 @@ import { ComposerMetaBar } from "./ComposerMetaBar";
 import { ComposerQueue } from "./ComposerQueue";
 import { isMacPlatform, isMobilePlatform } from "../../../utils/platformPaths";
 import type { CodexArgsOption } from "../../threads/utils/codexArgsProfiles";
+import type { ThreadGoal } from "../../threads/utils/threadStorage";
 
 type ComposerProps = {
   onSend: (
@@ -153,6 +155,8 @@ type ComposerProps = {
     disabled?: boolean;
     onSelect: () => void | Promise<void>;
   }[];
+  threadGoal?: ThreadGoal | null;
+  onGoalCommand?: (command: string) => void | Promise<void>;
 };
 
 const DEFAULT_EDITOR_SETTINGS: ComposerEditorSettings = {
@@ -166,6 +170,14 @@ const DEFAULT_EDITOR_SETTINGS: ComposerEditorSettings = {
   continueListOnShiftEnter: false,
 };
 const CARET_ANCHOR_GAP = 8;
+
+function goalStatusKey(status: ThreadGoal["status"]) {
+  return `composer.goal.status.${status}`;
+}
+
+function goalStatusClass(status: ThreadGoal["status"]) {
+  return status === "active" ? " is-active" : status === "paused" ? " is-paused" : "";
+}
 
 export const Composer = memo(function Composer({
   onSend,
@@ -253,6 +265,8 @@ export const Composer = memo(function Composer({
   onReviewPromptConfirmCustom,
   onFileAutocompleteActiveChange,
   contextActions = [],
+  threadGoal = null,
+  onGoalCommand,
 }: ComposerProps) {
   const { t } = useTranslation("app");
   const [text, setText] = useState(draftText);
@@ -280,6 +294,21 @@ export const Composer = memo(function Composer({
   const oppositeSubmitIntent: ComposerSendIntent = isProcessing
     ? oppositeFollowUpIntent
     : "default";
+  const goalSyncLabel = threadGoal?.backendSynced
+    ? t("composer.goal.synced")
+    : t("composer.goal.localFallback");
+  const goalSyncTitle = threadGoal?.backendSynced
+    ? t("composer.goal.syncedTitle")
+    : t("composer.goal.localFallbackTitle");
+  const canPauseGoal = threadGoal?.status === "active";
+  const canToggleGoal = threadGoal?.status === "active" || threadGoal?.status === "paused";
+  const goalToggleCommand = canPauseGoal ? "/goal pause" : "/goal resume";
+  const goalToggleLabel = canPauseGoal
+    ? t("composer.goal.pause")
+    : t("composer.goal.resume");
+  const goalToggleShortLabel = canPauseGoal
+    ? t("composer.goal.pauseShort")
+    : t("composer.goal.resumeShort");
   const effectiveSendLabel = isProcessing
     ? effectiveFollowUpBehavior === "steer"
       ? t("composer.followUpBehaviorSteer")
@@ -734,6 +763,84 @@ export const Composer = memo(function Composer({
               {action.label}
             </button>
           ))}
+        </div>
+      ) : null}
+      {threadGoal ? (
+        <div
+          className={`composer-goal-status${goalStatusClass(threadGoal.status)}`}
+          role="status"
+          aria-live="polite"
+        >
+          <div className="composer-goal-main" title={threadGoal.objective}>
+            <span className="composer-goal-icon" aria-hidden>
+              <Target size={14} strokeWidth={2.2} />
+            </span>
+            <span className="composer-goal-label">{t("composer.goal.title")}</span>
+            <span className="composer-goal-state">
+              {t(goalStatusKey(threadGoal.status))}
+            </span>
+            <span className="composer-goal-objective">{threadGoal.objective}</span>
+          </div>
+          <div className="composer-goal-actions" role="toolbar" aria-label={t("composer.goal.actions")}>
+            <span className="composer-goal-sync" title={goalSyncTitle}>
+              {goalSyncLabel}
+            </span>
+            {onGoalCommand ? (
+              <>
+                <button
+                  type="button"
+                  className="composer-goal-action"
+                  aria-label={t("composer.goal.view")}
+                  title={t("composer.goal.view")}
+                  disabled={disabled}
+                  onClick={() => {
+                    void onGoalCommand("/goal");
+                  }}
+                >
+                  <Eye size={13} aria-hidden />
+                  <span className="composer-goal-action-label">
+                    {t("composer.goal.viewShort")}
+                  </span>
+                </button>
+                {canToggleGoal ? (
+                  <button
+                    type="button"
+                    className="composer-goal-action"
+                    aria-label={goalToggleLabel}
+                    title={goalToggleLabel}
+                    disabled={disabled}
+                    onClick={() => {
+                      void onGoalCommand(goalToggleCommand);
+                    }}
+                  >
+                    {canPauseGoal ? (
+                      <Pause size={13} aria-hidden />
+                    ) : (
+                      <Play size={13} aria-hidden />
+                    )}
+                    <span className="composer-goal-action-label">
+                      {goalToggleShortLabel}
+                    </span>
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  className="composer-goal-action"
+                  aria-label={t("composer.goal.clear")}
+                  title={t("composer.goal.clear")}
+                  disabled={disabled}
+                  onClick={() => {
+                    void onGoalCommand("/goal clear");
+                  }}
+                >
+                  <X size={13} aria-hidden />
+                  <span className="composer-goal-action-label">
+                    {t("composer.goal.clearShort")}
+                  </span>
+                </button>
+              </>
+            ) : null}
+          </div>
         </div>
       ) : null}
       <ComposerInput

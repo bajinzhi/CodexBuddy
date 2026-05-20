@@ -112,6 +112,18 @@ pub(super) fn parse_optional_u32(value: &Value, key: &str) -> Option<u32> {
     }
 }
 
+pub(super) fn parse_optional_nullable_i64(value: &Value, key: &str) -> Option<Option<i64>> {
+    match value {
+        Value::Object(map) => match map.get(key) {
+            Some(Value::Null) => Some(None),
+            Some(Value::Number(value)) => value.as_i64().map(Some),
+            Some(_) => None,
+            None => None,
+        },
+        _ => None,
+    }
+}
+
 pub(super) fn parse_optional_bool(value: &Value, key: &str) -> Option<bool> {
     match value {
         Value::Object(map) => map.get(key).and_then(|value| value.as_bool()),

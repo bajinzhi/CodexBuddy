@@ -36,6 +36,9 @@ import {
   setTraySessionUsage,
   startReview,
   setThreadName,
+  threadGoalClear,
+  threadGoalGet,
+  threadGoalSet,
   tailscaleDaemonStart,
   tailscaleDaemonCommandPreview,
   tailscaleDaemonStatus,
@@ -413,6 +416,49 @@ describe("tauri invoke wrappers", () => {
       workspaceId: "ws-11",
       cursor: "cursor-2",
       limit: 50,
+    });
+  });
+
+  it("maps workspaceId/threadId for thread_goal_get", async () => {
+    const invokeMock = vi.mocked(invoke);
+    invokeMock.mockResolvedValueOnce({ goal: null });
+
+    await threadGoalGet("ws-11", "thread-11");
+
+    expect(invokeMock).toHaveBeenCalledWith("thread_goal_get", {
+      workspaceId: "ws-11",
+      threadId: "thread-11",
+    });
+  });
+
+  it("maps goal fields for thread_goal_set", async () => {
+    const invokeMock = vi.mocked(invoke);
+    invokeMock.mockResolvedValueOnce({ goal: null });
+
+    await threadGoalSet("ws-11", "thread-11", {
+      objective: "ship it",
+      status: "active",
+      tokenBudget: null,
+    });
+
+    expect(invokeMock).toHaveBeenCalledWith("thread_goal_set", {
+      workspaceId: "ws-11",
+      threadId: "thread-11",
+      objective: "ship it",
+      status: "active",
+      tokenBudget: null,
+    });
+  });
+
+  it("maps workspaceId/threadId for thread_goal_clear", async () => {
+    const invokeMock = vi.mocked(invoke);
+    invokeMock.mockResolvedValueOnce({ cleared: true });
+
+    await threadGoalClear("ws-11", "thread-11");
+
+    expect(invokeMock).toHaveBeenCalledWith("thread_goal_clear", {
+      workspaceId: "ws-11",
+      threadId: "thread-11",
     });
   });
 

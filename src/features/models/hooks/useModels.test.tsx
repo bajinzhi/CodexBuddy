@@ -123,6 +123,83 @@ describe("useModels", () => {
     expect(result.current.reasoningSupported).toBe(true);
   });
 
+  it("adds configured models for the active built-in provider", async () => {
+    vi.mocked(getModelProviderSettings).mockResolvedValueOnce({
+      ...providerSettings(),
+      activeModel: "gpt-local",
+      providers: [
+        {
+          ...providerSettings().providers[0],
+          models: ["gpt-local"],
+        },
+      ],
+    });
+    vi.mocked(getModelList).mockResolvedValueOnce({
+      result: { data: [] },
+    });
+    vi.mocked(getConfigModel).mockResolvedValueOnce(null);
+
+    const { result } = renderHook(() =>
+      useModels({ activeWorkspace: workspace }),
+    );
+
+    await waitFor(() => expect(result.current.models[0]?.model).toBe("gpt-local"));
+
+    expect(result.current.models[0]).toMatchObject({
+      id: "openai:gpt-local",
+      source: "providerCatalog",
+      providerId: "openai",
+    });
+    expect(result.current.selectedModel?.id).toBe("openai:gpt-local");
+  });
+
+  it("keeps the configured built-in default when the workspace model list has a superset", async () => {
+    vi.mocked(getModelProviderSettings).mockResolvedValueOnce({
+      ...providerSettings(),
+      activeModel: "gpt-5",
+      providers: [
+        {
+          ...providerSettings().providers[0],
+          models: ["gpt-5"],
+        },
+      ],
+    });
+    vi.mocked(getModelList).mockResolvedValueOnce({
+      result: {
+        data: [
+          {
+            id: "remote-1",
+            model: "gpt-5",
+            displayName: "GPT-5",
+            supportedReasoningEfforts: [],
+            defaultReasoningEffort: null,
+            isDefault: false,
+          },
+          {
+            id: "remote-2",
+            model: "gpt-5.1",
+            displayName: "GPT-5.1",
+            supportedReasoningEfforts: [],
+            defaultReasoningEffort: null,
+            isDefault: true,
+          },
+        ],
+      },
+    });
+    vi.mocked(getConfigModel).mockResolvedValueOnce(null);
+
+    const { result } = renderHook(() =>
+      useModels({ activeWorkspace: workspace }),
+    );
+
+    await waitFor(() => expect(result.current.models.length).toBeGreaterThan(0));
+
+    expect(result.current.models.find((model) => model.model === "gpt-5")?.isDefault).toBe(
+      true,
+    );
+    expect(result.current.selectedModel?.model).toBe("gpt-5");
+  });
+
   it("keeps the selected reasoning effort when switching models", async () => {
     vi.mocked(getModelList).mockResolvedValueOnce({
       result: {

@@ -843,6 +843,41 @@ impl DaemonState {
         codex_core::set_thread_name_core(&self.sessions, workspace_id, thread_id, name).await
     }
 
+    async fn thread_goal_get(
+        &self,
+        workspace_id: String,
+        thread_id: String,
+    ) -> Result<Value, String> {
+        codex_core::thread_goal_get_core(&self.sessions, workspace_id, thread_id).await
+    }
+
+    async fn thread_goal_set(
+        &self,
+        workspace_id: String,
+        thread_id: String,
+        objective: Option<String>,
+        status: Option<String>,
+        token_budget: Option<Option<i64>>,
+    ) -> Result<Value, String> {
+        codex_core::thread_goal_set_core(
+            &self.sessions,
+            workspace_id,
+            thread_id,
+            objective,
+            status,
+            token_budget,
+        )
+        .await
+    }
+
+    async fn thread_goal_clear(
+        &self,
+        workspace_id: String,
+        thread_id: String,
+    ) -> Result<Value, String> {
+        codex_core::thread_goal_clear_core(&self.sessions, workspace_id, thread_id).await
+    }
+
     async fn send_user_message(
         &self,
         workspace_id: String,

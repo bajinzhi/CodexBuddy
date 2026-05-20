@@ -504,6 +504,8 @@ export function useMainAppLayoutSurfaces({
             queuePausedReason: composerWorkspaceState.queuePausedReason,
             sendLabel: pullRequestComposer.composerSendLabel ?? t("actions.send", { ns: "common" }),
             steerAvailable: composerWorkspaceState.steerAvailable,
+            threadGoal: composerWorkspaceState.activeThreadGoal,
+            onGoalCommand: composerWorkspaceState.handleGoalCommand,
             followUpMessageBehavior: appSettings.followUpMessageBehavior,
             composerFollowUpHintEnabled: appSettings.composerFollowUpHintEnabled,
             isProcessing: composerWorkspaceState.isProcessing,

@@ -14,7 +14,9 @@ use crate::backend::events::AppServerEvent;
 use crate::event_sink::TauriEventSink;
 use crate::remote_backend;
 use crate::shared::agents_config_core;
-use crate::shared::codex_core::{self, insert_optional_nullable_string};
+use crate::shared::codex_core::{
+    self, insert_optional_nullable_i64, insert_optional_nullable_string,
+};
 use crate::shared::model_providers_core;
 use crate::state::AppState;
 use crate::types::WorkspaceEntry;
@@ -358,6 +360,87 @@ pub(crate) async fn set_thread_name(
     }
 
     codex_core::set_thread_name_core(&state.sessions, workspace_id, thread_id, name).await
+}
+
+#[tauri::command]
+pub(crate) async fn thread_goal_get(
+    workspace_id: String,
+    thread_id: String,
+    state: State<'_, AppState>,
+    app: AppHandle,
+) -> Result<Value, String> {
+    if remote_backend::is_remote_mode(&*state).await {
+        return remote_backend::call_remote(
+            &*state,
+            app,
+            "thread_goal_get",
+            json!({ "workspaceId": workspace_id, "threadId": thread_id }),
+        )
+        .await;
+    }
+
+    codex_core::thread_goal_get_core(&state.sessions, workspace_id, thread_id).await
+}
+
+#[tauri::command]
+pub(crate) async fn thread_goal_set(
+    workspace_id: String,
+    thread_id: String,
+    objective: Option<String>,
+    status: Option<String>,
+    token_budget: Option<Option<i64>>,
+    state: State<'_, AppState>,
+    app: AppHandle,
+) -> Result<Value, String> {
+    if remote_backend::is_remote_mode(&*state).await {
+        let mut payload = Map::new();
+        payload.insert("workspaceId".to_string(), json!(workspace_id));
+        payload.insert("threadId".to_string(), json!(thread_id));
+        if let Some(objective) = objective {
+            payload.insert("objective".to_string(), json!(objective));
+        }
+        if let Some(status) = status {
+            payload.insert("status".to_string(), json!(status));
+        }
+        insert_optional_nullable_i64(&mut payload, "tokenBudget", token_budget);
+        return remote_backend::call_remote(
+            &*state,
+            app,
+            "thread_goal_set",
+            Value::Object(payload),
+        )
+        .await;
+    }
+
+    codex_core::thread_goal_set_core(
+        &state.sessions,
+        workspace_id,
+        thread_id,
+        objective,
+        status,
+        token_budget,
+    )
+    .await
+}
+
+#[tauri::command]
+pub(crate) async fn thread_goal_clear(
+    workspace_id: String,
+    thread_id: String,
+    state: State<'_, AppState>,
+    app: AppHandle,
+) -> Result<Value, String> {
+    if remote_backend::is_remote_mode(&*state).await {
+        return remote_backend::call_remote(
+            &*state,
+            app,
+            "thread_goal_clear",
+            json!({ "workspaceId": workspace_id, "threadId": thread_id }),
+        )
+        .await;
+    }
+
+    codex_core::thread_goal_clear_core(&state.sessions, workspace_id, thread_id).await
 }
 
 #[tauri::command]

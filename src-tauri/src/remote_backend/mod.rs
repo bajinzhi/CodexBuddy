@@ -182,6 +182,7 @@ fn can_retry_after_disconnect(method: &str) -> bool {
             | "resume_thread"
             | "thread_live_subscribe"
             | "thread_live_unsubscribe"
+            | "thread_goal_get"
             | "skills_list"
             | "worktree_setup_status"
     )

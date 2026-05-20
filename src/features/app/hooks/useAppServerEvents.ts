@@ -42,6 +42,12 @@ type AppServerEventHandlers = {
     workspaceId: string,
     payload: { threadId: string; threadName: string | null },
   ) => void;
+  onThreadGoalUpdated?: (
+    workspaceId: string,
+    threadId: string,
+    goal: Record<string, unknown>,
+  ) => void;
+  onThreadGoalCleared?: (workspaceId: string, threadId: string) => void;
   onThreadStatusChanged?: (
     workspaceId: string,
     threadId: string,
@@ -129,6 +135,8 @@ export const METHODS_ROUTED_IN_USE_APP_SERVER_EVENTS = [
   "item/tool/requestUserInput",
   "thread/archived",
   "thread/closed",
+  "thread/goal/cleared",
+  "thread/goal/updated",
   "thread/name/updated",
   "thread/status/changed",
   "thread/started",
@@ -308,6 +316,27 @@ export function useAppServerEvents(handlers: AppServerEventHandlers) {
             : null;
         if (threadId) {
           currentHandlers.onThreadNameUpdated?.(workspace_id, { threadId, threadName });
+        }
+        return;
+      }
+
+      if (method === "thread/goal/updated") {
+        const threadId = String(params.threadId ?? params.thread_id ?? "").trim();
+        const goal = params.goal;
+        if (threadId && goal && typeof goal === "object" && !Array.isArray(goal)) {
+          currentHandlers.onThreadGoalUpdated?.(
+            workspace_id,
+            threadId,
+            goal as Record<string, unknown>,
+          );
+        }
+        return;
+      }
+
+      if (method === "thread/goal/cleared") {
+        const threadId = String(params.threadId ?? params.thread_id ?? "").trim();
+        if (threadId) {
+          currentHandlers.onThreadGoalCleared?.(workspace_id, threadId);
         }
         return;
       }

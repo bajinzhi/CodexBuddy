@@ -462,6 +462,15 @@ const renderFeaturesSection = (
           description: "Run long-running terminal commands in the background.",
           announcement: null,
         },
+        {
+          name: "multi_agent",
+          stage: "stable",
+          enabled: true,
+          defaultEnabled: true,
+          displayName: "Multi-agent",
+          description: "Enable subagent collaboration tools.",
+          announcement: null,
+        },
       ],
       nextCursor: null,
     },
@@ -2176,6 +2185,13 @@ describe("SettingsView Features", () => {
     expect(screen.queryByText("Steer mode")).toBeNull();
   });
 
+  it("hides multi-agent dynamic feature row", async () => {
+    renderFeaturesSection();
+
+    await screen.findByText("Background terminal");
+    expect(screen.queryByText("Multi-agent")).toBeNull();
+  });
+
   it("hides steer mode when returned as an experimental feature", async () => {
     renderFeaturesSection({
       appSettings: { steerEnabled: true },
@@ -2279,11 +2295,15 @@ describe("SettingsView Features", () => {
   });
 
   it("shows fallback description when Codex omits feature description", async () => {
+    await act(async () => {
+      await i18n.changeLanguage("en");
+    });
+
     renderFeaturesSection({
       experimentalFeaturesResponse: {
         data: [
           {
-            name: "responses_websockets",
+            name: "artifact",
             stage: "underDevelopment",
             enabled: false,
             defaultEnabled: false,
@@ -2296,9 +2316,33 @@ describe("SettingsView Features", () => {
       },
     });
 
-    await screen.findByText(
-      "Use Responses API WebSocket transport for OpenAI by default.",
-    );
+    await screen.findByText("Enable native artifact tools.");
+  });
+
+  it("falls back to feature key text for unknown feature flags", async () => {
+    await act(async () => {
+      await i18n.changeLanguage("en");
+    });
+
+    renderFeaturesSection({
+      experimentalFeaturesResponse: {
+        data: [
+          {
+            name: "future_feature",
+            stage: "underDevelopment",
+            enabled: false,
+            defaultEnabled: false,
+            displayName: null,
+            description: null,
+            announcement: null,
+          },
+        ],
+        nextCursor: null,
+      },
+    });
+
+    await screen.findByText("Future Feature");
+    expect(screen.getByText("Feature key: features.future_feature")).toBeTruthy();
   });
 });
 

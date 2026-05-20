@@ -492,6 +492,53 @@ pub(crate) async fn set_thread_name_core(
         .await
 }
 
+pub(crate) async fn thread_goal_get_core(
+    sessions: &Mutex<HashMap<String, Arc<WorkspaceSession>>>,
+    workspace_id: String,
+    thread_id: String,
+) -> Result<Value, String> {
+    let session = get_session_clone(sessions, &workspace_id).await?;
+    let params = json!({ "threadId": thread_id });
+    session
+        .send_request_for_workspace(&workspace_id, "thread/goal/get", params)
+        .await
+}
+
+pub(crate) async fn thread_goal_set_core(
+    sessions: &Mutex<HashMap<String, Arc<WorkspaceSession>>>,
+    workspace_id: String,
+    thread_id: String,
+    objective: Option<String>,
+    status: Option<String>,
+    token_budget: Option<Option<i64>>,
+) -> Result<Value, String> {
+    let session = get_session_clone(sessions, &workspace_id).await?;
+    let mut params = Map::new();
+    params.insert("threadId".to_string(), json!(thread_id));
+    if let Some(objective) = objective {
+        params.insert("objective".to_string(), json!(objective));
+    }
+    if let Some(status) = status {
+        params.insert("status".to_string(), json!(status));
+    }
+    insert_optional_nullable_i64(&mut params, "tokenBudget", token_budget);
+    session
+        .send_request_for_workspace(&workspace_id, "thread/goal/set", Value::Object(params))
+        .await
+}
+
+pub(crate) async fn thread_goal_clear_core(
+    sessions: &Mutex<HashMap<String, Arc<WorkspaceSession>>>,
+    workspace_id: String,
+    thread_id: String,
+) -> Result<Value, String> {
+    let session = get_session_clone(sessions, &workspace_id).await?;
+    let params = json!({ "threadId": thread_id });
+    session
+        .send_request_for_workspace(&workspace_id, "thread/goal/clear", params)
+        .await
+}
+
 fn as_attachment_values(
     attachments: Option<Vec<Value>>,
     images: Option<Vec<String>>,
@@ -895,6 +942,16 @@ pub(crate) fn insert_optional_nullable_string(
     params: &mut Map<String, Value>,
     key: &str,
     value: Option<Option<String>>,
+) {
+    if let Some(value) = value {
+        params.insert(key.to_string(), json!(value));
+    }
+}
+
+pub(crate) fn insert_optional_nullable_i64(
+    params: &mut Map<String, Value>,
+    key: &str,
+    value: Option<Option<i64>>,
 ) {
     if let Some(value) = value {
         params.insert(key.to_string(), json!(value));

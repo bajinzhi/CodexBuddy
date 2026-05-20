@@ -147,10 +147,16 @@ export function SettingsModelProvidersSection({
   }, []);
 
   const updateSelectedProvider = (patch: Partial<ModelProviderConfig>) => {
-    if (!draft || !selectedProvider || selectedProvider.isBuiltin) {
+    if (!draft || !selectedProvider) {
       return;
     }
-    const nextProvider = { ...selectedProvider, ...patch };
+    const nextProvider = {
+      ...selectedProvider,
+      ...patch,
+      id: selectedProvider.isReserved ? selectedProvider.id : patch.id ?? selectedProvider.id,
+      isBuiltin: selectedProvider.isBuiltin,
+      isReserved: selectedProvider.isReserved,
+    };
     const nextDraft = replaceProvider(draft, nextProvider, selectedProviderId);
     setDraft({
       ...nextDraft,
@@ -179,7 +185,7 @@ export function SettingsModelProvidersSection({
   };
 
   const deleteProvider = () => {
-    if (!draft || !selectedProvider || selectedProvider.isBuiltin) {
+    if (!draft || !selectedProvider || selectedProvider.isReserved) {
       return;
     }
     const nextProviders = draft.providers.filter(
@@ -241,7 +247,9 @@ export function SettingsModelProvidersSection({
   };
 
   const modelListId = "model-provider-default-models";
-  const canEdit = Boolean(selectedProvider && !selectedProvider.isBuiltin);
+  const canEdit = Boolean(selectedProvider);
+  const canEditIdentity = Boolean(selectedProvider && !selectedProvider.isReserved);
+  const canDelete = Boolean(selectedProvider && !selectedProvider.isReserved);
   const customModels = selectedProvider?.models ?? [];
 
   return (
@@ -297,12 +305,16 @@ export function SettingsModelProvidersSection({
             <button
               type="button"
               className="ghost settings-model-provider-danger"
-              disabled={!canEdit}
+              disabled={!canDelete}
               onClick={deleteProvider}
             >
               {t("common:actions.delete")}
             </button>
           </div>
+
+          {selectedProvider.isReserved && (
+            <div className="settings-help">{t("codex.providers.reservedHelp")}</div>
+          )}
 
           <div className="settings-model-provider-grid">
             <label className="settings-model-provider-field">
@@ -310,7 +322,7 @@ export function SettingsModelProvidersSection({
               <input
                 className="settings-input"
                 value={selectedProvider.id}
-                disabled={!canEdit}
+                disabled={!canEditIdentity}
                 onChange={(event) => updateSelectedProvider({ id: event.target.value })}
               />
             </label>

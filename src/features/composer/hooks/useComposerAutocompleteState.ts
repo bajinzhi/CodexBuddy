@@ -173,6 +173,13 @@ export function useComposerAutocompleteState({
         group: "Slash",
       },
       {
+        id: "goal",
+        label: "goal",
+        description: t("composer.autocomplete.slash.goal"),
+        insertText: "goal",
+        group: "Slash",
+      },
+      {
         id: "mcp",
         label: "mcp",
         description: t("composer.autocomplete.slash.mcp"),

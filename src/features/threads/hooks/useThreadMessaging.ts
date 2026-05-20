@@ -20,8 +20,19 @@ import {
   interruptTurn as interruptTurnService,
   getAppsList as getAppsListService,
   listMcpServerStatus as listMcpServerStatusService,
+  threadGoalClear as threadGoalClearService,
+  threadGoalGet as threadGoalGetService,
+  threadGoalSet as threadGoalSetService,
 } from "@services/tauri";
 import { expandCustomPromptText } from "@utils/customPrompts";
+import {
+  clearThreadGoal,
+  getThreadGoal,
+  setThreadGoal,
+  storeThreadGoalFromRaw,
+  updateThreadGoalStatus,
+  type ThreadGoal,
+} from "@threads/utils/threadStorage";
 import {
   asString,
   extractReviewThreadId,
@@ -32,15 +43,81 @@ import type { ThreadAction, ThreadState } from "./useThreadsReducer";
 import { useReviewPrompt } from "./useReviewPrompt";
 import {
   buildAppsLines,
+  buildGoalAugmentedPrompt,
   buildMcpStatusLines,
   buildReviewThreadTitle,
   buildStatusLines,
   buildTurnStartPayload,
   isStaleSteerTurnError,
   parseFastCommand,
+  parseGoalCommand,
   resolveSendMessageOptions,
   type SendMessageOptions,
 } from "./threadMessagingHelpers";
+
+function formatGoalStatus(goal: ThreadGoal | null): string {
+  if (!goal) {
+    return "No goal is set for this thread.";
+  }
+  return [
+    "Current goal:",
+    `- Status: ${goal.status}`,
+    `- Objective: ${goal.objective}`,
+  ].join("\n");
+}
+
+function rpcResult(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+  const root = value as Record<string, unknown>;
+  const result = root.result;
+  return result && typeof result === "object"
+    ? (result as Record<string, unknown>)
+    : root;
+}
+
+function extractGoalFromResponse(response: unknown): Record<string, unknown> | null {
+  const result = rpcResult(response);
+  const goal = result?.goal;
+  return goal && typeof goal === "object" ? (goal as Record<string, unknown>) : null;
+}
+
+function extractGoalRpcErrorMessage(response: unknown): string | null {
+  const directError = extractRpcErrorMessage(response);
+  if (directError) {
+    return directError;
+  }
+  const result = rpcResult(response);
+  return result && result !== response ? extractRpcErrorMessage(result) : null;
+}
+
+function persistRpcGoal(
+  workspaceId: string,
+  threadId: string,
+  response: unknown,
+): ThreadGoal | null {
+  const rawGoal = extractGoalFromResponse(response);
+  if (!rawGoal) {
+    return null;
+  }
+  return storeThreadGoalFromRaw(workspaceId, threadId, rawGoal, {
+    backendSynced: true,
+  });
+}
+
+function isGoalRpcUnavailableError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  const normalized = message.toLowerCase();
+  return (
+    normalized.includes("method not found") ||
+    normalized.includes("unknown method") ||
+    normalized.includes("unsupported") ||
+    normalized.includes("not supported") ||
+    (normalized.includes("goal") &&
+      (normalized.includes("disabled") || normalized.includes("feature")))
+  );
+}
 
 type UseThreadMessagingOptions = {
   activeWorkspace: WorkspaceInfo | null;
@@ -179,6 +256,12 @@ export function useThreadMessaging({
           activeTurnId,
         },
       });
+      if (!shouldSteer) {
+        finalText = buildGoalAugmentedPrompt(
+          finalText,
+          getThreadGoal(workspace.id, threadId),
+        );
+      }
       Sentry.metrics.count("prompt_sent", 1, {
         attributes: {
           workspace_id: workspace.id,
@@ -748,6 +831,180 @@ export function useThreadMessaging({
     ],
   );
 
+  const startGoal = useCallback(
+    async (text: string) => {
+      if (!activeWorkspace) {
+        return;
+      }
+      const threadId = await ensureThreadForActiveWorkspace();
+      if (!threadId) {
+        return;
+      }
+
+      const addGoalMessage = (message: string) => {
+        const timestamp = Date.now();
+        recordThreadActivity(activeWorkspace.id, threadId, timestamp);
+        dispatch({
+          type: "addAssistantMessage",
+          threadId,
+          text: message,
+        });
+        safeMessageActivity();
+      };
+
+      const command = parseGoalCommand(text);
+      if (command.action === "invalid") {
+        addGoalMessage(
+          `${command.message}\nUsage: /goal <objective>, /goal, /goal pause, /goal resume, or /goal clear.`,
+        );
+        return;
+      }
+
+      if (command.action === "view") {
+        try {
+          const response = await threadGoalGetService(activeWorkspace.id, threadId);
+          const rpcError = extractGoalRpcErrorMessage(response);
+          if (rpcError) {
+            if (!isGoalRpcUnavailableError(rpcError)) {
+              addGoalMessage(`Unable to read goal: ${rpcError}`);
+              return;
+            }
+          } else {
+            const goal = persistRpcGoal(activeWorkspace.id, threadId, response);
+            if (goal) {
+              addGoalMessage(formatGoalStatus(goal));
+              return;
+            }
+            clearThreadGoal(activeWorkspace.id, threadId);
+            addGoalMessage(formatGoalStatus(null));
+            return;
+          }
+        } catch (error) {
+          if (!isGoalRpcUnavailableError(error)) {
+            const message = error instanceof Error ? error.message : String(error);
+            addGoalMessage(`Unable to read goal: ${message}`);
+            return;
+          }
+        }
+        addGoalMessage(formatGoalStatus(getThreadGoal(activeWorkspace.id, threadId)));
+        return;
+      }
+
+      if (command.action === "set") {
+        try {
+          const response = await threadGoalSetService(activeWorkspace.id, threadId, {
+            objective: command.objective,
+            status: "active",
+          });
+          const rpcError = extractGoalRpcErrorMessage(response);
+          if (rpcError) {
+            if (!isGoalRpcUnavailableError(rpcError)) {
+              addGoalMessage(`Unable to set goal: ${rpcError}`);
+              return;
+            }
+          } else {
+            const goal =
+              persistRpcGoal(activeWorkspace.id, threadId, response) ??
+              setThreadGoal(activeWorkspace.id, threadId, command.objective, {
+                backendSynced: true,
+              });
+            addGoalMessage(`Goal set for this thread.\n${formatGoalStatus(goal)}`);
+            return;
+          }
+        } catch (error) {
+          if (!isGoalRpcUnavailableError(error)) {
+            const message = error instanceof Error ? error.message : String(error);
+            addGoalMessage(`Unable to set goal: ${message}`);
+            return;
+          }
+        }
+        const goal = setThreadGoal(activeWorkspace.id, threadId, command.objective, {
+          backendSynced: false,
+        });
+        addGoalMessage(
+          `Goal saved locally for this thread. Future messages will include it automatically.\n${formatGoalStatus(goal)}`,
+        );
+        return;
+      }
+
+      if (command.action === "clear") {
+        const hadLocalGoal = Boolean(getThreadGoal(activeWorkspace.id, threadId));
+        try {
+          const response = await threadGoalClearService(activeWorkspace.id, threadId);
+          const rpcError = extractGoalRpcErrorMessage(response);
+          if (rpcError) {
+            if (!isGoalRpcUnavailableError(rpcError)) {
+              addGoalMessage(`Unable to clear goal: ${rpcError}`);
+              return;
+            }
+          } else {
+            const result = rpcResult(response);
+            const cleared = Boolean(result?.cleared) || hadLocalGoal;
+            clearThreadGoal(activeWorkspace.id, threadId);
+            addGoalMessage(
+              cleared ? "Goal cleared for this thread." : "No goal is set for this thread.",
+            );
+            return;
+          }
+        } catch (error) {
+          if (!isGoalRpcUnavailableError(error)) {
+            const message = error instanceof Error ? error.message : String(error);
+            addGoalMessage(`Unable to clear goal: ${message}`);
+            return;
+          }
+        }
+        const cleared = clearThreadGoal(activeWorkspace.id, threadId);
+        addGoalMessage(
+          cleared ? "Goal cleared for this thread." : "No goal is set for this thread.",
+        );
+        return;
+      }
+
+      const nextStatus = command.action === "pause" ? "paused" : "active";
+      try {
+        const response = await threadGoalSetService(activeWorkspace.id, threadId, {
+          status: nextStatus,
+        });
+        const rpcError = extractGoalRpcErrorMessage(response);
+        if (rpcError) {
+          if (!isGoalRpcUnavailableError(rpcError)) {
+            addGoalMessage(`Unable to update goal: ${rpcError}`);
+            return;
+          }
+        } else {
+          const goal = persistRpcGoal(activeWorkspace.id, threadId, response);
+          addGoalMessage(
+            goal
+              ? `Goal ${nextStatus === "paused" ? "paused" : "resumed"}.\n${formatGoalStatus(goal)}`
+              : "No goal is set for this thread.",
+          );
+          return;
+        }
+      } catch (error) {
+        if (!isGoalRpcUnavailableError(error)) {
+          const message = error instanceof Error ? error.message : String(error);
+          addGoalMessage(`Unable to update goal: ${message}`);
+          return;
+        }
+      }
+      const goal = updateThreadGoalStatus(activeWorkspace.id, threadId, nextStatus, {
+        backendSynced: false,
+      });
+      addGoalMessage(
+        goal
+          ? `Goal ${nextStatus === "paused" ? "paused" : "resumed"} locally. Future messages will include active local goals automatically.\n${formatGoalStatus(goal)}`
+          : "No goal is set for this thread.",
+      );
+    },
+    [
+      activeWorkspace,
+      dispatch,
+      ensureThreadForActiveWorkspace,
+      recordThreadActivity,
+      safeMessageActivity,
+    ],
+  );
+
   const startMcp = useCallback(
     async (_text: string) => {
       if (!activeWorkspace) {
@@ -946,6 +1203,7 @@ export function useThreadMessaging({
     startApps,
     startMcp,
     startFast,
+    startGoal,
     startStatus,
     reviewPrompt,
     openReviewPrompt,

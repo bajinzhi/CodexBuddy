@@ -16,6 +16,7 @@ import { useComposerInsert } from "@app/hooks/useComposerInsert";
 import { useWorkspaceFileListing } from "@app/hooks/useWorkspaceFileListing";
 import { useWorkspaceAgentMd } from "@/features/workspaces/hooks/useWorkspaceAgentMd";
 import { useWorkspaceHome } from "@/features/workspaces/hooks/useWorkspaceHome";
+import { useThreadGoalIndicator } from "@threads/hooks/useThreadGoalIndicator";
 
 const RECENT_THREAD_LIMIT = 8;
 
@@ -86,6 +87,7 @@ type UseMainAppComposerWorkspaceStateArgs = {
     startApps: Parameters<typeof useComposerController>[0]["startApps"];
     startMcp: Parameters<typeof useComposerController>[0]["startMcp"];
     startFast: Parameters<typeof useComposerController>[0]["startFast"];
+    startGoal: Parameters<typeof useComposerController>[0]["startGoal"];
     startStatus: Parameters<typeof useComposerController>[0]["startStatus"];
     startPet: Parameters<typeof useComposerController>[0]["startPet"];
     handleWorktreeCreated?: Parameters<typeof useWorkspaceHome>[0]["onWorktreeCreated"];
@@ -148,6 +150,7 @@ export function useMainAppComposerWorkspaceState({
     startApps,
     startMcp,
     startFast,
+    startGoal,
     startStatus,
     startPet,
     handleWorktreeCreated,
@@ -188,6 +191,7 @@ export function useMainAppComposerWorkspaceState({
     : false;
   const activeTurnId = activeThreadId ? activeTurnIdByThread[activeThreadId] ?? null : null;
   const steerAvailable = settings.steerEnabled && Boolean(activeTurnId);
+  const activeThreadGoal = useThreadGoalIndicator(activeWorkspaceId, activeThreadId);
   const hasUserInputRequestForActiveThread = Boolean(
     activeThreadId &&
       userInputRequests.some(
@@ -248,6 +252,7 @@ export function useMainAppComposerWorkspaceState({
     startApps,
     startMcp,
     startFast,
+    startGoal,
     startStatus,
     startPet,
   });
@@ -321,6 +326,7 @@ export function useMainAppComposerWorkspaceState({
     canInterrupt,
     isProcessing,
     isReviewing,
+    activeThreadGoal,
     activeTurnId,
     steerAvailable,
     queuePausedReason,

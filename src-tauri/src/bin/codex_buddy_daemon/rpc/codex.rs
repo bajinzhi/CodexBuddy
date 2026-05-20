@@ -175,6 +175,46 @@ pub(super) async fn try_handle(
             };
             Some(state.set_thread_name(workspace_id, thread_id, name).await)
         }
+        "thread_goal_get" => {
+            let workspace_id = match parse_string(params, "workspaceId") {
+                Ok(value) => value,
+                Err(err) => return Some(Err(err)),
+            };
+            let thread_id = match parse_string(params, "threadId") {
+                Ok(value) => value,
+                Err(err) => return Some(Err(err)),
+            };
+            Some(state.thread_goal_get(workspace_id, thread_id).await)
+        }
+        "thread_goal_set" => {
+            let workspace_id = match parse_string(params, "workspaceId") {
+                Ok(value) => value,
+                Err(err) => return Some(Err(err)),
+            };
+            let thread_id = match parse_string(params, "threadId") {
+                Ok(value) => value,
+                Err(err) => return Some(Err(err)),
+            };
+            let objective = parse_optional_string(params, "objective");
+            let status = parse_optional_string(params, "status");
+            let token_budget = parse_optional_nullable_i64(params, "tokenBudget");
+            Some(
+                state
+                    .thread_goal_set(workspace_id, thread_id, objective, status, token_budget)
+                    .await,
+            )
+        }
+        "thread_goal_clear" => {
+            let workspace_id = match parse_string(params, "workspaceId") {
+                Ok(value) => value,
+                Err(err) => return Some(Err(err)),
+            };
+            let thread_id = match parse_string(params, "threadId") {
+                Ok(value) => value,
+                Err(err) => return Some(Err(err)),
+            };
+            Some(state.thread_goal_clear(workspace_id, thread_id).await)
+        }
         "send_user_message" => {
             let workspace_id = match parse_string(params, "workspaceId") {
                 Ok(value) => value,

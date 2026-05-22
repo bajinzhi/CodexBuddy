@@ -15,6 +15,11 @@ import {
 import { FileEditorCard } from "@/features/shared/components/FileEditorCard";
 import { SettingsModelProvidersSection } from "./SettingsModelProvidersSection";
 
+type CodexUpdateDisplayResult = CodexUpdateResult & {
+  displayTone?: "ok" | "info" | "error";
+  displayTitle?: "updated" | "alreadyLatest" | "unavailable" | "failed";
+};
+
 type SettingsCodexSectionProps = {
   appSettings: AppSettings;
   onUpdateAppSettings: (next: AppSettings) => Promise<void>;
@@ -33,7 +38,7 @@ type SettingsCodexSectionProps = {
   };
   codexUpdateState: {
     status: "idle" | "running" | "done";
-    result: CodexUpdateResult | null;
+    result: CodexUpdateDisplayResult | null;
   };
   globalAgentsMeta: string;
   globalAgentsError: string | null;
@@ -230,6 +235,19 @@ export function SettingsCodexSection({
     selectedEffort,
   ]);
 
+  const codexUpdateResult = codexUpdateState.result;
+  const codexUpdateTone =
+    codexUpdateResult?.displayTone ?? (codexUpdateResult?.ok ? "ok" : "error");
+  const codexUpdateTitle = codexUpdateResult
+    ? codexUpdateResult.displayTitle === "unavailable"
+      ? t("codex.updateUnavailable")
+      : codexUpdateResult.ok
+        ? codexUpdateResult.upgraded
+          ? t("codex.updated")
+          : t("codex.alreadyUpdated")
+        : t("codex.updateFailed")
+    : null;
+
   return (
     <SettingsSection
       title={t("codex.title")}
@@ -369,33 +387,25 @@ export function SettingsCodexSection({
           </div>
         )}
 
-        {codexUpdateState.result && (
-          <div
-            className={`settings-doctor ${codexUpdateState.result.ok ? "ok" : "error"}`}
-          >
-            <div className="settings-doctor-title">
-              {codexUpdateState.result.ok
-                ? codexUpdateState.result.upgraded
-                  ? t("codex.updated")
-                  : t("codex.alreadyUpdated")
-                : t("codex.updateFailed")}
-            </div>
+        {codexUpdateResult && (
+          <div className={`settings-doctor ${codexUpdateTone}`}>
+            <div className="settings-doctor-title">{codexUpdateTitle}</div>
             <div className="settings-doctor-body">
-              <div>{t("codex.methodLabel")}: {codexUpdateState.result.method}</div>
-              {codexUpdateState.result.package && (
-                <div>{t("codex.packageLabel")}: {codexUpdateState.result.package}</div>
+              <div>{t("codex.methodLabel")}: {codexUpdateResult.method}</div>
+              {codexUpdateResult.package && (
+                <div>{t("codex.packageLabel")}: {codexUpdateResult.package}</div>
               )}
               <div>
                 {t("codex.versionLabel")}:{" "}
-                {codexUpdateState.result.afterVersion ??
-                  codexUpdateState.result.beforeVersion ??
+                {codexUpdateResult.afterVersion ??
+                  codexUpdateResult.beforeVersion ??
                   t("common:labels.unknown")}
               </div>
-              {codexUpdateState.result.details && <div>{codexUpdateState.result.details}</div>}
-              {codexUpdateState.result.output && (
+              {codexUpdateResult.details && <div>{codexUpdateResult.details}</div>}
+              {codexUpdateResult.output && (
                 <details>
                   <summary>{t("codex.outputSummary")}</summary>
-                  <pre>{codexUpdateState.result.output}</pre>
+                  <pre>{codexUpdateResult.output}</pre>
                 </details>
               )}
             </div>

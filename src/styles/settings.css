@@ -1282,6 +1282,11 @@
   color: var(--text-strong);
 }
 
+.settings-doctor.info {
+  border-color: rgba(125, 190, 255, 0.38);
+  color: var(--text-strong);
+}
+
 .settings-doctor.error {
   border-color: rgba(255, 120, 120, 0.45);
   color: var(--text-strong);

@@ -34,6 +34,11 @@ type UseSettingsCodexSectionArgs = {
   ) => Promise<CodexUpdateResult>;
 };
 
+export type CodexUpdateDisplayResult = CodexUpdateResult & {
+  displayTone?: "ok" | "info" | "error";
+  displayTitle?: "updated" | "alreadyLatest" | "unavailable" | "failed";
+};
+
 export type SettingsCodexSectionProps = {
   appSettings: AppSettings;
   onUpdateAppSettings: (next: AppSettings) => Promise<void>;
@@ -52,7 +57,7 @@ export type SettingsCodexSectionProps = {
   };
   codexUpdateState: {
     status: "idle" | "running" | "done";
-    result: CodexUpdateResult | null;
+    result: CodexUpdateDisplayResult | null;
   };
   globalAgentsMeta: string;
   globalAgentsError: string | null;
@@ -100,7 +105,7 @@ export const useSettingsCodexSection = ({
   }>({ status: "idle", result: null });
   const [codexUpdateState, setCodexUpdateState] = useState<{
     status: "idle" | "running" | "done";
-    result: CodexUpdateResult | null;
+    result: CodexUpdateDisplayResult | null;
   }>({ status: "idle", result: null });
 
   const {
@@ -211,22 +216,79 @@ export const useSettingsCodexSection = ({
     }
   };
 
+  const formatUnavailableUpdateDetails = (details: string | null | undefined) => {
+    if (!details) {
+      return t("codex.updateUnavailableDetails", { ns: "settings" });
+    }
+
+    const normalized = details.toLowerCase();
+    if (normalized.includes("not available in this build")) {
+      return t("codex.updateUnavailableDetails", { ns: "settings" });
+    }
+    if (normalized.includes("unable to detect codex installation method")) {
+      return t("codex.updateUnavailableInstallMethodDetails", { ns: "settings" });
+    }
+    if (normalized.includes("npm") && normalized.includes("not available on path")) {
+      return t("codex.updateUnavailableNpmDetails", { ns: "settings" });
+    }
+
+    return t("codex.updateUnavailableDetailsWithReason", {
+      ns: "settings",
+      reason: details,
+    });
+  };
+
+  const buildUnavailableUpdateResult = (
+    result: Pick<
+      CodexUpdateDisplayResult,
+      "method" | "package" | "beforeVersion"
+    > & { details?: string | null },
+  ): CodexUpdateDisplayResult => ({
+    ok: false,
+    method: result.method,
+    package: result.package,
+    beforeVersion: result.beforeVersion,
+    afterVersion: null,
+    upgraded: false,
+    output: null,
+    details: formatUnavailableUpdateDetails(result.details),
+    displayTone: "info",
+    displayTitle: "unavailable",
+  });
+
+  const normalizeUpdateResult = (
+    result: CodexUpdateResult,
+  ): CodexUpdateDisplayResult => {
+    if (result.ok && !result.upgraded) {
+      return {
+        ...result,
+        afterVersion: result.afterVersion ?? result.beforeVersion,
+        details:
+          result.details ?? t("codex.alreadyLatestDetails", { ns: "settings" }),
+        displayTone: "ok",
+        displayTitle: "alreadyLatest",
+      };
+    }
+
+    return {
+      ...result,
+      displayTone: result.ok ? "ok" : "error",
+      displayTitle: result.ok ? "updated" : "failed",
+    };
+  };
+
   const handleRunCodexUpdate = async () => {
     setCodexUpdateState({ status: "running", result: null });
     try {
       if (!onRunCodexUpdate || !onRunCodexUpdateCheck) {
         setCodexUpdateState({
           status: "done",
-          result: {
-            ok: false,
+          result: buildUnavailableUpdateResult({
             method: "unknown",
             package: null,
             beforeVersion: null,
-            afterVersion: null,
-            upgraded: false,
-            output: null,
-            details: "Codex updates are not available in this build.",
-          },
+            details: null,
+          }),
         });
         return;
       }
@@ -235,17 +297,12 @@ export const useSettingsCodexSection = ({
       if (!check.canUpdate) {
         setCodexUpdateState({
           status: "done",
-          result: {
-            ok: false,
+          result: buildUnavailableUpdateResult({
             method: check.method,
             package: check.package,
             beforeVersion: check.beforeVersion,
-            afterVersion: null,
-            upgraded: false,
-            output: null,
-            details:
-              check.details ?? "Codex updates are not available in this build.",
-          },
+            details: check.details,
+          }),
         });
         return;
       }
@@ -262,6 +319,8 @@ export const useSettingsCodexSection = ({
             upgraded: false,
             output: null,
             details: t("codex.alreadyLatestDetails", { ns: "settings" }),
+            displayTone: "ok",
+            displayTitle: "alreadyLatest",
           },
         });
         return;
@@ -305,7 +364,7 @@ export const useSettingsCodexSection = ({
         nextCodexArgs,
         killActiveSessions,
       );
-      setCodexUpdateState({ status: "done", result });
+      setCodexUpdateState({ status: "done", result: normalizeUpdateResult(result) });
     } catch (error) {
       setCodexUpdateState({
         status: "done",

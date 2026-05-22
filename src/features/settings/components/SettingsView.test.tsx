@@ -1271,6 +1271,53 @@ describe("SettingsView Environments", () => {
 });
 
 describe("SettingsView Codex section", () => {
+  const renderCodexSection = (
+    options: {
+      onRunCodexUpdateCheck?: ComponentProps<
+        typeof SettingsView
+      >["onRunCodexUpdateCheck"];
+      onRunCodexUpdate?: ComponentProps<
+        typeof SettingsView
+      >["onRunCodexUpdate"];
+      appSettings?: Partial<AppSettings>;
+    } = {},
+  ) => {
+    cleanup();
+    return render(
+      <SettingsView
+        workspaceGroups={[]}
+        groupedWorkspaces={[]}
+        ungroupedLabel="Ungrouped"
+        onClose={vi.fn()}
+        onMoveWorkspace={vi.fn()}
+        onDeleteWorkspace={vi.fn()}
+        onCreateWorkspaceGroup={vi.fn().mockResolvedValue(null)}
+        onRenameWorkspaceGroup={vi.fn().mockResolvedValue(null)}
+        onMoveWorkspaceGroup={vi.fn().mockResolvedValue(null)}
+        onDeleteWorkspaceGroup={vi.fn().mockResolvedValue(null)}
+        onAssignWorkspaceGroup={vi.fn().mockResolvedValue(null)}
+        reduceTransparency={false}
+        onToggleTransparency={vi.fn()}
+        appSettings={{ ...baseSettings, ...options.appSettings }}
+        openAppIconById={{}}
+        onUpdateAppSettings={vi.fn().mockResolvedValue(undefined)}
+        onRunDoctor={vi.fn().mockResolvedValue(createDoctorResult())}
+        onRunCodexUpdateCheck={options.onRunCodexUpdateCheck}
+        onRunCodexUpdate={options.onRunCodexUpdate}
+        onUpdateWorkspaceSettings={vi.fn().mockResolvedValue(undefined)}
+        scaleShortcutTitle="Scale shortcut"
+        scaleShortcutText="Use Command +/-"
+        onTestNotificationSound={vi.fn()}
+        onTestSystemNotification={vi.fn()}
+        dictationModelStatus={null}
+        onDownloadDictationModel={vi.fn()}
+        onCancelDictationDownload={vi.fn()}
+        onRemoveDictationModel={vi.fn()}
+        initialSection="codex"
+      />,
+    );
+  };
+
   it("updates review mode in codex section", async () => {
     cleanup();
     const onUpdateAppSettings = vi.fn().mockResolvedValue(undefined);
@@ -1379,6 +1426,56 @@ describe("SettingsView Codex section", () => {
     });
   });
 
+  it("shows a friendly neutral message when Codex cannot be updated automatically", async () => {
+    const onRunCodexUpdateCheck = vi.fn().mockResolvedValue(
+      createUpdateCheckResult({
+        method: "unknown",
+        package: null,
+        beforeVersion: null,
+        latestVersion: null,
+        canUpdate: false,
+        upToDate: false,
+        details: "Codex updates are not available in this build.",
+      }),
+    );
+    const onRunCodexUpdate = vi.fn().mockResolvedValue(createUpdateResult());
+    const { container } = renderCodexSection({
+      onRunCodexUpdateCheck,
+      onRunCodexUpdate,
+    });
+
+    fireEvent.click(screen.getByTitle("Update Codex"));
+
+    await waitFor(() => {
+      expect(onRunCodexUpdateCheck).toHaveBeenCalledWith(null, null);
+      expect(onRunCodexUpdate).not.toHaveBeenCalled();
+      expect(
+        screen.getByText("Codex cannot be updated automatically right now"),
+      ).toBeTruthy();
+      expect(
+        screen.getByText(
+          "No in-app update channel is available in this environment. Codex can keep running; use its original install method when you want to check manually.",
+        ),
+      ).toBeTruthy();
+      expect(screen.queryByText("Codex update failed")).toBeNull();
+      expect(container.querySelector(".settings-doctor.info")).toBeTruthy();
+    });
+  });
+
+  it("shows a friendly neutral message when update handlers are unavailable", async () => {
+    const { container } = renderCodexSection();
+
+    fireEvent.click(screen.getByTitle("Update Codex"));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("Codex cannot be updated automatically right now"),
+      ).toBeTruthy();
+      expect(screen.queryByText("Codex update failed")).toBeNull();
+      expect(container.querySelector(".settings-doctor.info")).toBeTruthy();
+    });
+  });
+
   it("updates Codex immediately when no active sessions are running", async () => {
     cleanup();
     askMock.mockReset();
@@ -1427,6 +1524,39 @@ describe("SettingsView Codex section", () => {
       expect(onRunCodexUpdateCheck).toHaveBeenCalledWith(null, null);
       expect(askMock).not.toHaveBeenCalled();
       expect(onRunCodexUpdate).toHaveBeenCalledWith(null, null, false);
+    });
+  });
+
+  it("shows already up-to-date when the update command completes without upgrading", async () => {
+    const onRunCodexUpdateCheck = vi
+      .fn()
+      .mockResolvedValue(createUpdateCheckResult());
+    const onRunCodexUpdate = vi.fn().mockResolvedValue({
+      ...createUpdateResult(),
+      beforeVersion: "codex-cli 0.118.0",
+      afterVersion: "codex-cli 0.118.0",
+      upgraded: false,
+      details: null,
+    });
+
+    renderCodexSection({
+      onRunCodexUpdateCheck,
+      onRunCodexUpdate,
+    });
+
+    fireEvent.click(screen.getByTitle("Update Codex"));
+
+    await waitFor(() => {
+      expect(onRunCodexUpdate).toHaveBeenCalledWith(null, null, false);
+      expect(
+        screen.getByText("Codex is already the latest version"),
+      ).toBeTruthy();
+      expect(
+        screen.getByText(
+          "The installed Codex version is already the latest available version. No update is needed.",
+        ),
+      ).toBeTruthy();
+      expect(screen.queryByText("Codex update failed")).toBeNull();
     });
   });
 

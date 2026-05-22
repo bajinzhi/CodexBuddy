@@ -848,20 +848,42 @@
 .composer-context-track {
   --context-remaining: 0;
   --context-hue: 0deg;
+  --context-start: #14685a;
+  --context-mid: #27a37f;
+  --context-end: #8fd4b4;
+  --context-track-tint: rgb(31 93 77 / 0.34);
+  --context-glow: rgb(70 190 145 / 0.32);
+  --context-sheen: rgb(232 255 246 / 0.34);
   position: relative;
-  height: 6px;
+  height: 4px;
   border-radius: 999px;
-  border: 1px solid color-mix(
-    in srgb,
-    hsl(var(--context-hue) 38% 74%) 28%,
-    var(--border-subtle)
-  );
-  background: color-mix(
-    in srgb,
-    hsl(var(--context-hue) 46% 84%) 18%,
-    var(--surface-card-muted)
-  );
+  border: 0;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--context-end) 18%, transparent),
+      transparent 58%
+    ),
+    color-mix(in srgb, var(--context-track-tint) 38%, var(--surface-card-muted));
+  box-shadow:
+    inset 0 1px 2px rgb(0 0 0 / 0.28),
+    0 0 8px var(--context-glow);
   overflow: hidden;
+}
+
+.composer-context-track::before {
+  position: absolute;
+  inset: 1px 0 auto;
+  height: 1px;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--context-sheen),
+    transparent
+  );
+  content: "";
+  pointer-events: none;
 }
 
 .composer-context-fill {
@@ -870,28 +892,43 @@
   width: calc(var(--context-remaining) * 1%);
   height: 100%;
   border-radius: inherit;
-  background: hsl(var(--context-hue) 64% 52%);
+  background: linear-gradient(
+    90deg,
+    var(--context-start),
+    var(--context-mid) 54%,
+    var(--context-end)
+  );
+  box-shadow:
+    0 0 7px var(--context-glow),
+    0 0 14px color-mix(in srgb, var(--context-glow) 68%, transparent),
+    inset 0 1px 0 var(--context-sheen);
   transition: width 180ms ease;
 }
 
-.composer-context[data-state="healthy"] .composer-context-track {
-  border-color: color-mix(in srgb, hsl(136deg 34% 72%) 30%, var(--border-subtle));
-}
-
-.composer-context[data-state="warning"] .composer-context-track {
-  border-color: color-mix(in srgb, hsl(58deg 44% 72%) 34%, var(--border-subtle));
-}
-
-.composer-context[data-state="critical"] .composer-context-track {
-  border-color: color-mix(in srgb, hsl(8deg 50% 72%) 38%, var(--border-subtle));
-}
-
 .composer-context[data-state="critical"] .composer-context-readout {
-  color: color-mix(in srgb, hsl(8deg 62% 46%) 42%, var(--text-muted));
+  color: color-mix(in srgb, #d96a62 58%, var(--text-muted));
 }
 
 .composer-context[data-state="warning"] .composer-context-readout {
-  color: color-mix(in srgb, hsl(46deg 82% 42%) 34%, var(--text-muted));
+  color: color-mix(in srgb, #d1a044 54%, var(--text-muted));
+}
+
+.composer-context[data-state="warning"] .composer-context-track {
+  --context-start: #8a5a1c;
+  --context-mid: #c6922e;
+  --context-end: #f1d186;
+  --context-track-tint: rgb(122 85 32 / 0.34);
+  --context-glow: rgb(209 160 68 / 0.28);
+  --context-sheen: rgb(255 239 196 / 0.32);
+}
+
+.composer-context[data-state="critical"] .composer-context-track {
+  --context-start: #7f2f36;
+  --context-mid: #c75252;
+  --context-end: #ef9a86;
+  --context-track-tint: rgb(107 48 53 / 0.34);
+  --context-glow: rgb(217 98 90 / 0.3);
+  --context-sheen: rgb(255 222 211 / 0.32);
 }
 
 .composer-context[data-state="unknown"] .composer-context-readout {
@@ -900,7 +937,7 @@
 
 .composer-context[data-state="unknown"] .composer-context-track {
   background: color-mix(in srgb, var(--surface-card-muted) 94%, white 6%);
-  border-color: color-mix(in srgb, var(--border-subtle) 60%, transparent);
+  box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.18);
 }
 
 .composer-context[data-state="unknown"] .composer-context-fill {

@@ -20,6 +20,12 @@ CodexBuddy is a Tauri app that orchestrates Codex agents across local workspaces
 - Backend daemon: JSON-RPC process (`src-tauri/src/bin/codex_buddy_daemon.rs`)
 - Shared backend source of truth: `src-tauri/src/shared/*`
 
+## Requirement Workflow Default
+
+- Default implementation requirements to RAL unless the user explicitly asks for a different workflow.
+- Before changing code or docs for a requirement, check whether `ral` is installed locally. If available, create or select an RQ and follow the local RAL task flow.
+- If `ral` is unavailable locally, continue with the normal repo workflow and state that RAL is unavailable.
+
 ## Non-Negotiable Architecture Rules
 
 1. Put shared/domain backend logic in `src-tauri/src/shared/*` first.

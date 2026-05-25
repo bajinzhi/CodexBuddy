@@ -34,6 +34,20 @@ const THREAD_LIST_SOURCE_KINDS: &[&str] = &[
     "unknown",
 ];
 
+const THREAD_SETTINGS_UPDATE_FIELDS: &[&str] = &[
+    "cwd",
+    "approvalPolicy",
+    "approvalsReviewer",
+    "sandboxPolicy",
+    "permissions",
+    "model",
+    "serviceTier",
+    "effort",
+    "summary",
+    "collaborationMode",
+    "personality",
+];
+
 #[allow(dead_code)]
 fn image_extension_for_path(path: &str) -> Option<String> {
     Path::new(path)
@@ -439,6 +453,35 @@ pub(crate) async fn list_threads_core(
     });
     session
         .send_request_for_workspace(&workspace_id, "thread/list", params)
+        .await
+}
+
+pub(crate) async fn thread_settings_update_core(
+    sessions: &Mutex<HashMap<String, Arc<WorkspaceSession>>>,
+    workspace_id: String,
+    thread_id: String,
+    settings: Value,
+) -> Result<Value, String> {
+    if thread_id.trim().is_empty() {
+        return Err("threadId is required".to_string());
+    }
+    let settings = settings
+        .as_object()
+        .ok_or_else(|| "settings must be an object".to_string())?;
+    let session = get_session_clone(sessions, &workspace_id).await?;
+    let mut params = Map::new();
+    params.insert("threadId".to_string(), json!(thread_id));
+    for key in THREAD_SETTINGS_UPDATE_FIELDS {
+        if let Some(value) = settings.get(*key) {
+            params.insert((*key).to_string(), value.clone());
+        }
+    }
+    session
+        .send_request_for_workspace(
+            &workspace_id,
+            "thread/settings/update",
+            Value::Object(params),
+        )
         .await
 }
 

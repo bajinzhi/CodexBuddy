@@ -27,6 +27,7 @@ export const SUPPORTED_APP_SERVER_METHODS = [
   "thread/goal/cleared",
   "thread/goal/updated",
   "thread/name/updated",
+  "thread/settings/updated",
   "thread/status/changed",
   "thread/started",
   "thread/tokenUsage/updated",
@@ -37,7 +38,8 @@ export const SUPPORTED_APP_SERVER_METHODS = [
   "turn/started",
 ] as const;
 
-export type SupportedAppServerMethod = (typeof SUPPORTED_APP_SERVER_METHODS)[number];
+export type SupportedAppServerMethod =
+  (typeof SUPPORTED_APP_SERVER_METHODS)[number];
 
 export const METHODS_HANDLED_OUTSIDE_USE_APP_SERVER_EVENTS = [
   "app/list/updated",
@@ -78,7 +80,9 @@ export function isSupportedAppServerMethod(
   return SUPPORTED_METHOD_SET.has(method);
 }
 
-export function getAppServerParams(event: AppServerEvent): Record<string, unknown> {
+export function getAppServerParams(
+  event: AppServerEvent,
+): Record<string, unknown> {
   const message = getAppServerMessageObject(event);
   if (!message) {
     return {};
@@ -90,7 +94,9 @@ export function getAppServerParams(event: AppServerEvent): Record<string, unknow
   return params as Record<string, unknown>;
 }
 
-export function getAppServerRequestId(event: AppServerEvent): string | number | null {
+export function getAppServerRequestId(
+  event: AppServerEvent,
+): string | number | null {
   const message = getAppServerMessageObject(event);
   if (!message) {
     return null;

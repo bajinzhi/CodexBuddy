@@ -36,8 +36,11 @@ describe("appServerEvents", () => {
   it("checks supported method and approval requests", () => {
     expect(isSupportedAppServerMethod("turn/started")).toBe(true);
     expect(isSupportedAppServerMethod("hook/started")).toBe(true);
+    expect(isSupportedAppServerMethod("thread/settings/updated")).toBe(true);
     expect(isSupportedAppServerMethod("unknown/method")).toBe(false);
-    expect(isApprovalRequestMethod("item/permissions/requestApproval")).toBe(true);
+    expect(isApprovalRequestMethod("item/permissions/requestApproval")).toBe(
+      true,
+    );
     expect(isApprovalRequestMethod("workspace/requestApproval")).toBe(true);
     expect(isApprovalRequestMethod("workspace/request")).toBe(false);
   });
@@ -71,12 +74,17 @@ describe("appServerEvents", () => {
   });
 
   it("gracefully handles malformed event payloads", () => {
-    const missingMessage = { workspace_id: "ws-1" } as unknown as AppServerEvent;
+    const missingMessage = {
+      workspace_id: "ws-1",
+    } as unknown as AppServerEvent;
     const nonObjectMessage = {
       workspace_id: "ws-1",
       message: "oops",
     } as unknown as AppServerEvent;
-    const arrayMessage = { workspace_id: "ws-1", message: [] } as unknown as AppServerEvent;
+    const arrayMessage = {
+      workspace_id: "ws-1",
+      message: [],
+    } as unknown as AppServerEvent;
 
     expect(getAppServerRawMethod(missingMessage)).toBeNull();
     expect(getAppServerRawMethod(nonObjectMessage)).toBeNull();
@@ -96,7 +104,9 @@ describe("appServerEvents", () => {
       METHODS_HANDLED_OUTSIDE_USE_APP_SERVER_EVENTS,
     );
     const supportedHandledInHook = new Set(
-      SUPPORTED_APP_SERVER_METHODS.filter((method) => !methodsHandledOutsideHook.has(method)),
+      SUPPORTED_APP_SERVER_METHODS.filter(
+        (method) => !methodsHandledOutsideHook.has(method),
+      ),
     );
 
     expect([...METHODS_ROUTED_IN_USE_APP_SERVER_EVENTS].sort()).toEqual(

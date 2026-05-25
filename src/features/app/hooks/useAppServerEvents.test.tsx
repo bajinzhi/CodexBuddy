@@ -53,6 +53,7 @@ describe("useAppServerEvents", () => {
       onThreadNameUpdated: vi.fn(),
       onThreadGoalUpdated: vi.fn(),
       onThreadGoalCleared: vi.fn(),
+      onThreadSettingsUpdated: vi.fn(),
       onThreadStatusChanged: vi.fn(),
       onThreadClosed: vi.fn(),
       onThreadArchived: vi.fn(),
@@ -74,7 +75,10 @@ describe("useAppServerEvents", () => {
     expect(listener).toBeTypeOf("function");
 
     act(() => {
-      listener?.({ workspace_id: "ws-1", message: { method: "codex/connected" } });
+      listener?.({
+        workspace_id: "ws-1",
+        message: { method: "codex/connected" },
+      });
     });
     expect(handlers.onWorkspaceConnected).toHaveBeenCalledWith("ws-1");
 
@@ -99,7 +103,11 @@ describe("useAppServerEvents", () => {
         workspace_id: "ws-1",
         message: {
           method: "item/reasoning/summaryPartAdded",
-          params: { threadId: "thread-1", itemId: "reasoning-1", summaryIndex: 1 },
+          params: {
+            threadId: "thread-1",
+            itemId: "reasoning-1",
+            summaryIndex: 1,
+          },
         },
       });
     });
@@ -133,7 +141,11 @@ describe("useAppServerEvents", () => {
           params: {
             threadId: "thread-1",
             turnId: "turn-1",
-            run: { id: "hook-1", eventName: "session-start", statusMessage: "Preparing" },
+            run: {
+              id: "hook-1",
+              eventName: "session-start",
+              statusMessage: "Preparing",
+            },
           },
         },
       });
@@ -142,7 +154,11 @@ describe("useAppServerEvents", () => {
       workspaceId: "ws-1",
       threadId: "thread-1",
       turnId: "turn-1",
-      run: { id: "hook-1", eventName: "session-start", statusMessage: "Preparing" },
+      run: {
+        id: "hook-1",
+        eventName: "session-start",
+        statusMessage: "Preparing",
+      },
     });
 
     act(() => {
@@ -152,7 +168,11 @@ describe("useAppServerEvents", () => {
           method: "hook/completed",
           params: {
             threadId: "thread-1",
-            run: { id: "hook-1", eventName: "session-start", status: "completed" },
+            run: {
+              id: "hook-1",
+              eventName: "session-start",
+              status: "completed",
+            },
           },
         },
       });
@@ -220,12 +240,41 @@ describe("useAppServerEvents", () => {
       listener?.({
         workspace_id: "ws-1",
         message: {
+          method: "thread/settings/updated",
+          params: {
+            threadId: "thread-2",
+            threadSettings: {
+              model: "gpt-5.4-codex",
+              effort: "high",
+              serviceTier: "fast",
+            },
+          },
+        },
+      });
+    });
+    expect(handlers.onThreadSettingsUpdated).toHaveBeenCalledWith(
+      "ws-1",
+      "thread-2",
+      {
+        model: "gpt-5.4-codex",
+        effort: "high",
+        serviceTier: "fast",
+      },
+    );
+
+    act(() => {
+      listener?.({
+        workspace_id: "ws-1",
+        message: {
           method: "thread/goal/cleared",
           params: { thread_id: "thread-2" },
         },
       });
     });
-    expect(handlers.onThreadGoalCleared).toHaveBeenCalledWith("ws-1", "thread-2");
+    expect(handlers.onThreadGoalCleared).toHaveBeenCalledWith(
+      "ws-1",
+      "thread-2",
+    );
 
     act(() => {
       listener?.({
@@ -273,7 +322,10 @@ describe("useAppServerEvents", () => {
         },
       });
     });
-    expect(handlers.onThreadUnarchived).toHaveBeenCalledWith("ws-1", "thread-2");
+    expect(handlers.onThreadUnarchived).toHaveBeenCalledWith(
+      "ws-1",
+      "thread-2",
+    );
 
     act(() => {
       listener?.({
@@ -503,6 +555,60 @@ describe("useAppServerEvents", () => {
         ],
       },
     });
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  it("routes snake_case thread settings updates and ignores malformed payloads", async () => {
+    const handlers: Handlers = {
+      onThreadSettingsUpdated: vi.fn(),
+    };
+    const { root } = await mount(handlers);
+
+    act(() => {
+      listener?.({
+        workspace_id: "ws-1",
+        message: {
+          method: "thread/settings/updated",
+          params: {
+            thread_id: "thread-1",
+            thread_settings: { model: "gpt-5.4-codex", effort: null },
+          },
+        },
+      });
+    });
+    expect(handlers.onThreadSettingsUpdated).toHaveBeenCalledWith(
+      "ws-1",
+      "thread-1",
+      { model: "gpt-5.4-codex", effort: null },
+    );
+
+    act(() => {
+      listener?.({
+        workspace_id: "ws-1",
+        message: {
+          method: "thread/settings/updated",
+          params: {
+            thread_id: "thread-2",
+            thread_settings: "bad",
+          },
+        },
+      });
+    });
+    act(() => {
+      listener?.({
+        workspace_id: "ws-1",
+        message: {
+          method: "thread/settings/updated",
+          params: {
+            thread_settings: { model: "gpt-5" },
+          },
+        },
+      });
+    });
+    expect(handlers.onThreadSettingsUpdated).toHaveBeenCalledTimes(1);
 
     await act(async () => {
       root.unmount();

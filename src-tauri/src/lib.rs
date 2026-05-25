@@ -254,6 +254,7 @@ pub fn run() {
             codex::thread_live_unsubscribe,
             codex::fork_thread,
             codex::list_threads,
+            codex::thread_settings_update,
             codex::list_mcp_server_status,
             codex::archive_thread,
             codex::compact_thread,

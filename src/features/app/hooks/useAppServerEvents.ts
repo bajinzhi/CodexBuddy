@@ -37,7 +37,10 @@ type HookEvent = {
 
 type AppServerEventHandlers = {
   onWorkspaceConnected?: (workspaceId: string) => void;
-  onThreadStarted?: (workspaceId: string, thread: Record<string, unknown>) => void;
+  onThreadStarted?: (
+    workspaceId: string,
+    thread: Record<string, unknown>,
+  ) => void;
   onThreadNameUpdated?: (
     workspaceId: string,
     payload: { threadId: string; threadName: string | null },
@@ -48,6 +51,11 @@ type AppServerEventHandlers = {
     goal: Record<string, unknown>,
   ) => void;
   onThreadGoalCleared?: (workspaceId: string, threadId: string) => void;
+  onThreadSettingsUpdated?: (
+    workspaceId: string,
+    threadId: string,
+    threadSettings: Record<string, unknown>,
+  ) => void;
   onThreadStatusChanged?: (
     workspaceId: string,
     threadId: string,
@@ -66,8 +74,16 @@ type AppServerEventHandlers = {
   onAgentMessageDelta?: (event: AgentDelta) => void;
   onAgentMessageCompleted?: (event: AgentCompleted) => void;
   onAppServerEvent?: (event: AppServerEvent) => void;
-  onTurnStarted?: (workspaceId: string, threadId: string, turnId: string) => void;
-  onTurnCompleted?: (workspaceId: string, threadId: string, turnId: string) => void;
+  onTurnStarted?: (
+    workspaceId: string,
+    threadId: string,
+    turnId: string,
+  ) => void;
+  onTurnCompleted?: (
+    workspaceId: string,
+    threadId: string,
+    turnId: string,
+  ) => void;
   onTurnError?: (
     workspaceId: string,
     threadId: string,
@@ -82,21 +98,62 @@ type AppServerEventHandlers = {
   ) => void;
   onHookStarted?: (event: HookEvent) => void;
   onHookCompleted?: (event: HookEvent) => void;
-  onItemStarted?: (workspaceId: string, threadId: string, item: Record<string, unknown>) => void;
-  onItemCompleted?: (workspaceId: string, threadId: string, item: Record<string, unknown>) => void;
-  onReasoningSummaryDelta?: (workspaceId: string, threadId: string, itemId: string, delta: string) => void;
-  onReasoningSummaryBoundary?: (workspaceId: string, threadId: string, itemId: string) => void;
-  onReasoningTextDelta?: (workspaceId: string, threadId: string, itemId: string, delta: string) => void;
-  onPlanDelta?: (workspaceId: string, threadId: string, itemId: string, delta: string) => void;
-  onCommandOutputDelta?: (workspaceId: string, threadId: string, itemId: string, delta: string) => void;
+  onItemStarted?: (
+    workspaceId: string,
+    threadId: string,
+    item: Record<string, unknown>,
+  ) => void;
+  onItemCompleted?: (
+    workspaceId: string,
+    threadId: string,
+    item: Record<string, unknown>,
+  ) => void;
+  onReasoningSummaryDelta?: (
+    workspaceId: string,
+    threadId: string,
+    itemId: string,
+    delta: string,
+  ) => void;
+  onReasoningSummaryBoundary?: (
+    workspaceId: string,
+    threadId: string,
+    itemId: string,
+  ) => void;
+  onReasoningTextDelta?: (
+    workspaceId: string,
+    threadId: string,
+    itemId: string,
+    delta: string,
+  ) => void;
+  onPlanDelta?: (
+    workspaceId: string,
+    threadId: string,
+    itemId: string,
+    delta: string,
+  ) => void;
+  onCommandOutputDelta?: (
+    workspaceId: string,
+    threadId: string,
+    itemId: string,
+    delta: string,
+  ) => void;
   onTerminalInteraction?: (
     workspaceId: string,
     threadId: string,
     itemId: string,
     stdin: string,
   ) => void;
-  onFileChangeOutputDelta?: (workspaceId: string, threadId: string, itemId: string, delta: string) => void;
-  onTurnDiffUpdated?: (workspaceId: string, threadId: string, diff: string) => void;
+  onFileChangeOutputDelta?: (
+    workspaceId: string,
+    threadId: string,
+    itemId: string,
+    delta: string,
+  ) => void;
+  onTurnDiffUpdated?: (
+    workspaceId: string,
+    threadId: string,
+    diff: string,
+  ) => void;
   onThreadTokenUsageUpdated?: (
     workspaceId: string,
     threadId: string,
@@ -138,6 +195,7 @@ export const METHODS_ROUTED_IN_USE_APP_SERVER_EVENTS = [
   "thread/goal/cleared",
   "thread/goal/updated",
   "thread/name/updated",
+  "thread/settings/updated",
   "thread/status/changed",
   "thread/started",
   "thread/tokenUsage/updated",
@@ -176,7 +234,7 @@ function parseHookEvent(
 export function useAppServerEvents(handlers: AppServerEventHandlers) {
   // Use ref to keep handlers current without triggering re-subscription
   const handlersRef = useRef(handlers);
-  
+
   // Update ref on every render to always have latest handlers
   useEffect(() => {
     handlersRef.current = handlers;
@@ -217,11 +275,15 @@ export function useAppServerEvents(handlers: AppServerEventHandlers) {
       }
 
       if (method === "item/tool/requestUserInput" && hasRequestId) {
-        const questionsRaw = Array.isArray(params.questions) ? params.questions : [];
+        const questionsRaw = Array.isArray(params.questions)
+          ? params.questions
+          : [];
         const questions = questionsRaw
           .map((entry) => {
             const question = entry as Record<string, unknown>;
-            const optionsRaw = Array.isArray(question.options) ? question.options : [];
+            const optionsRaw = Array.isArray(question.options)
+              ? question.options
+              : [];
             const options = optionsRaw
               .map((option) => {
                 const record = option as Record<string, unknown>;
@@ -232,7 +294,10 @@ export function useAppServerEvents(handlers: AppServerEventHandlers) {
                 }
                 return { label, description };
               })
-              .filter((option): option is { label: string; description: string } => Boolean(option));
+              .filter(
+                (option): option is { label: string; description: string } =>
+                  Boolean(option),
+              );
             return {
               id: String(question.id ?? "").trim(),
               header: String(question.header ?? ""),
@@ -273,9 +338,15 @@ export function useAppServerEvents(handlers: AppServerEventHandlers) {
       if (method === "turn/started") {
         const turn = params.turn as Record<string, unknown> | undefined;
         const threadId = String(
-          params.threadId ?? params.thread_id ?? turn?.threadId ?? turn?.thread_id ?? "",
+          params.threadId ??
+            params.thread_id ??
+            turn?.threadId ??
+            turn?.thread_id ??
+            "",
         );
-        const turnId = String(turn?.id ?? params.turnId ?? params.turn_id ?? "");
+        const turnId = String(
+          turn?.id ?? params.turnId ?? params.turn_id ?? "",
+        );
         if (threadId) {
           currentHandlers.onTurnStarted?.(workspace_id, threadId, turnId);
         }
@@ -299,7 +370,8 @@ export function useAppServerEvents(handlers: AppServerEventHandlers) {
       }
 
       if (method === "thread/started") {
-        const thread = (params.thread as Record<string, unknown> | undefined) ?? null;
+        const thread =
+          (params.thread as Record<string, unknown> | undefined) ?? null;
         const threadId = String(thread?.id ?? "");
         if (thread && threadId) {
           currentHandlers.onThreadStarted?.(workspace_id, thread);
@@ -308,22 +380,34 @@ export function useAppServerEvents(handlers: AppServerEventHandlers) {
       }
 
       if (method === "thread/name/updated") {
-        const threadId = String(params.threadId ?? params.thread_id ?? "").trim();
+        const threadId = String(
+          params.threadId ?? params.thread_id ?? "",
+        ).trim();
         const threadNameRaw = params.threadName ?? params.thread_name ?? null;
         const threadName =
           typeof threadNameRaw === "string" && threadNameRaw.trim().length > 0
             ? threadNameRaw.trim()
             : null;
         if (threadId) {
-          currentHandlers.onThreadNameUpdated?.(workspace_id, { threadId, threadName });
+          currentHandlers.onThreadNameUpdated?.(workspace_id, {
+            threadId,
+            threadName,
+          });
         }
         return;
       }
 
       if (method === "thread/goal/updated") {
-        const threadId = String(params.threadId ?? params.thread_id ?? "").trim();
+        const threadId = String(
+          params.threadId ?? params.thread_id ?? "",
+        ).trim();
         const goal = params.goal;
-        if (threadId && goal && typeof goal === "object" && !Array.isArray(goal)) {
+        if (
+          threadId &&
+          goal &&
+          typeof goal === "object" &&
+          !Array.isArray(goal)
+        ) {
           currentHandlers.onThreadGoalUpdated?.(
             workspace_id,
             threadId,
@@ -334,20 +418,49 @@ export function useAppServerEvents(handlers: AppServerEventHandlers) {
       }
 
       if (method === "thread/goal/cleared") {
-        const threadId = String(params.threadId ?? params.thread_id ?? "").trim();
+        const threadId = String(
+          params.threadId ?? params.thread_id ?? "",
+        ).trim();
         if (threadId) {
           currentHandlers.onThreadGoalCleared?.(workspace_id, threadId);
         }
         return;
       }
 
+      if (method === "thread/settings/updated") {
+        const threadId = String(
+          params.threadId ?? params.thread_id ?? "",
+        ).trim();
+        const threadSettings =
+          params.threadSettings ?? params.thread_settings ?? null;
+        if (
+          threadId &&
+          threadSettings &&
+          typeof threadSettings === "object" &&
+          !Array.isArray(threadSettings)
+        ) {
+          currentHandlers.onThreadSettingsUpdated?.(
+            workspace_id,
+            threadId,
+            threadSettings as Record<string, unknown>,
+          );
+        }
+        return;
+      }
+
       if (method === "thread/status/changed") {
-        const threadId = String(params.threadId ?? params.thread_id ?? "").trim();
+        const threadId = String(
+          params.threadId ?? params.thread_id ?? "",
+        ).trim();
         if (!threadId) {
           return;
         }
         const statusRaw = params.status;
-        if (statusRaw && typeof statusRaw === "object" && !Array.isArray(statusRaw)) {
+        if (
+          statusRaw &&
+          typeof statusRaw === "object" &&
+          !Array.isArray(statusRaw)
+        ) {
           currentHandlers.onThreadStatusChanged?.(
             workspace_id,
             threadId,
@@ -364,7 +477,9 @@ export function useAppServerEvents(handlers: AppServerEventHandlers) {
       }
 
       if (method === "thread/closed") {
-        const threadId = String(params.threadId ?? params.thread_id ?? "").trim();
+        const threadId = String(
+          params.threadId ?? params.thread_id ?? "",
+        ).trim();
         if (threadId) {
           currentHandlers.onThreadClosed?.(workspace_id, threadId);
         }
@@ -372,7 +487,9 @@ export function useAppServerEvents(handlers: AppServerEventHandlers) {
       }
 
       if (method === "thread/archived") {
-        const threadId = String(params.threadId ?? params.thread_id ?? "").trim();
+        const threadId = String(
+          params.threadId ?? params.thread_id ?? "",
+        ).trim();
         if (threadId) {
           currentHandlers.onThreadArchived?.(workspace_id, threadId);
         }
@@ -380,7 +497,9 @@ export function useAppServerEvents(handlers: AppServerEventHandlers) {
       }
 
       if (method === "thread/unarchived") {
-        const threadId = String(params.threadId ?? params.thread_id ?? "").trim();
+        const threadId = String(
+          params.threadId ?? params.thread_id ?? "",
+        ).trim();
         if (threadId) {
           currentHandlers.onThreadUnarchived?.(workspace_id, threadId);
         }
@@ -391,7 +510,11 @@ export function useAppServerEvents(handlers: AppServerEventHandlers) {
         const threadId = String(params.threadId ?? params.thread_id ?? "");
         const action = String(params.action ?? "hide");
         if (threadId) {
-          currentHandlers.onBackgroundThreadAction?.(workspace_id, threadId, action);
+          currentHandlers.onBackgroundThreadAction?.(
+            workspace_id,
+            threadId,
+            action,
+          );
         }
         return;
       }
@@ -399,7 +522,8 @@ export function useAppServerEvents(handlers: AppServerEventHandlers) {
       if (method === "error") {
         const threadId = String(params.threadId ?? params.thread_id ?? "");
         const turnId = String(params.turnId ?? params.turn_id ?? "");
-        const error = (params.error as Record<string, unknown> | undefined) ?? {};
+        const error =
+          (params.error as Record<string, unknown> | undefined) ?? {};
         const messageText = String(error.message ?? "");
         const willRetry = Boolean(params.willRetry ?? params.will_retry);
         if (threadId) {
@@ -414,9 +538,15 @@ export function useAppServerEvents(handlers: AppServerEventHandlers) {
       if (method === "turn/completed") {
         const turn = params.turn as Record<string, unknown> | undefined;
         const threadId = String(
-          params.threadId ?? params.thread_id ?? turn?.threadId ?? turn?.thread_id ?? "",
+          params.threadId ??
+            params.thread_id ??
+            turn?.threadId ??
+            turn?.thread_id ??
+            "",
         );
-        const turnId = String(turn?.id ?? params.turnId ?? params.turn_id ?? "");
+        const turnId = String(
+          turn?.id ?? params.turnId ?? params.turn_id ?? "",
+        );
         if (threadId) {
           currentHandlers.onTurnCompleted?.(workspace_id, threadId, turnId);
         }
@@ -450,7 +580,11 @@ export function useAppServerEvents(handlers: AppServerEventHandlers) {
           (params.tokenUsage as Record<string, unknown> | null | undefined) ??
           (params.token_usage as Record<string, unknown> | null | undefined);
         if (threadId && tokenUsage !== undefined) {
-          currentHandlers.onThreadTokenUsageUpdated?.(workspace_id, threadId, tokenUsage);
+          currentHandlers.onThreadTokenUsageUpdated?.(
+            workspace_id,
+            threadId,
+            tokenUsage,
+          );
         }
         return;
       }
@@ -460,7 +594,10 @@ export function useAppServerEvents(handlers: AppServerEventHandlers) {
           (params.rateLimits as Record<string, unknown> | undefined) ??
           (params.rate_limits as Record<string, unknown> | undefined);
         if (rateLimits) {
-          currentHandlers.onAccountRateLimitsUpdated?.(workspace_id, rateLimits);
+          currentHandlers.onAccountRateLimitsUpdated?.(
+            workspace_id,
+            rateLimits,
+          );
         }
         return;
       }
@@ -484,7 +621,9 @@ export function useAppServerEvents(handlers: AppServerEventHandlers) {
         const success = Boolean(params.success);
         const errorRaw = params.error ?? null;
         const error =
-          typeof errorRaw === "string" && errorRaw.trim().length > 0 ? errorRaw : null;
+          typeof errorRaw === "string" && errorRaw.trim().length > 0
+            ? errorRaw
+            : null;
         currentHandlers.onAccountLoginCompleted?.(workspace_id, {
           loginId,
           success,
@@ -528,7 +667,12 @@ export function useAppServerEvents(handlers: AppServerEventHandlers) {
         const itemId = String(params.itemId ?? params.item_id ?? "");
         const delta = String(params.delta ?? "");
         if (threadId && itemId && delta) {
-          currentHandlers.onReasoningSummaryDelta?.(workspace_id, threadId, itemId, delta);
+          currentHandlers.onReasoningSummaryDelta?.(
+            workspace_id,
+            threadId,
+            itemId,
+            delta,
+          );
         }
         return;
       }
@@ -537,7 +681,11 @@ export function useAppServerEvents(handlers: AppServerEventHandlers) {
         const threadId = String(params.threadId ?? params.thread_id ?? "");
         const itemId = String(params.itemId ?? params.item_id ?? "");
         if (threadId && itemId) {
-          currentHandlers.onReasoningSummaryBoundary?.(workspace_id, threadId, itemId);
+          currentHandlers.onReasoningSummaryBoundary?.(
+            workspace_id,
+            threadId,
+            itemId,
+          );
         }
         return;
       }
@@ -547,7 +695,12 @@ export function useAppServerEvents(handlers: AppServerEventHandlers) {
         const itemId = String(params.itemId ?? params.item_id ?? "");
         const delta = String(params.delta ?? "");
         if (threadId && itemId && delta) {
-          currentHandlers.onReasoningTextDelta?.(workspace_id, threadId, itemId, delta);
+          currentHandlers.onReasoningTextDelta?.(
+            workspace_id,
+            threadId,
+            itemId,
+            delta,
+          );
         }
         return;
       }
@@ -567,7 +720,12 @@ export function useAppServerEvents(handlers: AppServerEventHandlers) {
         const itemId = String(params.itemId ?? params.item_id ?? "");
         const delta = String(params.delta ?? "");
         if (threadId && itemId && delta) {
-          currentHandlers.onCommandOutputDelta?.(workspace_id, threadId, itemId, delta);
+          currentHandlers.onCommandOutputDelta?.(
+            workspace_id,
+            threadId,
+            itemId,
+            delta,
+          );
         }
         return;
       }
@@ -577,7 +735,12 @@ export function useAppServerEvents(handlers: AppServerEventHandlers) {
         const itemId = String(params.itemId ?? params.item_id ?? "");
         const stdin = String(params.stdin ?? "");
         if (threadId && itemId) {
-          currentHandlers.onTerminalInteraction?.(workspace_id, threadId, itemId, stdin);
+          currentHandlers.onTerminalInteraction?.(
+            workspace_id,
+            threadId,
+            itemId,
+            stdin,
+          );
         }
         return;
       }
@@ -587,7 +750,12 @@ export function useAppServerEvents(handlers: AppServerEventHandlers) {
         const itemId = String(params.itemId ?? params.item_id ?? "");
         const delta = String(params.delta ?? "");
         if (threadId && itemId && delta) {
-          currentHandlers.onFileChangeOutputDelta?.(workspace_id, threadId, itemId, delta);
+          currentHandlers.onFileChangeOutputDelta?.(
+            workspace_id,
+            threadId,
+            itemId,
+            delta,
+          );
         }
         return;
       }

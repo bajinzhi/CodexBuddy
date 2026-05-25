@@ -511,6 +511,9 @@ export function AiRadarPanel({ onClose, onSettingsChange }: AiRadarPanelProps) {
     response?.items.filter((item) => item.channel === "github").length ?? 0;
   const modelsCount =
     response?.items.filter((item) => item.channel === "models").length ?? 0;
+  const refreshLabel = refreshing
+    ? t("aiRadar.refreshing")
+    : t("aiRadar.refresh");
 
   return (
     <div className="ai-radar-overlay" role="dialog" aria-modal="true">
@@ -534,18 +537,19 @@ export function AiRadarPanel({ onClose, onSettingsChange }: AiRadarPanelProps) {
           <div className="ai-radar-header-actions">
             <button
               type="button"
-              className="secondary"
+              className={`secondary icon-button ai-radar-header-action ai-radar-refresh-button${refreshing ? " is-refreshing" : ""}`}
               onClick={() =>
                 void refresh(activeTab === "sources" ? undefined : activeTab)
               }
               disabled={refreshing}
+              aria-label={refreshLabel}
+              title={refreshLabel}
             >
-              <RefreshCw size={14} aria-hidden />
-              {refreshing ? t("aiRadar.refreshing") : t("aiRadar.refresh")}
+              <RefreshCw size={16} aria-hidden />
             </button>
             <button
               type="button"
-              className="ghost icon-only"
+              className="ghost icon-button ai-radar-header-action"
               onClick={onClose}
               aria-label={t("aiRadar.closeAria")}
               title={t("common:actions.close")}

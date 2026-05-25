@@ -7,9 +7,9 @@ use std::time::Duration;
 
 use chrono::{DateTime, NaiveDateTime, Utc};
 use futures_util::stream::{self, StreamExt};
-use reqwest::Url;
 use reqwest::header::{ACCEPT, CONTENT_TYPE, LOCATION};
 use reqwest::redirect::Policy;
+use reqwest::Url;
 use reqwest::{Client, ClientBuilder};
 use serde::{Deserialize, Serialize};
 use tokio::fs;
@@ -204,7 +204,8 @@ pub(crate) async fn ai_radar_refresh_core(
         )
         .await;
         match result {
-            Ok(items) => {
+            Ok(mut items) => {
+                normalize_item_texts(&settings, &mut items);
                 let item_count = items.len() as u32;
                 for item in items {
                     item_by_id.insert(item.id.clone(), item);
@@ -319,6 +320,7 @@ async fn write_cache(path: &Path, cache: &AiRadarCache) -> Result<(), String> {
 fn build_response(settings: AiRadarSettings, mut cache: AiRadarCache) -> AiRadarListResponse {
     let now = now_ms();
     retain_active_cache_entries(&settings, &mut cache);
+    normalize_item_texts(&settings, &mut cache.items);
     cache.items = trim_items(&settings, cache.items, now);
     let status = build_status(&settings, &cache, now);
     AiRadarListResponse {
@@ -355,7 +357,7 @@ fn build_status(settings: &AiRadarSettings, cache: &AiRadarCache, now: i64) -> A
         .iter()
         .filter(|source| source.enabled)
         .map(|source| {
-            state_by_id
+            let mut state = state_by_id
                 .get(source.id.as_str())
                 .cloned()
                 .unwrap_or_else(|| AiRadarSourceState {
@@ -365,7 +367,9 @@ fn build_status(settings: &AiRadarSettings, cache: &AiRadarCache, now: i64) -> A
                     last_fetched_at_ms: None,
                     last_error: None,
                     item_count: 0,
-                })
+                });
+            state.source_name = source.name.clone();
+            state
         })
         .collect();
     AiRadarStatus {
@@ -597,11 +601,8 @@ async fn fetch_feed(
     )
     .await?;
     let feed = feed_rs::parser::parse(Cursor::new(bytes)).map_err(|err| err.to_string())?;
-    let source_name = feed
-        .title
-        .map(|title| sanitize_text(&title.content, 120))
-        .filter(|title| !title.is_empty())
-        .unwrap_or_else(|| source.name.clone());
+    let feed_title = feed.title.map(|title| title.content);
+    let source_name = feed_source_name(source, feed_title.as_deref());
     let items = feed
         .entries
         .into_iter()
@@ -617,7 +618,7 @@ async fn fetch_feed(
                 .filter(|title| !title.is_empty())?;
             let summary = entry
                 .summary
-                .map(|summary| sanitize_text(&summary.content, 360))
+                .map(|summary| sanitize_summary_text(&summary.content, 360))
                 .filter(|summary| !summary.is_empty());
             let published_at_ms = entry
                 .published
@@ -737,7 +738,7 @@ async fn fetch_json_feed(
             let summary = entry
                 .summary
                 .or(entry.content_text)
-                .map(|summary| sanitize_text(&summary, 360))
+                .map(|summary| sanitize_summary_text(&summary, 360))
                 .filter(|summary| !summary.is_empty());
             let published_at_ms = entry
                 .date_published
@@ -835,7 +836,7 @@ async fn fetch_github_search(
                 title: repo.full_name,
                 summary: repo
                     .description
-                    .map(|value| sanitize_text(&value, 360))
+                    .map(|value| sanitize_summary_text(&value, 360))
                     .filter(|value| !value.is_empty()),
                 title_zh: None,
                 summary_zh: None,
@@ -1309,7 +1310,7 @@ fn extract_google_translation(payload: &serde_json::Value) -> Option<String> {
 
 fn apply_translated_item_text(item: &mut AiRadarItem, translated: &str) {
     if item.channel == AiRadarChannel::Github {
-        let summary = sanitize_text(translated, 220);
+        let summary = sanitize_translated_summary_text(translated, 220);
         if !summary.is_empty() && item.summary.as_deref() != Some(summary.as_str()) {
             item.summary_zh = Some(summary);
         }
@@ -1317,22 +1318,22 @@ fn apply_translated_item_text(item: &mut AiRadarItem, translated: &str) {
     }
     let mut lines = translated
         .lines()
-        .map(|line| sanitize_text(line, 240))
+        .map(|line| sanitize_translated_title_text(line, 240))
         .filter(|line| !line.is_empty())
         .collect::<Vec<_>>();
     if lines.is_empty() {
-        let fallback = sanitize_text(translated, 240);
+        let fallback = sanitize_translated_title_text(translated, 240);
         if !fallback.is_empty() {
             item.title_zh = Some(fallback);
         }
         return;
     }
-    let title = sanitize_text(&lines.remove(0), 180);
+    let title = sanitize_translated_title_text(&lines.remove(0), 180);
     if !title.is_empty() && title != item.title {
         item.title_zh = Some(title);
     }
     if item.summary.is_some() {
-        let summary = sanitize_text(&lines.join(" "), 220);
+        let summary = sanitize_translated_summary_text(&lines.join(" "), 220);
         if !summary.is_empty() && item.summary.as_deref() != Some(summary.as_str()) {
             item.summary_zh = Some(summary);
         }
@@ -1721,6 +1722,56 @@ fn human_count(value: i64) -> String {
     }
 }
 
+fn normalize_item_texts(settings: &AiRadarSettings, items: &mut [AiRadarItem]) {
+    let source_names = settings
+        .sources
+        .iter()
+        .map(|source| (source.id.as_str(), source.name.as_str()))
+        .collect::<HashMap<_, _>>();
+    for item in items {
+        item.source_name = normalize_source_name(
+            &item.source_name,
+            source_names.get(item.source_id.as_str()).copied(),
+        );
+        if let Some(summary) = item.summary.take() {
+            let summary = sanitize_summary_text(&summary, 360);
+            item.summary = (!summary.is_empty()).then_some(summary);
+        }
+        if let Some(title) = item.title_zh.take() {
+            let title = sanitize_translated_title_text(&title, 180);
+            item.title_zh = (!title.is_empty()).then_some(title);
+        }
+        if let Some(summary) = item.summary_zh.take() {
+            let summary = sanitize_translated_summary_text(&summary, 220);
+            item.summary_zh = (!summary.is_empty()).then_some(summary);
+        }
+    }
+}
+
+fn feed_source_name(source: &AiRadarSource, feed_title: Option<&str>) -> String {
+    feed_title
+        .map(|title| normalize_source_name(title, Some(source.name.as_str())))
+        .filter(|title| !title.is_empty())
+        .unwrap_or_else(|| sanitize_text(&source.name, 120))
+}
+
+fn normalize_source_name(value: &str, fallback: Option<&str>) -> String {
+    let fallback = fallback
+        .map(|value| sanitize_text(value, 120))
+        .filter(|value| !value.is_empty());
+    let source_name = sanitize_text(value, 120);
+    if source_name.is_empty() || is_feed_query_metadata_source_name(&source_name) {
+        return fallback.unwrap_or_else(|| "arXiv".to_string());
+    }
+    source_name
+}
+
+fn is_feed_query_metadata_source_name(value: &str) -> bool {
+    let lower = value.trim().to_ascii_lowercase();
+    lower.starts_with("arxiv query:")
+        || (lower.contains("search_query=") && lower.contains("max_res"))
+}
+
 fn sanitize_text(value: &str, max_chars: usize) -> String {
     let mut output = value.split_whitespace().collect::<Vec<_>>().join(" ");
     if output.chars().count() > max_chars {
@@ -1728,6 +1779,221 @@ fn sanitize_text(value: &str, max_chars: usize) -> String {
         output.push_str("...");
     }
     output
+}
+
+fn sanitize_summary_text(value: &str, max_chars: usize) -> String {
+    let decoded = decode_minimal_html(value);
+    compact_punctuation_spacing(&sanitize_text(&strip_html_markup(&decoded), max_chars))
+}
+
+fn sanitize_translated_title_text(value: &str, max_chars: usize) -> String {
+    let polished = polish_ai_translation_text(&sanitize_text(value, max_chars));
+    sanitize_text(&polished, max_chars)
+}
+
+fn sanitize_translated_summary_text(value: &str, max_chars: usize) -> String {
+    let polished = polish_ai_translation_text(&sanitize_summary_text(value, max_chars));
+    sanitize_text(&polished, max_chars)
+}
+
+fn polish_ai_translation_text(value: &str) -> String {
+    let mut output = value.to_string();
+    for (from, to) in [
+        ("法学硕士", "大语言模型"),
+        ("人工智能代理", "AI 智能体"),
+        ("AI代理", "AI 智能体"),
+        ("AI 代理", "AI 智能体"),
+        ("自主代理", "自主智能体"),
+        ("多代理", "多智能体"),
+        ("代理商", "智能体"),
+        ("座席", "智能体"),
+        ("代理工作流程", "智能体工作流"),
+        ("代理工程", "智能体工程"),
+        ("代理功能", "智能体能力"),
+        ("代理框架", "智能体框架"),
+        ("代理工具包", "智能体工具包"),
+        ("代理利用", "智能体运行框架"),
+    ] {
+        output = output.replace(from, to);
+    }
+    output.replace("代理", "智能体")
+}
+
+fn compact_punctuation_spacing(value: &str) -> String {
+    let mut output = value.to_string();
+    for punctuation in [
+        ".", ",", ";", ":", "!", "?", ")", "]", "}", "。", "，", "；", "：", "！", "？", "）", "】",
+    ] {
+        output = output.replace(&format!(" {punctuation}"), punctuation);
+    }
+    output
+}
+
+fn strip_html_markup(value: &str) -> String {
+    let mut output = String::with_capacity(value.len());
+    let mut index = 0usize;
+    while let Some(relative_start) = value[index..].find('<') {
+        let start = index + relative_start;
+        output.push_str(&value[index..start]);
+        let tag_text = &value[start..];
+        let Some((end, name, closing)) = parse_html_tag(tag_text) else {
+            output.push('<');
+            index = start + '<'.len_utf8();
+            continue;
+        };
+        output.push(' ');
+        index = start + end + '>'.len_utf8();
+        if !closing && (name == "script" || name == "style") {
+            let close_tag = format!("</{name}");
+            let tail_lower = value[index..].to_ascii_lowercase();
+            if let Some(close_start) = tail_lower.find(&close_tag) {
+                let absolute_close = index + close_start;
+                if let Some(close_end) = value[absolute_close..].find('>') {
+                    index = absolute_close + close_end + '>'.len_utf8();
+                } else {
+                    index = value.len();
+                }
+            } else {
+                index = value.len();
+            }
+        }
+    }
+    output.push_str(&value[index..]);
+    output
+}
+
+fn parse_html_tag(value: &str) -> Option<(usize, String, bool)> {
+    if !value.starts_with('<') {
+        return None;
+    }
+    let mut index = '<'.len_utf8();
+    index = skip_ascii_whitespace(value, index);
+    let mut closing = false;
+    if value[index..].starts_with('/') {
+        closing = true;
+        index += '/'.len_utf8();
+        index = skip_ascii_whitespace(value, index);
+    }
+    let first = value[index..].chars().next()?;
+    if first == '!' || first == '?' {
+        return find_html_tag_end(value).map(|end| (end, String::new(), closing));
+    }
+    if !first.is_ascii_alphabetic() {
+        return None;
+    }
+    let name_start = index;
+    while let Some(ch) = value[index..].chars().next() {
+        if !(ch.is_ascii_alphanumeric() || ch == '-') {
+            break;
+        }
+        index += ch.len_utf8();
+    }
+    if index == name_start {
+        return None;
+    }
+    let name = value[name_start..index].to_ascii_lowercase();
+    if !is_known_html_tag(&name) {
+        return None;
+    }
+    find_html_tag_end(value).map(|end| (end, name, closing))
+}
+
+fn skip_ascii_whitespace(value: &str, mut index: usize) -> usize {
+    while let Some(ch) = value[index..].chars().next() {
+        if !ch.is_ascii_whitespace() {
+            break;
+        }
+        index += ch.len_utf8();
+    }
+    index
+}
+
+fn find_html_tag_end(value: &str) -> Option<usize> {
+    let mut quote = None;
+    for (index, ch) in value.char_indices().skip(1) {
+        if let Some(current_quote) = quote {
+            if ch == current_quote {
+                quote = None;
+            }
+            continue;
+        }
+        if ch == '"' || ch == '\'' {
+            quote = Some(ch);
+            continue;
+        }
+        if ch == '>' {
+            return Some(index);
+        }
+    }
+    None
+}
+
+fn is_known_html_tag(name: &str) -> bool {
+    matches!(
+        name,
+        "a" | "abbr"
+            | "article"
+            | "aside"
+            | "b"
+            | "blockquote"
+            | "br"
+            | "button"
+            | "caption"
+            | "code"
+            | "dd"
+            | "del"
+            | "details"
+            | "div"
+            | "dl"
+            | "dt"
+            | "em"
+            | "figcaption"
+            | "figure"
+            | "footer"
+            | "h1"
+            | "h2"
+            | "h3"
+            | "h4"
+            | "h5"
+            | "h6"
+            | "header"
+            | "hr"
+            | "i"
+            | "iframe"
+            | "img"
+            | "input"
+            | "label"
+            | "li"
+            | "main"
+            | "nav"
+            | "ol"
+            | "p"
+            | "picture"
+            | "pre"
+            | "script"
+            | "section"
+            | "small"
+            | "source"
+            | "span"
+            | "strong"
+            | "style"
+            | "sub"
+            | "summary"
+            | "sup"
+            | "table"
+            | "tbody"
+            | "td"
+            | "template"
+            | "textarea"
+            | "tfoot"
+            | "th"
+            | "thead"
+            | "time"
+            | "tr"
+            | "u"
+            | "ul"
+            | "video"
+    )
 }
 
 fn truncate_chars(value: &str, max_chars: usize) -> String {
@@ -1802,7 +2068,7 @@ fn extract_meta_attr(html: &str, attr: &str, value: &str) -> Option<String> {
             || lower_tag.contains(&format!("{attr}='{}'", value.to_ascii_lowercase()))
         {
             return extract_attr_value(tag, "content")
-                .map(|content| sanitize_text(&decode_minimal_html(&content), 360))
+                .map(|content| sanitize_summary_text(&content, 360))
                 .filter(|content| !content.is_empty());
         }
         offset = end;
@@ -1834,10 +2100,12 @@ fn extract_between_case_insensitive(html: &str, start: &str, end: &str) -> Optio
 
 fn decode_minimal_html(value: &str) -> String {
     value
+        .replace("&nbsp;", " ")
         .replace("&amp;", "&")
         .replace("&lt;", "<")
         .replace("&gt;", ">")
         .replace("&quot;", "\"")
+        .replace("&apos;", "'")
         .replace("&#39;", "'")
 }
 
@@ -1846,13 +2114,14 @@ mod tests {
     use tokio::sync::Mutex;
 
     use super::{
-        AiRadarCache, OpenRouterRankingRow, ai_radar_refresh_core, apply_translated_item_text,
-        build_response, cache_path, encode_path_segment, encode_query_component,
-        extract_google_translation, extract_next_chunk_paths,
-        extract_openrouter_model_rankings_action_id, extract_openrouter_ranking_rows,
-        is_public_http_url, item_needs_chinese_translation, merge_translations_into_cache,
-        normalize_runtime_settings, now_ms, openrouter_ranking_item, read_cache, sanitize_text,
-        scheduler_status_for_cache, source_feed_url, write_cache,
+        ai_radar_refresh_core, apply_translated_item_text, build_response, cache_path,
+        encode_path_segment, encode_query_component, extract_google_translation,
+        extract_next_chunk_paths, extract_openrouter_model_rankings_action_id,
+        extract_openrouter_ranking_rows, is_public_http_url, item_needs_chinese_translation,
+        merge_translations_into_cache, normalize_runtime_settings, now_ms, openrouter_ranking_item,
+        read_cache, sanitize_summary_text, sanitize_text, sanitize_translated_summary_text,
+        scheduler_status_for_cache, source_feed_url, write_cache, AiRadarCache,
+        OpenRouterRankingRow,
     };
     use crate::types::{
         AiRadarChannel, AiRadarItem, AiRadarItemMetrics, AiRadarRefreshRequest, AiRadarSettings,
@@ -1892,6 +2161,40 @@ mod tests {
     #[test]
     fn normalizes_text_whitespace() {
         assert_eq!(sanitize_text(" A\n  B\tC ", 20), "A B C");
+    }
+
+    #[test]
+    fn removes_html_markup_from_summaries() {
+        assert_eq!(
+            sanitize_summary_text(
+                r#"<p>First <a href="https://example.com?a=>">link</a></p><br><img src="x">Second&nbsp;line"#,
+                200,
+            ),
+            "First link Second line"
+        );
+        assert_eq!(
+            sanitize_summary_text("&lt;p&gt;Encoded&lt;/p&gt; <strong>summary</strong>", 200),
+            "Encoded summary"
+        );
+    }
+
+    #[test]
+    fn preserves_non_html_angle_text_in_summaries() {
+        assert_eq!(
+            sanitize_summary_text("<⚡️> SuperAGI supports Vec<T> examples.", 200),
+            "<⚡️> SuperAGI supports Vec<T> examples."
+        );
+    }
+
+    #[test]
+    fn cleans_ai_domain_translation_terms() {
+        assert_eq!(
+            sanitize_translated_summary_text(
+                "每个座席都支持 AI 代理、多代理工作流和法学硕士上下文。",
+                200,
+            ),
+            "每个智能体都支持 AI 智能体、多智能体工作流和大语言模型上下文。"
+        );
     }
 
     #[test]
@@ -1951,12 +2254,11 @@ mod tests {
         assert_eq!(item.channel, AiRadarChannel::Models);
         assert_eq!(item.metrics.rank, Some(1));
         assert_eq!(item.metrics.tokens, Some(45_848_741_651));
-        assert!(
-            item.summary
-                .as_deref()
-                .unwrap_or("")
-                .contains("本周模型调用榜第 1 名")
-        );
+        assert!(item
+            .summary
+            .as_deref()
+            .unwrap_or("")
+            .contains("本周模型调用榜第 1 名"));
         assert_eq!(
             item.url,
             "https://openrouter.ai/deepseek/deepseek-v4-flash-20260423:free"
@@ -2082,7 +2384,7 @@ mod tests {
         item.title = "example/agent-framework".to_string();
         item.summary = Some("A framework for building autonomous agents.".to_string());
 
-        apply_translated_item_text(&mut item, "用于构建自主智能体的框架。");
+        apply_translated_item_text(&mut item, "用于构建自主代理的框架。");
 
         assert_eq!(item.title_zh, None);
         assert_eq!(
@@ -2203,6 +2505,79 @@ mod tests {
         assert_eq!(response.items[0].source_id, "active");
         assert_eq!(response.status.source_states.len(), 1);
         assert_eq!(response.status.source_states[0].source_id, "active");
+    }
+
+    #[test]
+    fn cleans_cached_summaries_before_returning_response() {
+        let now = now_ms();
+        let mut item = test_item("active", now);
+        item.summary = Some(
+            r#"<p>Google announced <a href="https://example.com">agent features</a>.</p>"#
+                .to_string(),
+        );
+        item.summary_zh = Some("<p>人工智能代理和法学硕士上下文。</p>".to_string());
+        let response = build_response(
+            AiRadarSettings {
+                enabled: true,
+                refresh_interval_minutes: 60,
+                max_items: 20,
+                retention_days: 30,
+                translate_to_chinese: true,
+                default_source_version: 5,
+                sources: vec![test_source("active")],
+            },
+            AiRadarCache {
+                items: vec![item],
+                source_states: vec![test_source_state("active")],
+                last_refreshed_at_ms: Some(123),
+            },
+        );
+
+        assert_eq!(
+            response.items[0].summary.as_deref(),
+            Some("Google announced agent features.")
+        );
+        assert_eq!(
+            response.items[0].summary_zh.as_deref(),
+            Some("AI 智能体和大语言模型上下文。")
+        );
+    }
+
+    #[test]
+    fn cleans_arxiv_query_metadata_source_names_before_returning_response() {
+        let now = now_ms();
+        let mut source = test_source("media-arxiv-agent-memory-context");
+        source.name = "arXiv Agent Memory & Context".to_string();
+        source.kind = AiRadarSourceKind::Atom;
+        let mut item = test_item("media-arxiv-agent-memory-context", now);
+        item.source_name =
+            "arXiv Query: search_query=all:\"agent memory\"&id_list=&start=0&max_res..."
+                .to_string();
+        let response = build_response(
+            AiRadarSettings {
+                enabled: true,
+                refresh_interval_minutes: 60,
+                max_items: 20,
+                retention_days: 30,
+                translate_to_chinese: true,
+                default_source_version: 5,
+                sources: vec![source],
+            },
+            AiRadarCache {
+                items: vec![item],
+                source_states: vec![test_source_state("media-arxiv-agent-memory-context")],
+                last_refreshed_at_ms: Some(123),
+            },
+        );
+
+        assert_eq!(
+            response.items[0].source_name,
+            "arXiv Agent Memory & Context"
+        );
+        assert_eq!(
+            response.status.source_states[0].source_name,
+            "arXiv Agent Memory & Context"
+        );
     }
 
     #[test]

@@ -125,6 +125,25 @@ pub(super) async fn try_handle(
                     .await,
             )
         }
+        "thread_settings_update" => {
+            let workspace_id = match parse_string(params, "workspaceId") {
+                Ok(value) => value,
+                Err(err) => return Some(Err(err)),
+            };
+            let thread_id = match parse_string(params, "threadId") {
+                Ok(value) => value,
+                Err(err) => return Some(Err(err)),
+            };
+            let settings = match parse_optional_value(params, "settings") {
+                Some(value) => value,
+                None => return Some(Err("missing `settings`".to_string())),
+            };
+            Some(
+                state
+                    .thread_settings_update(workspace_id, thread_id, settings)
+                    .await,
+            )
+        }
         "list_mcp_server_status" => {
             let workspace_id = match parse_string(params, "workspaceId") {
                 Ok(value) => value,

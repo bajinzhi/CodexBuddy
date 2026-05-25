@@ -107,10 +107,9 @@ describe("threadReducer", () => {
         timestamp: 1500,
       },
     );
-    expect(next.threadsByWorkspace["ws-1"]?.map((thread) => thread.id)).toEqual([
-      "thread-2",
-      "thread-1",
-    ]);
+    expect(next.threadsByWorkspace["ws-1"]?.map((thread) => thread.id)).toEqual(
+      ["thread-2", "thread-1"],
+    );
   });
 
   it("keeps ordering stable on timestamp updates when sorted by created_at", () => {
@@ -131,10 +130,9 @@ describe("threadReducer", () => {
         timestamp: 1500,
       },
     );
-    expect(next.threadsByWorkspace["ws-1"]?.map((thread) => thread.id)).toEqual([
-      "thread-1",
-      "thread-2",
-    ]);
+    expect(next.threadsByWorkspace["ws-1"]?.map((thread) => thread.id)).toEqual(
+      ["thread-1", "thread-2"],
+    );
   });
 
   it("does not churn state for unchanged thread names", () => {
@@ -153,6 +151,31 @@ describe("threadReducer", () => {
         name: "Agent 1",
       }),
     ).toBe(base);
+  });
+
+  it("merges thread model and effort metadata", () => {
+    const next = threadReducer(
+      {
+        ...initialState,
+        threadsByWorkspace: {
+          "ws-1": [{ id: "thread-1", name: "Agent 1", updatedAt: 1000 }],
+        },
+      },
+      {
+        type: "mergeThreadSummary",
+        workspaceId: "ws-1",
+        threadId: "thread-1",
+        patch: {
+          modelId: "gpt-5.4-codex",
+          effort: "high",
+        },
+      },
+    );
+
+    expect(next.threadsByWorkspace["ws-1"]?.[0]).toMatchObject({
+      modelId: "gpt-5.4-codex",
+      effort: "high",
+    });
   });
 
   it("tracks processing durations", () => {
@@ -567,14 +590,18 @@ describe("threadReducer", () => {
       workspaceId: "ws-1",
       threadId: "thread-bg",
     });
-    expect(withThread.threadsByWorkspace["ws-1"]?.some((t) => t.id === "thread-bg")).toBe(true);
+    expect(
+      withThread.threadsByWorkspace["ws-1"]?.some((t) => t.id === "thread-bg"),
+    ).toBe(true);
 
     const hidden = threadReducer(withThread, {
       type: "hideThread",
       workspaceId: "ws-1",
       threadId: "thread-bg",
     });
-    expect(hidden.threadsByWorkspace["ws-1"]?.some((t) => t.id === "thread-bg")).toBe(false);
+    expect(
+      hidden.threadsByWorkspace["ws-1"]?.some((t) => t.id === "thread-bg"),
+    ).toBe(false);
 
     const synced = threadReducer(hidden, {
       type: "setThreads",
@@ -633,20 +660,24 @@ describe("threadReducer", () => {
       ],
     });
 
-    expect(next.threadsByWorkspace["ws-1"]?.map((thread) => thread.id)).toEqual([
-      "thread-child",
-      "thread-new",
-      "thread-active",
-      "thread-processing",
-      "thread-parent",
-    ]);
+    expect(next.threadsByWorkspace["ws-1"]?.map((thread) => thread.id)).toEqual(
+      [
+        "thread-child",
+        "thread-new",
+        "thread-active",
+        "thread-processing",
+        "thread-parent",
+      ],
+    );
     expect(
-      next.threadsByWorkspace["ws-1"]?.find((thread) => thread.id === "thread-child")
-        ?.name,
+      next.threadsByWorkspace["ws-1"]?.find(
+        (thread) => thread.id === "thread-child",
+      )?.name,
     ).toBe("Child (fresh)");
     expect(
-      next.threadsByWorkspace["ws-1"]?.find((thread) => thread.id === "thread-parent")
-        ?.updatedAt,
+      next.threadsByWorkspace["ws-1"]?.find(
+        (thread) => thread.id === "thread-parent",
+      )?.updatedAt,
     ).toBe(300);
   });
 
@@ -691,9 +722,9 @@ describe("threadReducer", () => {
       threads: [{ id: "thread-child", name: "Child", updatedAt: 210 }],
     });
 
-    expect(next.threadsByWorkspace["ws-1"]?.map((thread) => thread.id)).toEqual([
-      "thread-child",
-    ]);
+    expect(next.threadsByWorkspace["ws-1"]?.map((thread) => thread.id)).toEqual(
+      ["thread-child"],
+    );
   });
 
   it("drops stale active anchors on complete setThreads payloads", () => {
@@ -715,9 +746,9 @@ describe("threadReducer", () => {
       threads: [{ id: "thread-fresh", name: "Fresh", updatedAt: 210 }],
     });
 
-    expect(next.threadsByWorkspace["ws-1"]?.map((thread) => thread.id)).toEqual([
-      "thread-fresh",
-    ]);
+    expect(next.threadsByWorkspace["ws-1"]?.map((thread) => thread.id)).toEqual(
+      ["thread-fresh"],
+    );
     expect(next.activeThreadIdByWorkspace["ws-1"]).toBe("thread-fresh");
   });
 
@@ -743,5 +774,4 @@ describe("threadReducer", () => {
     expect(trimmed.itemsByThread["thread-1"]).toHaveLength(3);
     expect(trimmed.itemsByThread["thread-1"]?.[0]?.id).toBe("msg-2");
   });
-
 });

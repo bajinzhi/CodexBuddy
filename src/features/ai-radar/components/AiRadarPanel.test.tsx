@@ -188,6 +188,21 @@ describe("AiRadarPanel", () => {
     ).toBeTruthy();
   });
 
+  it("renders refresh as an icon-only accessible action", async () => {
+    aiRadarListMock.mockResolvedValueOnce(response());
+
+    render(<AiRadarPanel onClose={vi.fn()} />);
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const refreshButton = screen.getByRole("button", { name: "刷新" });
+
+    expect(refreshButton.textContent).toBe("");
+    expect(refreshButton.getAttribute("title")).toBe("刷新");
+  });
+
   it("preserves unsaved source drafts during translation polling", async () => {
     aiRadarListMock.mockResolvedValueOnce(response()).mockResolvedValueOnce(
       response({

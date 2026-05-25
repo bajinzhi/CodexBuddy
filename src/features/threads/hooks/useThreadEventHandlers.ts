@@ -18,6 +18,7 @@ import {
   clearThreadGoal,
   storeThreadGoalFromRaw,
 } from "../utils/threadStorage";
+import { asString } from "../utils/threadNormalize";
 import type { ThreadAction } from "./useThreadsReducer";
 
 type ThreadEventHandlersOptions = {
@@ -60,6 +61,10 @@ type ThreadEventHandlersOptions = {
   approvalAllowlistRef: MutableRefObject<Record<string, string[][]>>;
   pendingInterruptsRef: MutableRefObject<Set<string>>;
 };
+
+function hasOwn(record: Record<string, unknown>, key: string): boolean {
+  return Object.prototype.hasOwnProperty.call(record, key);
+}
 
 export function useThreadEventHandlers({
   activeThreadId,
@@ -201,14 +206,47 @@ export function useThreadEventHandlers({
 
   const onThreadGoalUpdated = useCallback(
     (workspaceId: string, threadId: string, goal: Record<string, unknown>) => {
-      storeThreadGoalFromRaw(workspaceId, threadId, goal, { backendSynced: true });
+      storeThreadGoalFromRaw(workspaceId, threadId, goal, {
+        backendSynced: true,
+      });
     },
     [],
   );
 
-  const onThreadGoalCleared = useCallback((workspaceId: string, threadId: string) => {
-    clearThreadGoal(workspaceId, threadId);
-  }, []);
+  const onThreadGoalCleared = useCallback(
+    (workspaceId: string, threadId: string) => {
+      clearThreadGoal(workspaceId, threadId);
+    },
+    [],
+  );
+
+  const onThreadSettingsUpdated = useCallback(
+    (
+      workspaceId: string,
+      threadId: string,
+      threadSettings: Record<string, unknown>,
+    ) => {
+      const patch: { modelId?: string | null; effort?: string | null } = {};
+      if (hasOwn(threadSettings, "model")) {
+        const model = asString(threadSettings.model).trim();
+        patch.modelId = model || null;
+      }
+      if (hasOwn(threadSettings, "effort")) {
+        const effort = asString(threadSettings.effort).trim();
+        patch.effort = effort || null;
+      }
+      if (Object.keys(patch).length === 0) {
+        return;
+      }
+      dispatch({
+        type: "mergeThreadSummary",
+        workspaceId,
+        threadId,
+        patch,
+      });
+    },
+    [dispatch],
+  );
 
   const onAppServerEvent = useCallback(
     (event: AppServerEvent) => {
@@ -249,6 +287,7 @@ export function useThreadEventHandlers({
       onThreadNameUpdated,
       onThreadGoalUpdated,
       onThreadGoalCleared,
+      onThreadSettingsUpdated,
       onThreadArchived,
       onThreadUnarchived,
       onTurnStarted,
@@ -284,6 +323,7 @@ export function useThreadEventHandlers({
       onThreadNameUpdated,
       onThreadGoalUpdated,
       onThreadGoalCleared,
+      onThreadSettingsUpdated,
       onThreadArchived,
       onThreadUnarchived,
       onTurnStarted,

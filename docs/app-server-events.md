@@ -1,34 +1,43 @@
-# App-Server Events Reference (Codex `59507b849126f598ed7c624bbaf75d7ebc5588c2`)
+# App-Server Events Reference (Codex `9474e5cfc4494b0ba319352aa86ce436c59e65c8`)
 
 This document helps agents quickly answer:
+
 - Which app-server events CodexBuddy supports right now.
 - Which app-server requests CodexBuddy sends right now.
 - Where to look in CodexBuddy to add support.
 - Where to look in `../Codex` to compare event lists and find emitters.
 
 When updating this document:
+
 1. Fetch latest refs with `git -C ../Codex fetch --all --prune`.
-2. Update the Codex hash in the title using `git -C ../Codex rev-parse origin/main`.
-3. Compare Codex events vs CodexBuddy routing.
-4. Compare Codex client request methods vs CodexBuddy outgoing request methods.
-5. Compare Codex server request methods vs CodexBuddy inbound request handling.
-6. Update supported and missing lists below.
+2. Pick the comparison baseline. The current baseline is official stable
+   `@openai/codex@0.133.0` / `rust-v0.133.0`.
+3. Update the Codex hash in the title using the selected baseline commit.
+4. Compare Codex events vs CodexBuddy routing.
+5. Compare Codex client request methods vs CodexBuddy outgoing request methods.
+6. Compare Codex server request methods vs CodexBuddy inbound request handling.
+7. Update supported and missing lists below.
 
 Related project skill:
+
 - `.codex/skills/app-server-events-sync/SKILL.md`
 
 ## Where To Look In CodexBuddy
 
 Primary app-server event source of truth (methods + typed parsing helpers):
+
 - `src/utils/appServerEvents.ts`
 
 Primary event router:
+
 - `src/features/app/hooks/useAppServerEvents.ts`
 
 Event handler composition:
+
 - `src/features/threads/hooks/useThreadEventHandlers.ts`
 
 Thread/turn/item handlers:
+
 - `src/features/threads/hooks/useThreadTurnEvents.ts`
 - `src/features/threads/hooks/useThreadItemEvents.ts`
 - `src/features/threads/hooks/useThreadApprovalEvents.ts`
@@ -36,15 +45,19 @@ Thread/turn/item handlers:
 - `src/features/skills/hooks/useSkills.ts`
 
 State updates:
+
 - `src/features/threads/hooks/useThreadsReducer.ts`
 
 Item normalization / display shaping:
+
 - `src/utils/threadItems.ts`
 
 UI rendering of items:
+
 - `src/features/messages/components/Messages.tsx`
 
 Primary outgoing request layer:
+
 - `src/services/tauri.ts`
 - `src-tauri/src/shared/codex_core.rs`
 - `src-tauri/src/codex/mod.rs`
@@ -79,6 +92,7 @@ subscriptions.
 - `thread/goal/cleared`
 - `thread/goal/updated`
 - `thread/name/updated`
+- `thread/settings/updated`
 - `thread/started`
 - `thread/status/changed`
 - `thread/tokenUsage/updated`
@@ -125,15 +139,23 @@ events are currently not routed:
 - `configWarning`
 - `command/exec/outputDelta`
 - `deprecationNotice`
+- `externalAgentConfig/import/completed`
+- `fs/changed`
 - `fuzzyFileSearch/sessionCompleted`
 - `fuzzyFileSearch/sessionUpdated`
-- `item/mcpToolCall/progress`
+- `guardianWarning`
 - `item/autoApprovalReview/completed`
 - `item/autoApprovalReview/started`
+- `item/fileChange/patchUpdated`
+- `item/mcpToolCall/progress`
 - `mcpServer/oauthLogin/completed`
 - `mcpServer/startupStatus/updated`
 - `model/rerouted`
+- `model/verification`
+- `process/exited`
+- `process/outputDelta`
 - `rawResponseItem/completed`
+- `remoteControl/status/changed`
 - `serverRequest/resolved`
 - `skills/changed`
 - `thread/compacted` (deprecated; intentionally not routed)
@@ -141,8 +163,11 @@ events are currently not routed:
 - `thread/realtime/error`
 - `thread/realtime/itemAdded`
 - `thread/realtime/outputAudio/delta`
+- `thread/realtime/sdp`
 - `thread/realtime/started`
-- `thread/realtime/transcriptUpdated`
+- `thread/realtime/transcript/delta`
+- `thread/realtime/transcript/done`
+- `warning`
 - `windows/worldWritableWarning`
 - `windowsSandbox/setupCompleted`
 
@@ -152,10 +177,12 @@ These are v2 request methods CodexBuddy currently sends to Codex app-server:
 
 - `thread/start`
 - `thread/resume`
+- `thread/read`
 - `thread/fork`
 - `thread/list`
 - `thread/archive`
 - `thread/compact/start`
+- `thread/settings/update`
 - `thread/goal/clear`
 - `thread/goal/get`
 - `thread/goal/set`
@@ -176,14 +203,18 @@ These are v2 request methods CodexBuddy currently sends to Codex app-server:
 - `app/list`
 
 Notes:
+
 - `turn/start` now forwards the optional `serviceTier` override (`"fast"` for `/fast`, `null` for default/off) alongside `model`, `effort`, and `collaborationMode`.
 - `/goal` uses `thread/goal/get`, `thread/goal/set`, and `thread/goal/clear` when Codex supports them. Older Codex versions fall back to a local active-goal prefix on future `turn/start` messages.
+- `thread/settings/update` is exposed as a low-level compatibility wrapper only;
+  there is no dedicated CodexBuddy settings UI for it yet.
 
 ## Missing Client Requests (Codex v2 ClientRequest Methods)
 
 Compared against Codex v2 request methods, CodexBuddy currently does not send:
 
 - `account/logout`
+- `account/sendAddCreditsNudgeEmail`
 - `command/exec`
 - `command/exec/resize`
 - `command/exec/terminate`
@@ -193,6 +224,8 @@ Compared against Codex v2 request methods, CodexBuddy currently does not send:
 - `config/read`
 - `config/value/write`
 - `configRequirements/read`
+- `environment/add`
+- `experimentalFeature/enablement/set`
 - `externalAgentConfig/detect`
 - `externalAgentConfig/import`
 - `feedback/upload`
@@ -202,31 +235,59 @@ Compared against Codex v2 request methods, CodexBuddy currently does not send:
 - `fs/readDirectory`
 - `fs/readFile`
 - `fs/remove`
+- `fs/unwatch`
+- `fs/watch`
 - `fs/writeFile`
-- `fuzzyFileSearch/sessionStart`
-- `fuzzyFileSearch/sessionStop`
-- `fuzzyFileSearch/sessionUpdate`
+- `hooks/list`
+- `marketplace/add`
+- `marketplace/remove`
+- `marketplace/upgrade`
 - `mcpServer/oauth/login`
+- `mcpServer/resource/read`
+- `mcpServer/tool/call`
+- `memory/reset`
 - `mock/experimentalMethod`
+- `modelProvider/capabilities/read`
+- `permissionProfile/list`
 - `plugin/install`
+- `plugin/installed`
 - `plugin/list`
 - `plugin/read`
+- `plugin/share/checkout`
+- `plugin/share/delete`
+- `plugin/share/list`
+- `plugin/share/save`
+- `plugin/share/updateTargets`
+- `plugin/skill/read`
 - `plugin/uninstall`
+- `process/kill`
+- `process/resizePty`
+- `process/spawn`
+- `process/writeStdin`
+- `remoteControl/disable`
+- `remoteControl/enable`
+- `remoteControl/status/read`
 - `skills/config/write`
+- `thread/approveGuardianDeniedAction`
 - `thread/backgroundTerminals/clean`
 - `thread/decrement_elicitation`
 - `thread/increment_elicitation`
+- `thread/inject_items`
 - `thread/loaded/list`
+- `thread/memoryMode/set`
 - `thread/metadata/update`
-- `thread/read`
 - `thread/realtime/appendAudio`
 - `thread/realtime/appendText`
+- `thread/realtime/listVoices`
 - `thread/realtime/start`
 - `thread/realtime/stop`
 - `thread/rollback`
 - `thread/shellCommand`
+- `thread/turns/items/list`
+- `thread/turns/list`
 - `thread/unarchive`
 - `thread/unsubscribe`
+- `windowsSandbox/readiness`
 - `windowsSandbox/setupStart`
 
 ## Server Requests (App-Server -> CodexBuddy, v2)
@@ -242,16 +303,19 @@ Missing server requests:
 
 - `item/tool/call`
 - `account/chatgptAuthTokens/refresh`
+- `attestation/generate`
 - `mcpServer/elicitation/request`
 
 ## Where To Look In ../Codex
 
 Start here for the authoritative v2 notification list:
+
 - `../Codex/codex-rs/app-server-protocol/src/protocol/common.rs`
 
 Useful follow-ups:
+
 - Notification payload types:
-  - `../Codex/codex-rs/app-server-protocol/src/protocol/v2.rs`
+  - `../Codex/codex-rs/app-server-protocol/src/protocol/v2/*`
 - Emitters / wiring from core events to server notifications:
   - `../Codex/codex-rs/app-server/src/bespoke_event_handling.rs`
 - Human-readable protocol notes:
@@ -290,16 +354,16 @@ Use this when the method list is unchanged but behavior looks off.
 1. Confirm the current Codex hash:
    - `git -C ../Codex fetch --all --prune && git -C ../Codex rev-parse origin/main`
 2. Inspect the authoritative notification structs:
-   - `git -C ../Codex show origin/main:codex-rs/app-server-protocol/src/protocol/v2.rs | rg -n \"struct .*Notification\"`
+   - `git -C ../Codex grep -n \"struct .*Notification\" origin/main -- codex-rs/app-server-protocol/src/protocol/v2`
 3. For a specific method, jump to its struct definition:
-   - Example: `git -C ../Codex show origin/main:codex-rs/app-server-protocol/src/protocol/v2.rs | rg -n \"struct TurnPlanUpdatedNotification|struct ThreadTokenUsageUpdatedNotification|struct AccountRateLimitsUpdatedNotification|struct ItemStartedNotification|struct ItemCompletedNotification\"`
+   - Example: `git -C ../Codex grep -n \"struct TurnPlanUpdatedNotification\\|struct ThreadTokenUsageUpdatedNotification\\|struct AccountRateLimitsUpdatedNotification\\|struct ItemStartedNotification\\|struct ItemCompletedNotification\" origin/main -- codex-rs/app-server-protocol/src/protocol/v2`
 4. Compare payload shapes to the router expectations:
    - Parser/source of truth: `src/utils/appServerEvents.ts`
    - Router: `src/features/app/hooks/useAppServerEvents.ts`
    - Turn/plan/token/rate-limit normalization: `src/features/threads/utils/threadNormalize.ts`
    - Item shaping for display: `src/utils/threadItems.ts`
 5. Verify the ThreadItem schema (many UI issues start here):
-   - `git -C ../Codex show origin/main:codex-rs/app-server-protocol/src/protocol/v2.rs | rg -n \"enum ThreadItem|CommandExecution|FileChange|McpToolCall|EnteredReviewMode|ExitedReviewMode|ContextCompaction\"`
+   - `git -C ../Codex grep -n \"enum ThreadItem\\|CommandExecution\\|FileChange\\|McpToolCall\\|EnteredReviewMode\\|ExitedReviewMode\\|ContextCompaction\" origin/main -- codex-rs/app-server-protocol/src/protocol/v2`
 6. Check for camelCase vs snake_case mismatches:
    - The protocol uses `#[serde(rename_all = \"camelCase\")]`, but fields are often declared in snake_case.
    - CodexBuddy generally defends against this by checking both forms (for example in `threadNormalize.ts` and `useAppServerEvents.ts`), while centralizing method/type parsing in `appServerEvents.ts`.

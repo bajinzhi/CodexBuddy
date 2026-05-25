@@ -809,6 +809,16 @@ impl DaemonState {
         codex_core::list_threads_core(&self.sessions, workspace_id, cursor, limit, sort_key).await
     }
 
+    async fn thread_settings_update(
+        &self,
+        workspace_id: String,
+        thread_id: String,
+        settings: Value,
+    ) -> Result<Value, String> {
+        codex_core::thread_settings_update_core(&self.sessions, workspace_id, thread_id, settings)
+            .await
+    }
+
     async fn list_mcp_server_status(
         &self,
         workspace_id: String,

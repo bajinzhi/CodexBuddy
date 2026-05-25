@@ -123,6 +123,25 @@
   gap: 8px;
 }
 
+.ai-radar-header-action {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 8px;
+  line-height: 0;
+  flex: 0 0 auto;
+}
+
+.ai-radar-refresh-button.is-refreshing svg {
+  animation: ai-radar-spin 0.9s linear infinite;
+}
+
+@keyframes ai-radar-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .ai-radar-tabs {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -409,10 +428,9 @@
     padding: 14px 12px 10px;
   }
 
-  .ai-radar-header-actions .secondary {
-    width: 38px;
-    padding-inline: 0;
-    font-size: 0;
+  .ai-radar-header-action {
+    width: 36px;
+    height: 36px;
   }
 
   .ai-radar-tabs button {

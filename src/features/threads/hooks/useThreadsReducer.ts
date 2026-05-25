@@ -64,7 +64,12 @@ export type ThreadAction =
   | { type: "markReviewing"; threadId: string; isReviewing: boolean }
   | { type: "markUnread"; threadId: string; hasUnread: boolean }
   | { type: "addAssistantMessage"; threadId: string; text: string }
-  | { type: "setThreadName"; workspaceId: string; threadId: string; name: string }
+  | {
+      type: "setThreadName";
+      workspaceId: string;
+      threadId: string;
+      name: string;
+    }
   | {
       type: "mergeThreadSummary";
       workspaceId: string;
@@ -72,7 +77,12 @@ export type ThreadAction =
       patch: Partial<
         Pick<
           ThreadSummary,
-          "isSubagent" | "subagentNickname" | "subagentRole" | "createdAt"
+          | "isSubagent"
+          | "subagentNickname"
+          | "subagentRole"
+          | "createdAt"
+          | "modelId"
+          | "effort"
         >
       >;
     }
@@ -117,9 +127,19 @@ export type ThreadAction =
       threadId: string;
       itemId: string;
     }
-  | { type: "appendReasoningContent"; threadId: string; itemId: string; delta: string }
+  | {
+      type: "appendReasoningContent";
+      threadId: string;
+      itemId: string;
+      delta: string;
+    }
   | { type: "appendPlanDelta"; threadId: string; itemId: string; delta: string }
-  | { type: "appendToolOutput"; threadId: string; itemId: string; delta: string }
+  | {
+      type: "appendToolOutput";
+      threadId: string;
+      itemId: string;
+      delta: string;
+    }
   | {
       type: "setThreads";
       workspaceId: string;
@@ -155,7 +175,11 @@ export type ThreadAction =
       requestId: number | string;
       workspaceId: string;
     }
-  | { type: "setThreadTokenUsage"; threadId: string; tokenUsage: ThreadTokenUsage }
+  | {
+      type: "setThreadTokenUsage";
+      threadId: string;
+      tokenUsage: ThreadTokenUsage;
+    }
   | {
       type: "setRateLimits";
       workspaceId: string;
@@ -203,7 +227,10 @@ export const initialState: ThreadState = {
   lastAgentMessageByThread: {},
 };
 
-type ThreadSliceReducer = (state: ThreadState, action: ThreadAction) => ThreadState;
+type ThreadSliceReducer = (
+  state: ThreadState,
+  action: ThreadAction,
+) => ThreadState;
 
 const threadSliceReducers: ThreadSliceReducer[] = [
   reduceThreadLifecycle,
@@ -213,7 +240,10 @@ const threadSliceReducers: ThreadSliceReducer[] = [
   reduceThreadSnapshots,
 ];
 
-export function threadReducer(state: ThreadState, action: ThreadAction): ThreadState {
+export function threadReducer(
+  state: ThreadState,
+  action: ThreadAction,
+): ThreadState {
   for (const reduceSlice of threadSliceReducers) {
     const nextState = reduceSlice(state, action);
     if (nextState !== state) {

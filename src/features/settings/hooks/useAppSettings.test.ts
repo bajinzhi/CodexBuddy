@@ -278,14 +278,26 @@ describe("useAppSettings", () => {
     const sourceIds = result.current.settings.aiRadar.sources.map(
       (source) => source.id,
     );
+    const sourcesById = new Map(
+      result.current.settings.aiRadar.sources.map((source) => [
+        source.id,
+        source,
+      ]),
+    );
     expect(result.current.settings.aiRadar.translateToChinese).toBe(true);
-    expect(result.current.settings.aiRadar.defaultSourceVersion).toBe(8);
+    expect(result.current.settings.aiRadar.defaultSourceVersion).toBe(9);
     expect(sourceIds).toContain("media-openai-news");
     expect(sourceIds).toContain("media-venturebeat-ai");
     expect(sourceIds).toContain("media-mit-ai");
     expect(sourceIds).toContain("media-anthropic-news");
     expect(sourceIds).toContain("media-arxiv-agent-memory-context");
     expect(sourceIds).toContain("media-wechat-jiqizhixin");
+    expect(sourceIds).toContain("media-wechat-xinzhiyuan");
+    expect(sourceIds).toContain("media-wechat-51cto-tech");
+    expect(sourceIds).toContain("media-wechat-tencent-cloud-developer");
+    expect(sourceIds).toContain("media-wechat-aliyun-developer");
+    expect(sourceIds).toContain("media-wechat-infoq");
+    expect(sourceIds).toContain("media-wechat-taobao-tech");
     expect(sourceIds).toContain("media-toutiao-ai-teaching");
     expect(sourceIds).not.toContain("media-the-decoder");
     expect(sourceIds).toContain("github-ai-agent-topic");
@@ -295,6 +307,15 @@ describe("useAppSettings", () => {
     expect(sourceIds).toContain("github-context-engineering-topic");
     expect(sourceIds).toContain("github-ai-projects");
     expect(sourceIds).toContain("models-openrouter-weekly");
+    expect(sourcesById.get("media-wechat-xinzhiyuan")?.query).toBe(
+      "/wechat/sogou/%E6%96%B0%E6%99%BA%E5%85%83",
+    );
+    expect(sourcesById.get("media-wechat-51cto-tech")?.query).toBe(
+      "/wechat/sogou/51CTO%E6%8A%80%E6%9C%AF%E6%A0%88",
+    );
+    expect(sourcesById.get("media-wechat-aliyun-developer")?.query).toBe(
+      "/wechat/sogou/%E9%98%BF%E9%87%8C%E4%BA%91%E5%BC%80%E5%8F%91%E8%80%85",
+    );
     expect(
       result.current.settings.aiRadar.sources.find(
         (source) => source.id === "github-ai-agent-topic",

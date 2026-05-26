@@ -28,6 +28,13 @@ import {
 } from "@services/tauri";
 
 type AiRadarTab = AiRadarChannel | "sources";
+type AiRadarMediaGroup =
+  | "all"
+  | "official"
+  | "wechat"
+  | "research"
+  | "community"
+  | "other";
 type AiRadarSortMode =
   | "score"
   | "latest"
@@ -62,6 +69,15 @@ const defaultSortModeByChannel: Record<AiRadarChannel, AiRadarSortMode> = {
   github: "score",
   models: "tokens",
 };
+
+const mediaGroups: AiRadarMediaGroup[] = [
+  "all",
+  "official",
+  "wechat",
+  "research",
+  "community",
+  "other",
+];
 
 type SourceDefaults = {
   githubSearchName: string;
@@ -100,6 +116,39 @@ function channelLabelKey(channel: AiRadarChannel) {
     return "aiRadar.tabs.models";
   }
   return "aiRadar.tabs.media";
+}
+
+function mediaGroupLabelKey(group: AiRadarMediaGroup) {
+  return `aiRadar.mediaGroups.${group}`;
+}
+
+function mediaGroupForSource(
+  source: AiRadarSource | null | undefined,
+  sourceName?: string,
+): Exclude<AiRadarMediaGroup, "all"> {
+  const id = source?.id.toLowerCase() ?? "";
+  const name = `${source?.name ?? ""} ${sourceName ?? ""}`.toLowerCase();
+  if (source?.kind === "wechatOfficialAccount" || id.includes("wechat")) {
+    return "wechat";
+  }
+  if (source?.kind === "toutiaoUser" || id.includes("toutiao")) {
+    return "community";
+  }
+  if (
+    source?.kind === "atom" ||
+    id.includes("arxiv") ||
+    name.includes("arxiv")
+  ) {
+    return "research";
+  }
+  if (
+    source?.kind === "rss" ||
+    source?.kind === "article" ||
+    source?.kind === "jsonFeed"
+  ) {
+    return "official";
+  }
+  return "other";
 }
 
 function sourceUsesQuery(kind: AiRadarSourceKind) {
@@ -345,6 +394,8 @@ function channelNeedsInitialFetch(
 export function AiRadarPanel({ onClose, onSettingsChange }: AiRadarPanelProps) {
   const { t } = useTranslation(["app", "common"]);
   const [activeTab, setActiveTab] = useState<AiRadarTab>("media");
+  const [activeMediaGroup, setActiveMediaGroup] =
+    useState<AiRadarMediaGroup>("all");
   const [sortModeByChannel, setSortModeByChannel] = useState<
     Record<AiRadarChannel, AiRadarSortMode>
   >(defaultSortModeByChannel);
@@ -363,19 +414,24 @@ export function AiRadarPanel({ onClose, onSettingsChange }: AiRadarPanelProps) {
     setError(null);
     try {
       let next = await aiRadarList();
-      if (
-        channelNeedsInitialFetch(next, "media") ||
-        channelNeedsInitialFetch(next, "github") ||
-        channelNeedsInitialFetch(next, "models")
-      ) {
-        next = await aiRadarRefresh();
-      }
       setResponse(next);
       setDraftSettings(next.settings);
+      setLoading(false);
+
+      const shouldRefresh =
+        channelNeedsInitialFetch(next, "media") ||
+        channelNeedsInitialFetch(next, "github") ||
+        channelNeedsInitialFetch(next, "models");
+      if (shouldRefresh) {
+        setRefreshing(true);
+        next = await aiRadarRefresh();
+        setResponse(next);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   }, []);
 
@@ -416,14 +472,81 @@ export function AiRadarPanel({ onClose, onSettingsChange }: AiRadarPanelProps) {
   const activeSortOptions = activeChannel
     ? sortOptionsForChannel(activeChannel)
     : [];
+  const sourceById = useMemo(
+    () =>
+      new Map(
+        (response?.settings.sources ?? []).map((source) => [source.id, source]),
+      ),
+    [response?.settings.sources],
+  );
+  const mediaGroupCounts = useMemo(() => {
+    const counts = new Map<AiRadarMediaGroup, number>(
+      mediaGroups.map((group) => [group, 0]),
+    );
+    for (const item of response?.items ?? []) {
+      if (item.channel !== "media") {
+        continue;
+      }
+      const group = mediaGroupForSource(
+        sourceById.get(item.sourceId),
+        item.sourceName,
+      );
+      counts.set("all", (counts.get("all") ?? 0) + 1);
+      counts.set(group, (counts.get(group) ?? 0) + 1);
+    }
+    return counts;
+  }, [response?.items, sourceById]);
+  const mediaGroupFailures = useMemo(() => {
+    const failures = new Map<AiRadarMediaGroup, number>(
+      mediaGroups.map((group) => [group, 0]),
+    );
+    const statesBySourceId = new Map(
+      (response?.status.sourceStates ?? []).map((state) => [
+        state.sourceId,
+        state,
+      ]),
+    );
+    for (const source of response?.settings.sources ?? []) {
+      if (source.channel !== "media") {
+        continue;
+      }
+      const state = statesBySourceId.get(source.id);
+      if (!state || state.ok) {
+        continue;
+      }
+      const group = mediaGroupForSource(source);
+      failures.set("all", (failures.get("all") ?? 0) + 1);
+      failures.set(group, (failures.get(group) ?? 0) + 1);
+    }
+    return failures;
+  }, [response?.settings.sources, response?.status.sourceStates]);
 
   const items = useMemo(() => {
     const channel = activeChannel ?? "media";
     return sortItems(
-      (response?.items ?? []).filter((item) => item.channel === channel),
+      (response?.items ?? []).filter((item) => {
+        if (item.channel !== channel) {
+          return false;
+        }
+        if (channel !== "media" || activeMediaGroup === "all") {
+          return true;
+        }
+        return (
+          mediaGroupForSource(
+            sourceById.get(item.sourceId),
+            item.sourceName,
+          ) === activeMediaGroup
+        );
+      }),
       activeSortMode,
     );
-  }, [activeChannel, activeSortMode, response?.items]);
+  }, [
+    activeChannel,
+    activeMediaGroup,
+    activeSortMode,
+    response?.items,
+    sourceById,
+  ]);
 
   const refresh = async (channel?: AiRadarChannel) => {
     setRefreshing(true);
@@ -712,6 +835,11 @@ export function AiRadarPanel({ onClose, onSettingsChange }: AiRadarPanelProps) {
                         />
                         <span>{t(channelLabelKey(source.channel))}</span>
                       </label>
+                      {source.channel === "media" && (
+                        <span className="ai-radar-source-group">
+                          {t(mediaGroupLabelKey(mediaGroupForSource(source)))}
+                        </span>
+                      )}
                       <select
                         value={source.kind}
                         onChange={(event) =>
@@ -793,6 +921,45 @@ export function AiRadarPanel({ onClose, onSettingsChange }: AiRadarPanelProps) {
           </div>
         ) : (
           <div className="ai-radar-items">
+            {activeChannel === "media" && (
+              <div
+                className="ai-radar-media-groups"
+                role="group"
+                aria-label={t("aiRadar.mediaGroups.aria")}
+              >
+                {mediaGroups.map((group) => {
+                  const count = mediaGroupCounts.get(group) ?? 0;
+                  const failed = mediaGroupFailures.get(group) ?? 0;
+                  return (
+                    <button
+                      key={group}
+                      type="button"
+                      className={group === activeMediaGroup ? "active" : ""}
+                      aria-pressed={group === activeMediaGroup}
+                      onClick={() => setActiveMediaGroup(group)}
+                    >
+                      <span>{t(mediaGroupLabelKey(group))}</span>
+                      <span className="ai-radar-media-group-count">
+                        {formatNumber(count)}
+                      </span>
+                      {failed > 0 && (
+                        <span
+                          className="ai-radar-media-group-failed"
+                          title={t("aiRadar.mediaGroups.failed", {
+                            count: failed,
+                          })}
+                          aria-label={t("aiRadar.mediaGroups.failed", {
+                            count: failed,
+                          })}
+                        >
+                          {formatNumber(failed)}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
             {activeChannel && (
               <div className="ai-radar-list-toolbar">
                 <span>{t("aiRadar.sort.label")}</span>

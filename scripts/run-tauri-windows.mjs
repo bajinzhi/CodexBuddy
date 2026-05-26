@@ -22,8 +22,31 @@ const mode = process.argv[2];
 const extraArgs = process.argv.slice(3);
 
 if (mode !== "build" && mode !== "dev") {
-  console.error("Usage: node scripts/run-tauri-windows.mjs <build|dev> [...tauri args]");
+  console.error(
+    "Usage: node scripts/run-tauri-windows.mjs <build|dev> [...tauri args]",
+  );
   process.exit(1);
+}
+
+function normalizeDevInstanceId(value) {
+  const normalized = String(value ?? "")
+    .trim()
+    .replace(/[^A-Za-z0-9.-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return normalized || null;
+}
+
+function resolveDevPort() {
+  const value = String(process.env.CODEXBUDDY_DEV_PORT ?? "").trim();
+  if (!value) {
+    return null;
+  }
+  const port = Number(value);
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+    console.error(`Invalid CODEXBUDDY_DEV_PORT: ${value}`);
+    process.exit(1);
+  }
+  return port;
 }
 
 function powershellCommand(script) {
@@ -37,15 +60,32 @@ function powershellCommand(script) {
 }
 
 const shellProjectRoot = projectRoot.replace(/'/g, "''");
+const devPort = mode === "dev" ? resolveDevPort() : null;
+const devInstanceId =
+  mode === "dev"
+    ? normalizeDevInstanceId(process.env.CODEXBUDDY_DEV_INSTANCE_ID)
+    : null;
+const devHost =
+  String(process.env.CODEXBUDDY_DEV_HOST ?? "127.0.0.1").trim() || "127.0.0.1";
+const devCommand = devPort
+  ? `npm run dev -- --host ${devHost} --port ${devPort} --strictPort`
+  : "npm run dev";
 const overrideConfig = JSON.stringify({
   build: {
     beforeDevCommand: powershellCommand(
-      `Set-Location -LiteralPath '${shellProjectRoot}'; npm run dev`,
+      `Set-Location -LiteralPath '${shellProjectRoot}'; ${devCommand}`,
     ),
     beforeBuildCommand: powershellCommand(
       `Set-Location -LiteralPath '${shellProjectRoot}'; npm run build`,
     ),
+    ...(devPort ? { devUrl: `http://${devHost}:${devPort}` } : {}),
   },
+  ...(devInstanceId
+    ? {
+        identifier: `com.bajinzhi.codexbuddy.${devInstanceId}`,
+        productName: `CodexBuddy ${devInstanceId}`,
+      }
+    : {}),
 });
 
 const tauriArgs = [

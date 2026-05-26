@@ -26,8 +26,16 @@ const CACHE_FILE_NAME: &str = "ai-radar-cache.json";
 const USER_AGENT_VALUE: &str = "CodexBuddy AI Radar/1.0 (+https://github.com/openai/codex)";
 const MAX_FETCH_BYTES: u64 = 2 * 1024 * 1024;
 const HTTP_TIMEOUT_SECS: u64 = 30;
+const RSSHUB_CANDIDATE_TIMEOUT_SECS: u64 = 8;
 const MAX_REDIRECTS: usize = 5;
-const DEFAULT_RSSHUB_BASE_URL: &str = "https://rsshub.chn.moe";
+const DEFAULT_RSSHUB_BASE_URLS: &[&str] = &[
+    "https://rsshub.yubao.moe",
+    "https://rsshub.rssforever.com",
+    "https://rsshub.ktachibana.party",
+    "https://rss.owo.nz",
+    "https://rsshub.umzzz.com",
+];
+const RSSHUB_BASE_URLS_ENV: &str = "CODEXBUDDY_RSSHUB_BASE_URLS";
 const GOOGLE_TRANSLATE_ENDPOINT: &str =
     "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=zh-CN&dt=t&q=";
 const MAX_TRANSLATED_ITEMS_PER_SOURCE: usize = 20;
@@ -223,15 +231,23 @@ pub(crate) async fn ai_radar_refresh_core(
                 );
             }
             Err(err) => {
+                let cached_item_count = item_by_id
+                    .values()
+                    .filter(|item| item.source_id == source.id)
+                    .count() as u32;
+                let last_fetched_at_ms = state_by_id
+                    .get(&source.id)
+                    .and_then(|state| state.last_fetched_at_ms)
+                    .or(Some(now));
                 state_by_id.insert(
                     source.id.clone(),
                     AiRadarSourceState {
                         source_id: source.id.clone(),
                         source_name: source.name.clone(),
                         ok: false,
-                        last_fetched_at_ms: Some(now),
+                        last_fetched_at_ms,
                         last_error: Some(err),
-                        item_count: 0,
+                        item_count: cached_item_count,
                     },
                 );
             }
@@ -593,10 +609,10 @@ async fn fetch_feed(
     source: &AiRadarSource,
     now: i64,
 ) -> Result<Vec<AiRadarItem>, String> {
-    let url = source_feed_url(source)?;
-    let bytes = fetch_bytes(
+    let urls = source_feed_urls(source)?;
+    let bytes = fetch_bytes_from_candidates(
         client,
-        &url,
+        &urls,
         "application/rss+xml, application/atom+xml, text/xml",
     )
     .await?;
@@ -638,7 +654,12 @@ async fn fetch_feed(
     Ok(items)
 }
 
+#[cfg(test)]
 fn source_feed_url(source: &AiRadarSource) -> Result<String, String> {
+    source_feed_urls(source).map(|urls| urls.into_iter().next().unwrap_or_default())
+}
+
+fn source_feed_urls(source: &AiRadarSource) -> Result<Vec<String>, String> {
     match &source.kind {
         AiRadarSourceKind::WechatOfficialAccount => rsshub_route_url(
             source,
@@ -650,7 +671,7 @@ fn source_feed_url(source: &AiRadarSource) -> Result<String, String> {
             "toutiao/user/token",
             "Missing Toutiao RSSHub route or user token",
         ),
-        _ => source_url(source).map(|url| url.to_string()),
+        _ => source_url(source).map(|url| vec![url.to_string()]),
     }
 }
 
@@ -673,7 +694,7 @@ fn rsshub_route_url(
     source: &AiRadarSource,
     short_route_prefix: &str,
     missing_message: &str,
-) -> Result<String, String> {
+) -> Result<Vec<String>, String> {
     if let Some(url) = source
         .url
         .as_deref()
@@ -681,7 +702,7 @@ fn rsshub_route_url(
         .filter(|url| !url.is_empty())
     {
         if is_public_http_url(url) {
-            return Ok(url.to_string());
+            return Ok(vec![url.to_string()]);
         }
         return Err("Source URL must be a public http(s) URL".to_string());
     }
@@ -693,7 +714,7 @@ fn rsshub_route_url(
         .filter(|query| !query.is_empty())
         .ok_or_else(|| missing_message.to_string())?;
     if is_public_http_url(value) {
-        return Ok(value.to_string());
+        return Ok(vec![value.to_string()]);
     }
     if value.starts_with("http://") || value.starts_with("https://") {
         return Err("RSSHub URL must be a public http(s) URL".to_string());
@@ -705,7 +726,40 @@ fn rsshub_route_url(
     } else {
         format!("{short_route_prefix}/{}", encode_path_segment(route))
     };
-    Ok(format!("{DEFAULT_RSSHUB_BASE_URL}/{route}"))
+    Ok(rsshub_base_urls()
+        .into_iter()
+        .map(|base_url| format!("{base_url}/{route}"))
+        .collect())
+}
+
+fn rsshub_base_urls() -> Vec<String> {
+    let mut base_urls = Vec::new();
+    if let Ok(value) = std::env::var(RSSHUB_BASE_URLS_ENV) {
+        for entry in value.split([',', ';', '\n']) {
+            if let Some(base_url) = normalize_rsshub_base_url(entry) {
+                base_urls.push(base_url);
+            }
+        }
+    }
+    for base_url in DEFAULT_RSSHUB_BASE_URLS {
+        if let Some(base_url) = normalize_rsshub_base_url(base_url) {
+            base_urls.push(base_url);
+        }
+    }
+    let mut seen = HashSet::new();
+    base_urls
+        .into_iter()
+        .filter(|base_url| seen.insert(base_url.clone()))
+        .collect()
+}
+
+fn normalize_rsshub_base_url(value: &str) -> Option<String> {
+    let value = value.trim().trim_end_matches('/');
+    if is_public_http_url(value) {
+        Some(value.to_string())
+    } else {
+        None
+    }
 }
 
 async fn fetch_json_feed(
@@ -1351,16 +1405,26 @@ fn contains_cjk(value: &str) -> bool {
     })
 }
 
-async fn fetch_bytes(_client: &Client, url: &str, accept: &str) -> Result<Vec<u8>, String> {
+async fn fetch_bytes(client: &Client, url: &str, accept: &str) -> Result<Vec<u8>, String> {
+    fetch_bytes_with_timeout(client, url, accept, None).await
+}
+
+async fn fetch_bytes_with_timeout(
+    _client: &Client,
+    url: &str,
+    accept: &str,
+    request_timeout: Option<Duration>,
+) -> Result<Vec<u8>, String> {
     let mut current = parse_public_http_url(url).await?;
     for redirect_count in 0..=MAX_REDIRECTS {
         let request_client = build_client_for_url(&current.url, &current.addrs)?;
-        let mut response = request_client
+        let mut request = request_client
             .get(current.url.clone())
-            .header(ACCEPT, accept)
-            .send()
-            .await
-            .map_err(|err| err.to_string())?;
+            .header(ACCEPT, accept);
+        if let Some(timeout) = request_timeout {
+            request = request.timeout(timeout);
+        }
+        let mut response = request.send().await.map_err(|err| err.to_string())?;
 
         if response.status().is_redirection() {
             if redirect_count == MAX_REDIRECTS {
@@ -1391,6 +1455,34 @@ async fn fetch_bytes(_client: &Client, url: &str, accept: &str) -> Result<Vec<u8
         return read_limited_response_body(&mut response).await;
     }
     Err("Too many redirects".to_string())
+}
+
+async fn fetch_bytes_from_candidates(
+    client: &Client,
+    urls: &[String],
+    accept: &str,
+) -> Result<Vec<u8>, String> {
+    let mut errors = Vec::new();
+    for url in urls {
+        match fetch_bytes_with_timeout(
+            client,
+            url,
+            accept,
+            Some(Duration::from_secs(RSSHUB_CANDIDATE_TIMEOUT_SECS)),
+        )
+        .await
+        {
+            Ok(bytes) => return Ok(bytes),
+            Err(err) => errors.push(format!("{url}: {err}")),
+        }
+    }
+    if errors.len() == 1 {
+        return Err(errors.pop().unwrap_or_else(|| "Fetch failed".to_string()));
+    }
+    Err(format!(
+        "All RSSHub fallbacks failed: {}",
+        errors.join("; ")
+    ))
 }
 
 fn client_builder() -> ClientBuilder {
@@ -2120,7 +2212,7 @@ mod tests {
         extract_openrouter_ranking_rows, is_public_http_url, item_needs_chinese_translation,
         merge_translations_into_cache, normalize_runtime_settings, now_ms, openrouter_ranking_item,
         read_cache, sanitize_summary_text, sanitize_text, sanitize_translated_summary_text,
-        scheduler_status_for_cache, source_feed_url, write_cache, AiRadarCache,
+        scheduler_status_for_cache, source_feed_url, source_feed_urls, write_cache, AiRadarCache,
         OpenRouterRankingRow,
     };
     use crate::types::{
@@ -2630,6 +2722,12 @@ mod tests {
         assert!(source_ids.contains(&"media-anthropic-news"));
         assert!(source_ids.contains(&"media-arxiv-agent-memory-context"));
         assert!(source_ids.contains(&"media-wechat-jiqizhixin"));
+        assert!(source_ids.contains(&"media-wechat-xinzhiyuan"));
+        assert!(source_ids.contains(&"media-wechat-51cto-tech"));
+        assert!(source_ids.contains(&"media-wechat-tencent-cloud-developer"));
+        assert!(source_ids.contains(&"media-wechat-aliyun-developer"));
+        assert!(source_ids.contains(&"media-wechat-infoq"));
+        assert!(source_ids.contains(&"media-wechat-taobao-tech"));
         assert!(source_ids.contains(&"media-toutiao-ai-teaching"));
         assert!(!source_ids.contains(&"media-the-decoder"));
         assert!(source_ids.contains(&"github-ai-agent-topic"));
@@ -2676,20 +2774,42 @@ mod tests {
             channel: AiRadarChannel::Media,
             created_at_ms: None,
         };
+        let sogou_route = AiRadarSource {
+            id: "wechat-sogou-route".to_string(),
+            name: "WeChat Sogou Route".to_string(),
+            kind: AiRadarSourceKind::WechatOfficialAccount,
+            url: None,
+            query: Some("/wechat/sogou/almosthuman2014".to_string()),
+            enabled: true,
+            channel: AiRadarChannel::Media,
+            created_at_ms: None,
+        };
 
         assert_eq!(
             source_feed_url(&wechat).as_deref(),
-            Ok("https://rsshub.chn.moe/wechat/ershicimi/813oxJOl")
+            Ok("https://rsshub.yubao.moe/wechat/ershicimi/813oxJOl")
         );
         assert_eq!(
             source_feed_url(&toutiao).as_deref(),
-            Ok(
-                "https://rsshub.chn.moe/toutiao/user/token/MS4wLjABAAAAEmbqJP2CmC8XXv1BpMvQ3sQHKAxFsq8wHxj8XVIQWja6tMcB-QEbFkzkRNgMl12M"
-            )
+            Ok("https://rsshub.yubao.moe/toutiao/user/token/MS4wLjABAAAAEmbqJP2CmC8XXv1BpMvQ3sQHKAxFsq8wHxj8XVIQWja6tMcB-QEbFkzkRNgMl12M")
         );
         assert_eq!(
             source_feed_url(&route).as_deref(),
-            Ok("https://rsshub.chn.moe/wechat/ershicimi/813oxJOl")
+            Ok("https://rsshub.yubao.moe/wechat/ershicimi/813oxJOl")
+        );
+        assert_eq!(
+            source_feed_url(&sogou_route).as_deref(),
+            Ok("https://rsshub.yubao.moe/wechat/sogou/almosthuman2014")
+        );
+        assert_eq!(
+            source_feed_urls(&sogou_route).unwrap(),
+            vec![
+                "https://rsshub.yubao.moe/wechat/sogou/almosthuman2014".to_string(),
+                "https://rsshub.rssforever.com/wechat/sogou/almosthuman2014".to_string(),
+                "https://rsshub.ktachibana.party/wechat/sogou/almosthuman2014".to_string(),
+                "https://rss.owo.nz/wechat/sogou/almosthuman2014".to_string(),
+                "https://rsshub.umzzz.com/wechat/sogou/almosthuman2014".to_string(),
+            ]
         );
     }
 
@@ -2865,6 +2985,67 @@ mod tests {
             assert_eq!(response.status.last_refreshed_at_ms, previous_refresh);
             assert_eq!(cache.last_refreshed_at_ms, previous_refresh);
             assert!(state.last_fetched_at_ms.is_some());
+            assert!(state.last_error.is_some());
+            let _ = tokio::fs::remove_dir_all(dir).await;
+        });
+    }
+
+    #[test]
+    fn failed_source_refresh_keeps_cached_content_as_fallback() {
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .expect("runtime");
+        runtime.block_on(async {
+            let cached_at = now_ms();
+            let dir = std::env::temp_dir().join(format!("codexbuddy-ai-radar-{cached_at}"));
+            let settings_path = dir.join("settings.json");
+            let cache_file = cache_path(&settings_path);
+            write_cache(
+                &cache_file,
+                &AiRadarCache {
+                    items: vec![test_item("cached-source", cached_at)],
+                    source_states: vec![test_source_state("cached-source")],
+                    last_refreshed_at_ms: Some(123),
+                },
+            )
+            .await
+            .expect("write cache");
+            let mut settings = AppSettings::default();
+            settings.ai_radar.sources = vec![AiRadarSource {
+                id: "cached-source".to_string(),
+                name: "Cached Source".to_string(),
+                kind: AiRadarSourceKind::Rss,
+                url: Some("http://127.0.0.1/feed.xml".to_string()),
+                query: None,
+                enabled: true,
+                channel: AiRadarChannel::Media,
+                created_at_ms: Some(1),
+            }];
+            let app_settings = Mutex::new(settings);
+
+            let response = ai_radar_refresh_core(
+                &app_settings,
+                &settings_path,
+                AiRadarRefreshRequest {
+                    channel: Some(AiRadarChannel::Media),
+                    source_id: None,
+                },
+            )
+            .await
+            .expect("refresh");
+            let state = response
+                .status
+                .source_states
+                .iter()
+                .find(|state| state.source_id == "cached-source")
+                .expect("source state");
+
+            assert_eq!(response.items.len(), 1);
+            assert_eq!(response.items[0].source_id, "cached-source");
+            assert!(!state.ok);
+            assert_eq!(state.item_count, 1);
+            assert_eq!(state.last_fetched_at_ms, Some(123));
             assert!(state.last_error.is_some());
             let _ = tokio::fs::remove_dir_all(dir).await;
         });

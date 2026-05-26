@@ -61,7 +61,7 @@ function settings(overrides: Partial<AiRadarSettings> = {}): AiRadarSettings {
     maxItems: 800,
     retentionDays: 30,
     translateToChinese: true,
-    defaultSourceVersion: 8,
+    defaultSourceVersion: 9,
     sources: [source()],
     ...overrides,
   };
@@ -201,6 +201,140 @@ describe("AiRadarPanel", () => {
 
     expect(refreshButton.textContent).toBe("");
     expect(refreshButton.getAttribute("title")).toBe("刷新");
+  });
+
+  it("does not block initial content while the first refresh is running", async () => {
+    let resolveRefresh: (value: AiRadarListResponse) => void = () => {};
+    const refreshPromise = new Promise<AiRadarListResponse>((resolve) => {
+      resolveRefresh = resolve;
+    });
+
+    aiRadarListMock.mockResolvedValueOnce(
+      response({
+        items: [],
+        status: {
+          lastRefreshedAtMs: null,
+          nextRefreshAtMs: null,
+          stale: true,
+          sourceStates: [
+            {
+              sourceId: "source-1",
+              sourceName: "Source 1",
+              ok: true,
+              lastFetchedAtMs: null,
+              lastError: null,
+              itemCount: 0,
+            },
+          ],
+        },
+      }),
+    );
+    aiRadarRefreshMock.mockReturnValueOnce(refreshPromise);
+
+    render(<AiRadarPanel onClose={vi.fn()} />);
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(aiRadarRefreshMock).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText("加载中...")).toBeNull();
+    expect(screen.getByText("暂无媒体资讯")).toBeTruthy();
+    expect(
+      (screen.getByRole("button", { name: "刷新中" }) as HTMLButtonElement)
+        .disabled,
+    ).toBe(true);
+
+    await act(async () => {
+      resolveRefresh(
+        response({
+          items: [
+            item({
+              title: "Fresh AI radar item",
+            }),
+          ],
+        }),
+      );
+      await refreshPromise;
+    });
+
+    expect(screen.getByText("Fresh AI radar item")).toBeTruthy();
+  });
+
+  it("filters media items by source group", async () => {
+    aiRadarListMock.mockResolvedValueOnce(
+      response({
+        settings: settings({
+          sources: [
+            source({
+              id: "media-openai-news",
+              name: "OpenAI News",
+              kind: "rss",
+              url: "https://openai.com/news/rss.xml",
+            }),
+            source({
+              id: "media-wechat-jiqizhixin",
+              name: "机器之心",
+              kind: "wechatOfficialAccount",
+              url: null,
+              query: "/wechat/sogou/almosthuman2014",
+            }),
+          ],
+        }),
+        items: [
+          item({
+            id: "media-official-1",
+            sourceId: "media-openai-news",
+            sourceName: "OpenAI News",
+            title: "OpenAI 官方博客更新",
+          }),
+          item({
+            id: "media-wechat-1",
+            sourceId: "media-wechat-jiqizhixin",
+            sourceName: "机器之心",
+            title: "机器之心公众号更新",
+          }),
+        ],
+        status: {
+          lastRefreshedAtMs: 1,
+          nextRefreshAtMs: null,
+          stale: false,
+          sourceStates: [
+            {
+              sourceId: "media-openai-news",
+              sourceName: "OpenAI News",
+              ok: true,
+              lastFetchedAtMs: 1,
+              lastError: null,
+              itemCount: 1,
+            },
+            {
+              sourceId: "media-wechat-jiqizhixin",
+              sourceName: "机器之心",
+              ok: true,
+              lastFetchedAtMs: 1,
+              lastError: null,
+              itemCount: 1,
+            },
+          ],
+        },
+      }),
+    );
+
+    render(<AiRadarPanel onClose={vi.fn()} />);
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(screen.getByText("OpenAI 官方博客更新")).toBeTruthy();
+    expect(screen.getByText("机器之心公众号更新")).toBeTruthy();
+
+    const group = within(screen.getByRole("group", { name: "媒体来源分组" }));
+    fireEvent.click(group.getByRole("button", { name: /微信公众号/ }));
+
+    expect(screen.queryByText("OpenAI 官方博客更新")).toBeNull();
+    expect(screen.getByText("机器之心公众号更新")).toBeTruthy();
   });
 
   it("preserves unsaved source drafts during translation polling", async () => {

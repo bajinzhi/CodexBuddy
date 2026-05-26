@@ -184,6 +184,17 @@
       "models": "Model Rankings",
       "sources": "Sources"
     },
+    "mediaGroups": {
+      "aria": "Media source groups",
+      "all": "All",
+      "official": "Official & media",
+      "wechat": "WeChat",
+      "research": "Research",
+      "community": "Tech community",
+      "other": "Other",
+      "failed_one": "{{count}} failed",
+      "failed_other": "{{count}} failed"
+    },
     "sourceKinds": {
       "rss": "RSS",
       "atom": "Atom",

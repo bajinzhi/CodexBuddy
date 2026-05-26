@@ -1350,7 +1350,7 @@ fn default_ai_radar_translate_to_chinese() -> bool {
 }
 
 fn default_ai_radar_source_version() -> u32 {
-    8
+    9
 }
 
 fn default_ai_radar_sources() -> Vec<AiRadarSource> {
@@ -1436,6 +1436,69 @@ fn default_ai_radar_sources() -> Vec<AiRadarSource> {
             kind: AiRadarSourceKind::WechatOfficialAccount,
             url: None,
             query: Some("/wechat/sogou/almosthuman2014".to_string()),
+            enabled: true,
+            channel: AiRadarChannel::Media,
+            created_at_ms: None,
+        },
+        AiRadarSource {
+            id: "media-wechat-xinzhiyuan".to_string(),
+            name: "新智元微信公众号".to_string(),
+            kind: AiRadarSourceKind::WechatOfficialAccount,
+            url: None,
+            query: Some("/wechat/sogou/%E6%96%B0%E6%99%BA%E5%85%83".to_string()),
+            enabled: true,
+            channel: AiRadarChannel::Media,
+            created_at_ms: None,
+        },
+        AiRadarSource {
+            id: "media-wechat-51cto-tech".to_string(),
+            name: "51CTO技术栈微信公众号".to_string(),
+            kind: AiRadarSourceKind::WechatOfficialAccount,
+            url: None,
+            query: Some("/wechat/sogou/51CTO%E6%8A%80%E6%9C%AF%E6%A0%88".to_string()),
+            enabled: true,
+            channel: AiRadarChannel::Media,
+            created_at_ms: None,
+        },
+        AiRadarSource {
+            id: "media-wechat-tencent-cloud-developer".to_string(),
+            name: "腾讯云开发者微信公众号".to_string(),
+            kind: AiRadarSourceKind::WechatOfficialAccount,
+            url: None,
+            query: Some("/wechat/sogou/QcloudCommunity".to_string()),
+            enabled: true,
+            channel: AiRadarChannel::Media,
+            created_at_ms: None,
+        },
+        AiRadarSource {
+            id: "media-wechat-aliyun-developer".to_string(),
+            name: "阿里云开发者微信公众号".to_string(),
+            kind: AiRadarSourceKind::WechatOfficialAccount,
+            url: None,
+            query: Some(
+                "/wechat/sogou/%E9%98%BF%E9%87%8C%E4%BA%91%E5%BC%80%E5%8F%91%E8%80%85"
+                    .to_string(),
+            ),
+            enabled: true,
+            channel: AiRadarChannel::Media,
+            created_at_ms: None,
+        },
+        AiRadarSource {
+            id: "media-wechat-infoq".to_string(),
+            name: "InfoQ微信公众号".to_string(),
+            kind: AiRadarSourceKind::WechatOfficialAccount,
+            url: None,
+            query: Some("/wechat/sogou/infoqchina".to_string()),
+            enabled: true,
+            channel: AiRadarChannel::Media,
+            created_at_ms: None,
+        },
+        AiRadarSource {
+            id: "media-wechat-taobao-tech".to_string(),
+            name: "大淘宝技术微信公众号".to_string(),
+            kind: AiRadarSourceKind::WechatOfficialAccount,
+            url: None,
+            query: Some("/wechat/sogou/AlibabaMTT".to_string()),
             enabled: true,
             channel: AiRadarChannel::Media,
             created_at_ms: None,

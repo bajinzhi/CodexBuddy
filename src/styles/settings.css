@@ -53,10 +53,13 @@
 
 .settings-master {
   display: flex;
+  overflow: hidden;
 }
 
 .settings-master .settings-sidebar {
   flex: 1;
+  min-width: 0;
+  min-height: 0;
 }
 
 .settings-detail {
@@ -68,6 +71,9 @@
   padding: 16px;
   border-right: 1px solid var(--border-muted);
   background: var(--surface-sidebar);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
 }
 
 .settings-nav {

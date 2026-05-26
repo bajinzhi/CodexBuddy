@@ -557,4 +557,27 @@ describe("Markdown file-like href behavior", () => {
     expect(screen.getByText("Ready")).toBeTruthy();
   });
 
+  it("preserves table horizontal scroll position across rerenders", () => {
+    const tableMarkdown = [
+      "| Module | Dependency | Current | Notes |",
+      "| --- | --- | --- | --- |",
+      "| loadbalancer-client-milvus | milvus-sdk-java | 2.6.11 | long notes |",
+    ].join("\n");
+    const { container, rerender } = render(
+      <Markdown value={tableMarkdown} className="markdown" />,
+    );
+
+    const tableWrap = container.querySelector(".markdown-table-wrap") as HTMLDivElement;
+    expect(tableWrap).toBeTruthy();
+    tableWrap.scrollLeft = 123;
+
+    rerender(<Markdown value={tableMarkdown} className="markdown" />);
+
+    const rerenderedTableWrap = container.querySelector(
+      ".markdown-table-wrap",
+    ) as HTMLDivElement;
+    expect(rerenderedTableWrap).toBe(tableWrap);
+    expect(rerenderedTableWrap.scrollLeft).toBe(123);
+  });
+
 });

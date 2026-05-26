@@ -317,6 +317,14 @@ function LinkBlock({ urls }: LinkBlockProps) {
   );
 }
 
+function MarkdownTable({ children }: { children?: ReactNode }) {
+  return (
+    <div className="markdown-table-wrap">
+      <table className="markdown-table">{children}</table>
+    </div>
+  );
+}
+
 function FileReferenceLink({
   href,
   rawPath,
@@ -479,11 +487,7 @@ export function Markdown({
     return resolvedPath;
   };
   const components: Components = {
-    table: ({ children }) => (
-      <div className="markdown-table-wrap">
-        <table className="markdown-table">{children}</table>
-      </div>
-    ),
+    table: MarkdownTable,
     a: ({ href, children }) => {
       const url = (href ?? "").trim();
       const threadId = url.startsWith("thread://")

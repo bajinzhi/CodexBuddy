@@ -47,7 +47,7 @@ describe("useCollaborationModes", () => {
     vi.clearAllMocks();
   });
 
-  it("keeps the last selected mode across workspace switches and reconnects", async () => {
+  it("defaults to plan and keeps the last selected mode across workspace switches", async () => {
     vi.mocked(getCollaborationModes).mockImplementation(async () => makeModesResponse());
 
     const { result, rerender } = renderHook(
@@ -58,22 +58,22 @@ describe("useCollaborationModes", () => {
       },
     );
 
-    await waitFor(() => expect(result.current.selectedCollaborationModeId).toBe("default"));
+    await waitFor(() => expect(result.current.selectedCollaborationModeId).toBe("plan"));
 
     act(() => {
-      result.current.setSelectedCollaborationModeId("plan");
+      result.current.setSelectedCollaborationModeId("default");
     });
-    expect(result.current.selectedCollaborationModeId).toBe("plan");
+    expect(result.current.selectedCollaborationModeId).toBe("default");
 
     rerender({ workspace: workspaceTwoDisconnected, enabled: true });
-    expect(result.current.selectedCollaborationModeId).toBe("plan");
+    expect(result.current.selectedCollaborationModeId).toBe("default");
     expect(result.current.collaborationModes).toEqual([]);
 
     rerender({ workspace: workspaceTwoConnected, enabled: true });
 
     await waitFor(() => {
       expect(getCollaborationModes).toHaveBeenCalledWith("workspace-2");
-      expect(result.current.selectedCollaborationModeId).toBe("plan");
+      expect(result.current.selectedCollaborationModeId).toBe("default");
     });
   });
 
@@ -88,7 +88,7 @@ describe("useCollaborationModes", () => {
       },
     );
 
-    await waitFor(() => expect(result.current.selectedCollaborationModeId).toBe("default"));
+    await waitFor(() => expect(result.current.selectedCollaborationModeId).toBe("plan"));
 
     act(() => {
       result.current.setSelectedCollaborationModeId("plan");
@@ -177,7 +177,7 @@ describe("useCollaborationModes", () => {
       selectionKey: "thread-b",
     });
 
-    expect(result.current.selectedCollaborationModeId).toBe("default");
+    expect(result.current.selectedCollaborationModeId).toBe("plan");
   });
 
   it("falls back to the workspace default when the preferredModeId is stale", async () => {
@@ -214,6 +214,27 @@ describe("useCollaborationModes", () => {
       preferredModeId: "stale-mode-id",
       selectionKey: "thread-b",
     });
+
+    await waitFor(() => {
+      expect(result.current.selectedCollaborationModeId).toBe("plan");
+    });
+  });
+
+  it("falls back to default when plan mode is unavailable", async () => {
+    vi.mocked(getCollaborationModes).mockResolvedValue({
+      result: {
+        data: [{ mode: "default" }, { mode: "code" }],
+      },
+    });
+
+    const { result } = renderHook(() =>
+      useCollaborationModes({
+        activeWorkspace: workspaceOne,
+        enabled: true,
+        preferredModeId: null,
+        selectionKey: "thread-a",
+      }),
+    );
 
     await waitFor(() => {
       expect(result.current.selectedCollaborationModeId).toBe("default");

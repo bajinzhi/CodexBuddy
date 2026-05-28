@@ -1,6 +1,6 @@
 /** @vitest-environment jsdom */
-import { cleanup, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ThreadTokenUsage } from "../../../types";
 import { ComposerMetaBar } from "./ComposerMetaBar";
 
@@ -76,5 +76,42 @@ describe("ComposerMetaBar context meter", () => {
     expect(bar.getAttribute("aria-valuenow")).toBeNull();
     expect(bar.getAttribute("title")).toBe("Context unavailable");
     expect(screen.getByText("Context unavailable")).toBeTruthy();
+  });
+
+  it("checks the Plan toggle when plan collaboration mode is selected", () => {
+    render(
+      <ComposerMetaBar
+        {...baseProps}
+        collaborationModes={[
+          { id: "plan", label: "Plan" },
+          { id: "default", label: "Default" },
+        ]}
+        selectedCollaborationModeId="plan"
+      />,
+    );
+
+    expect(
+      (screen.getByRole("checkbox", { name: "Plan mode" }) as HTMLInputElement)
+        .checked,
+    ).toBe(true);
+  });
+
+  it("switches to default mode when the Plan toggle is unchecked", () => {
+    const onSelectCollaborationMode = vi.fn();
+    render(
+      <ComposerMetaBar
+        {...baseProps}
+        collaborationModes={[
+          { id: "plan", label: "Plan" },
+          { id: "default", label: "Default" },
+        ]}
+        selectedCollaborationModeId="plan"
+        onSelectCollaborationMode={onSelectCollaborationMode}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("checkbox", { name: "Plan mode" }));
+
+    expect(onSelectCollaborationMode).toHaveBeenCalledWith("default");
   });
 });

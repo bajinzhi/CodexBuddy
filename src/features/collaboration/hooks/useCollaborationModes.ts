@@ -18,6 +18,11 @@ function pickWorkspaceDefaultModeId(modes: CollaborationModeOption[]): string | 
   return (
     modes.find(
       (mode) =>
+        mode.id.trim().toLowerCase() === "plan" ||
+        mode.mode.trim().toLowerCase() === "plan",
+    )?.id ??
+    modes.find(
+      (mode) =>
         mode.id.trim().toLowerCase() === "default" ||
         mode.mode.trim().toLowerCase() === "default",
     )?.id ??

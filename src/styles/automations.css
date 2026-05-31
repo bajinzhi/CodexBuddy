@@ -1,0 +1,371 @@
+.automations-overlay {
+  --automations-surface-base: var(
+    --surface-popover,
+    var(--ds-modal-card-bg, var(--surface-card-strong))
+  );
+  --automations-surface: var(--automations-surface-base);
+  --automations-surface-muted: color-mix(
+    in srgb,
+    var(--automations-surface-base) 88%,
+    var(--surface-card-muted) 12%
+  );
+  --automations-surface-raised: color-mix(
+    in srgb,
+    var(--automations-surface-base) 80%,
+    var(--surface-card-strong) 20%
+  );
+  --automations-text: var(--ds-text-strong, var(--text-strong));
+  --automations-text-muted: var(
+    --text-muted,
+    var(--ds-text-subtle, var(--text-subtle))
+  );
+  --automations-border: var(--ds-border-subtle, var(--border-subtle));
+  --automations-border-strong: var(--ds-border-strong, var(--border-stronger));
+  --automations-active: var(--surface-active);
+  --automations-error: var(--status-error);
+  position: fixed;
+  inset: 0;
+  z-index: var(--ds-layer-modal, 80);
+  display: flex;
+  justify-content: flex-start;
+  align-items: stretch;
+  background: var(
+    --ds-modal-backdrop,
+    color-mix(in srgb, var(--surface-messages) 78%, transparent)
+  );
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.sidebar-corner-button {
+  position: relative;
+}
+
+.sidebar-corner-badge {
+  position: absolute;
+  top: -4px;
+  right: -5px;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--surface-sidebar, var(--surface-card));
+  border-radius: 999px;
+  background: var(--status-error);
+  color: var(--surface-card);
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.app.reduced-transparency .automations-overlay {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.automations-panel {
+  width: min(860px, calc(100vw - 24px));
+  margin: 12px;
+  display: flex;
+  flex-direction: column;
+  background: var(--automations-surface);
+  color: var(--automations-text);
+  border: 1px solid var(--automations-border-strong);
+  border-radius: 8px;
+  box-shadow: 0 20px 48px rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+}
+
+.automations-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 18px 12px;
+  border-bottom: 1px solid var(--automations-border);
+}
+
+.automations-header h2 {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.25;
+  font-weight: 650;
+  letter-spacing: 0;
+}
+
+.automations-status-line,
+.automations-task-meta,
+.automations-run-meta {
+  color: var(--automations-text-muted);
+  font-size: 12px;
+}
+
+.automations-status-line {
+  margin-top: 4px;
+}
+
+.automations-header-actions,
+.automations-tabs,
+.automations-task-actions,
+.automations-editor-actions,
+.automations-run-row,
+.automations-run-meta,
+.automations-task-meta {
+  display: flex;
+  align-items: center;
+}
+
+.automations-header-actions,
+.automations-task-actions,
+.automations-editor-actions {
+  gap: 8px;
+}
+
+.automations-header-action {
+  gap: 7px;
+  min-height: 34px;
+}
+
+.automations-icon-button {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border-radius: 8px;
+  line-height: 0;
+  flex: 0 0 auto;
+}
+
+.automations-tabs {
+  gap: 6px;
+  padding: 10px 12px;
+  background: var(--automations-surface-muted);
+  border-bottom: 1px solid var(--automations-border);
+}
+
+.automations-tabs button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 34px;
+  min-width: 120px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--automations-text-muted);
+  font-size: 13px;
+  font-weight: 560;
+}
+
+.automations-tabs button.active {
+  background: var(--automations-active);
+  border-color: var(--border-accent-soft);
+  color: var(--automations-text);
+}
+
+.automations-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 12px 0;
+  padding: 9px 10px;
+  border: 1px solid color-mix(in srgb, var(--automations-error) 42%, transparent);
+  border-radius: 6px;
+  color: var(--automations-error);
+  background: color-mix(in srgb, var(--automations-error) 12%, transparent);
+  font-size: 12px;
+}
+
+.automations-body,
+.automations-runs {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 12px;
+}
+
+.automations-body {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.95fr) minmax(320px, 1.05fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.automations-editor {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--automations-border);
+  border-radius: 8px;
+  background: var(--automations-surface-raised);
+}
+
+.automations-editor label {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  color: var(--automations-text-muted);
+  font-size: 12px;
+}
+
+.automations-editor input,
+.automations-editor select,
+.automations-editor textarea {
+  width: 100%;
+  min-width: 0;
+  border-radius: 6px;
+  border: 1px solid var(--automations-border);
+  background: var(--surface-control);
+  color: var(--automations-text);
+  font: inherit;
+  font-size: 13px;
+}
+
+.automations-editor input,
+.automations-editor select {
+  min-height: 34px;
+  padding: 0 9px;
+}
+
+.automations-editor textarea {
+  padding: 8px 9px;
+  resize: vertical;
+}
+
+.automations-editor-wide,
+.automations-editor-actions,
+.automations-weekdays {
+  grid-column: 1 / -1;
+}
+
+.automations-editor-grid {
+  display: contents;
+}
+
+.automations-weekdays {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.automations-weekdays label {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 30px;
+  padding: 0 8px;
+  border: 1px solid var(--automations-border);
+  border-radius: 6px;
+  background: var(--automations-surface-muted);
+}
+
+.automations-weekdays input {
+  width: auto;
+  min-height: auto;
+  padding: 0;
+}
+
+.automations-editor-actions {
+  justify-content: flex-end;
+  padding-top: 2px;
+}
+
+.automations-task-list {
+  display: grid;
+  gap: 8px;
+}
+
+.automations-task-row,
+.automations-run-row {
+  border: 1px solid var(--automations-border);
+  border-radius: 8px;
+  background: var(--automations-surface-raised);
+}
+
+.automations-task-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 10px;
+}
+
+.automations-task-title,
+.automations-run-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 620;
+}
+
+.automations-task-meta,
+.automations-run-meta {
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.automations-runs {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+}
+
+.automations-run-row {
+  gap: 10px;
+  padding: 10px;
+}
+
+.automations-run-icon {
+  color: var(--automations-text-muted);
+  line-height: 0;
+}
+
+.automations-run-row.status-completed .automations-run-icon {
+  color: var(--status-success);
+}
+
+.automations-run-row.status-failed .automations-run-icon,
+.automations-run-row.status-skipped .automations-run-icon {
+  color: var(--status-warning);
+}
+
+.automations-run-main {
+  min-width: 0;
+  flex: 1;
+}
+
+.automations-empty {
+  padding: 24px 12px;
+  color: var(--automations-text-muted);
+  font-size: 13px;
+  text-align: center;
+}
+
+@media (max-width: 760px) {
+  .automations-panel {
+    width: calc(100vw - 16px);
+    margin: 8px;
+  }
+
+  .automations-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .automations-body,
+  .automations-editor,
+  .automations-task-row {
+    grid-template-columns: 1fr;
+  }
+
+  .automations-task-actions {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+}

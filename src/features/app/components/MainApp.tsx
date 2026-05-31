@@ -50,6 +50,8 @@ import { useMainAppWorkspaceActions } from "@app/hooks/useMainAppWorkspaceAction
 import { useMainAppWorkspaceLifecycle } from "@app/hooks/useMainAppWorkspaceLifecycle";
 import { useHomeAccount } from "@app/hooks/useHomeAccount";
 import type {
+  AutomationExecutionDefaults,
+  AutomationState,
   ComposerEditorSettings,
   ServiceTier,
   WorkspaceInfo,
@@ -68,6 +70,7 @@ import { useTauriEvent } from "@app/hooks/useTauriEvent";
 import { PetOverlayController } from "@/features/pets/components/PetOverlayController";
 import { parsePetCommand } from "@/features/pets/petCommands";
 import { useAiRadarScheduler } from "@/features/ai-radar/hooks/useAiRadarScheduler";
+import { useAutomationScheduler } from "@/features/automations/hooks/useAutomationScheduler";
 import { useAppBootstrapOrchestration } from "@app/bootstrap/useAppBootstrapOrchestration";
 import {
   useThreadCodexBootstrapOrchestration,
@@ -98,6 +101,12 @@ const SettingsView = lazy(() =>
 const AiRadarPanel = lazy(() =>
   import("@/features/ai-radar/components/AiRadarPanel").then((module) => ({
     default: module.AiRadarPanel,
+  })),
+);
+
+const AutomationsPanel = lazy(() =>
+  import("@/features/automations/components/AutomationsPanel").then((module) => ({
+    default: module.AutomationsPanel,
   })),
 );
 
@@ -137,7 +146,13 @@ export default function MainApp() {
     shouldReduceTransparency,
   } = useAppBootstrapOrchestration();
   const [aiRadarOpen, setAiRadarOpen] = useState(false);
+  const [automationsOpen, setAutomationsOpen] = useState(false);
+  const [automationState, setAutomationState] = useState<AutomationState>({
+    tasks: [],
+    runs: [],
+  });
   const openAiRadar = useCallback(() => setAiRadarOpen(true), []);
+  const openAutomations = useCallback(() => setAutomationsOpen(true), []);
   useAiRadarScheduler(appSettings.aiRadar);
   const {
     threadListSortKey,
@@ -606,6 +621,39 @@ export default function MainApp() {
       refreshThread,
       reconnectWorkspace: connectWorkspace,
     });
+  const defaultAutomationExecutionDefaults = useMemo<AutomationExecutionDefaults>(
+    () => ({
+      modelId: resolvedModel,
+      reasoningEffort: resolvedEffort,
+      serviceTier: selectedServiceTier ?? null,
+      accessMode,
+      collaborationMode: collaborationModePayload,
+    }),
+    [
+      accessMode,
+      collaborationModePayload,
+      resolvedEffort,
+      resolvedModel,
+      selectedServiceTier,
+    ],
+  );
+  useAutomationScheduler({
+    enabled: !appSettingsLoading,
+    workspacesLoaded: hasLoaded,
+    workspaces,
+    threadStatusById,
+    startThreadForWorkspace,
+    sendUserMessageToThread,
+    onStateChange: setAutomationState,
+    onDebug: addDebugEntry,
+  });
+  const automationAttentionCount = useMemo(
+    () =>
+      automationState.runs.filter(
+        (run) => run.status === "running" || run.status === "failed",
+      ).length,
+    [automationState.runs],
+  );
 
   const handleMobileThreadRefresh = useCallback(() => {
     if (mobileThreadRefreshLoading || !activeWorkspace) {
@@ -1549,6 +1597,13 @@ export default function MainApp() {
     },
     [handleOpenThreadLink, setActiveTab],
   );
+  const handleOpenAutomationThread = useCallback(
+    (workspaceId: string, threadId: string) => {
+      setAutomationsOpen(false);
+      handleOpenThreadLinkFromExternal(workspaceId, threadId);
+    },
+    [handleOpenThreadLinkFromExternal],
+  );
 
   const { recordPendingThreadLink, openThreadLinkOrQueue } =
     useSystemNotificationThreadLinks({
@@ -1823,6 +1878,8 @@ export default function MainApp() {
     onSwitchAccount: handleSwitchAccount,
     onCancelSwitchAccount: handleCancelSwitchAccount,
     onOpenAiRadar: openAiRadar,
+    onOpenAutomations: openAutomations,
+    automationsAttentionCount: automationAttentionCount,
     onDecision: handleApprovalDecision,
     onRemember: handleApprovalRemember,
     onUserInputSubmit: handleUserInputSubmit,
@@ -2100,6 +2157,17 @@ export default function MainApp() {
             onSettingsChange={(aiRadar) =>
               setAppSettings((current) => ({ ...current, aiRadar }))
             }
+          />
+        </Suspense>
+      )}
+      {automationsOpen && (
+        <Suspense fallback={null}>
+          <AutomationsPanel
+            workspaces={workspaces}
+            defaultExecutionDefaults={defaultAutomationExecutionDefaults}
+            onClose={() => setAutomationsOpen(false)}
+            onOpenThread={handleOpenAutomationThread}
+            onStateChange={setAutomationState}
           />
         </Suspense>
       )}

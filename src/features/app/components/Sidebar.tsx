@@ -89,6 +89,8 @@ type SidebarProps = {
   commonLinks: CommonLink[];
   onOpenSettings: (section?: "common-links") => void;
   onOpenAiRadar: () => void;
+  onOpenAutomations?: () => void;
+  automationsAttentionCount?: number;
   onOpenDebug: () => void;
   showDebugButton: boolean;
   onAddWorkspace: () => void;
@@ -152,6 +154,8 @@ export const Sidebar = memo(function Sidebar({
   commonLinks,
   onOpenSettings,
   onOpenAiRadar,
+  onOpenAutomations = () => {},
+  automationsAttentionCount = 0,
   onOpenDebug,
   showDebugButton,
   onAddWorkspace,
@@ -1207,6 +1211,8 @@ export const Sidebar = memo(function Sidebar({
         commonLinks={commonLinks}
         onOpenSettings={onOpenSettings}
         onOpenAiRadar={onOpenAiRadar}
+        onOpenAutomations={onOpenAutomations}
+        automationsAttentionCount={automationsAttentionCount}
         onOpenDebug={onOpenDebug}
         showDebugButton={showDebugButton}
         showAccountSwitcher={showAccountSwitcher}

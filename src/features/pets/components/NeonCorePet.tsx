@@ -112,6 +112,17 @@ function renderStatusBadge(runtimeState: PetRuntimeState) {
 }
 
 function renderStateDecor(runtimeState: PetRuntimeState) {
+  if (runtimeState.form === "charged") {
+    return (
+      <g className="pet-core-charge">
+        <ellipse cx="60" cy="53" rx="49" ry="35" />
+        <ellipse cx="60" cy="53" rx="57" ry="42" />
+        <path d="M19 54 H32" />
+        <path d="M88 54 H101" />
+      </g>
+    );
+  }
+
   if (runtimeState.status === "working") {
     return (
       <g className="pet-core-terminal">
@@ -140,17 +151,6 @@ function renderStateDecor(runtimeState: PetRuntimeState) {
         <path d="M31 72 L22 80" />
         <path d="M96 17 L105 10" />
         <path d="M17 55 L27 52" />
-      </g>
-    );
-  }
-
-  if (runtimeState.form === "charged") {
-    return (
-      <g className="pet-core-charge">
-        <ellipse cx="60" cy="53" rx="49" ry="35" />
-        <ellipse cx="60" cy="53" rx="57" ry="42" />
-        <path d="M19 54 H32" />
-        <path d="M88 54 H101" />
       </g>
     );
   }
@@ -184,11 +184,25 @@ export function NeonCorePet({ runtimeState }: NeonCorePetProps) {
           <stop offset="45%" stopColor="#29eaff" />
           <stop offset="100%" stopColor="#2038ff" />
         </linearGradient>
+        <linearGradient id="neon-core-aurora" x1="12" y1="18" x2="106" y2="86">
+          <stop offset="0%" stopColor="#fff6b8" stopOpacity="0" />
+          <stop offset="34%" stopColor="#55f3d4" stopOpacity="0.7" />
+          <stop offset="72%" stopColor="#6aa5ff" stopOpacity="0.5" />
+          <stop offset="100%" stopColor="#ff6f9f" stopOpacity="0" />
+        </linearGradient>
+        <linearGradient id="neon-core-panel" x1="37" y1="24" x2="83" y2="74">
+          <stop offset="0%" stopColor="#f4ffff" stopOpacity="0.78" />
+          <stop offset="100%" stopColor="#1648a8" stopOpacity="0.18" />
+        </linearGradient>
         <filter id="neon-core-shadow" x="-35%" y="-30%" width="170%" height="170%">
           <feDropShadow dx="0" dy="10" stdDeviation="7" floodColor="#00d5ff" floodOpacity="0.38" />
         </filter>
       </defs>
       <ellipse className="pet-core-halo" cx="60" cy="56" rx="48" ry="43" />
+      <g className="pet-core-aurora">
+        <path d="M15 60 C33 34 49 29 69 43 C82 53 94 52 108 34" />
+        <path d="M19 75 C38 53 57 50 75 62 C87 70 96 68 107 57" />
+      </g>
       <g className="pet-core-orbits">
         <ellipse className="pet-core-orbit pet-core-orbit--outer" cx="60" cy="54" rx="52" ry="36" />
         <ellipse className="pet-core-orbit pet-core-orbit--inner" cx="60" cy="54" rx="39" ry="28" />
@@ -196,6 +210,8 @@ export function NeonCorePet({ runtimeState }: NeonCorePetProps) {
       <g className="pet-core-drone" filter="url(#neon-core-shadow)">
         <path className="pet-core-wing pet-core-wing--left" d="M35 44 L13 32 L17 55 L35 61 Z" />
         <path className="pet-core-wing pet-core-wing--right" d="M85 44 L107 32 L103 55 L85 61 Z" />
+        <path className="pet-core-wing-trim pet-core-wing-trim--left" d="M19 38 L32 47 L30 55" />
+        <path className="pet-core-wing-trim pet-core-wing-trim--right" d="M101 38 L88 47 L90 55" />
         <circle className="pet-core-wing-node" cx="18" cy="44" r="4" />
         <circle className="pet-core-wing-node" cx="102" cy="44" r="4" />
         <path className="pet-core-antenna" d="M52 26 L48 14" />
@@ -203,12 +219,20 @@ export function NeonCorePet({ runtimeState }: NeonCorePetProps) {
         <circle className="pet-core-antenna-dot" cx="48" cy="14" r="3" />
         <circle className="pet-core-antenna-dot" cx="72" cy="14" r="3" />
         <path className="pet-core-shell" d="M60 20 L86 35 L86 64 L60 82 L34 64 L34 35 Z" />
+        <path className="pet-core-shell-highlight" d="M45 37 L60 28 L75 37 L73 42 C65 38 55 38 47 42 Z" />
+        <path className="pet-core-panel-line" d="M39 63 L60 76 L81 63" />
+        <path className="pet-core-panel-line" d="M42 38 L34 35 M78 38 L86 35" />
         <circle className="pet-core-lens" cx="60" cy="50" r="22" />
         <circle className="pet-core-lens-ring" cx="60" cy="50" r="15" />
         <circle className="pet-core-lens-core" cx="60" cy="50" r="8" />
+        <circle className="pet-core-lens-glint" cx="54" cy="43" r="3.2" />
         <path className="pet-core-shine" d="M47 34 C53 29 64 28 72 33" />
         <rect className="pet-core-visor" x="43" y="47" width="34" height="23" rx="10" />
         {renderVisor(runtimeState)}
+        <g className="pet-core-chassis-runes">
+          <path className="pet-core-chassis-rune" d="M45 72 H51" />
+          <path className="pet-core-chassis-rune" d="M69 72 H75" />
+        </g>
         <g className="pet-core-thrusters">
           <path d="M48 79 L43 91 L53 86 Z" />
           <path d="M72 79 L67 86 L77 91 Z" />

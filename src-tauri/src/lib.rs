@@ -7,6 +7,7 @@ use tauri::RunEvent;
 use tauri::WindowEvent;
 
 mod ai_radar;
+mod automations;
 mod backend;
 mod clipboard;
 mod codex;
@@ -207,6 +208,12 @@ pub fn run() {
             ai_radar::ai_radar_sources_get,
             ai_radar::ai_radar_sources_update,
             ai_radar::ai_radar_scheduler_status,
+            automations::automations_list,
+            automations::automations_upsert_task,
+            automations::automations_delete_task,
+            automations::automations_set_task_enabled,
+            automations::automations_claim_due,
+            automations::automations_record_run_finished,
             files::file_read,
             files::file_write,
             files::read_image_as_data_url,

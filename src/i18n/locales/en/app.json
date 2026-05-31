@@ -257,6 +257,80 @@
       "requests": "{{value}} calls"
     }
   },
+  "automations": {
+    "title": "Automations",
+    "statusLine": "{{active}} active · {{runs}} runs",
+    "close": "Close",
+    "closeAria": "Close automations",
+    "tabsAria": "Automation views",
+    "tabs": {
+      "tasks": "Tasks",
+      "runs": "Runs"
+    },
+    "actions": {
+      "new": "New automation",
+      "save": "Save automation",
+      "saving": "Saving",
+      "cancel": "Cancel",
+      "pause": "Pause",
+      "resume": "Resume",
+      "edit": "Edit automation",
+      "delete": "Delete automation",
+      "openThread": "Open thread"
+    },
+    "fields": {
+      "name": "Name",
+      "workspace": "Workspace",
+      "prompt": "Prompt",
+      "scheduleType": "Schedule",
+      "runAt": "Run at",
+      "time": "Time",
+      "weekdays": "Weekdays",
+      "dayOfMonth": "Day of month",
+      "intervalMinutes": "Interval minutes",
+      "threadPolicy": "Thread",
+      "threadId": "Thread ID"
+    },
+    "scheduleTypes": {
+      "once": "Once",
+      "daily": "Daily",
+      "weekly": "Weekly",
+      "monthly": "Monthly",
+      "interval": "Interval"
+    },
+    "schedule": {
+      "onceAt": "Once at {{time}}",
+      "dailyAt": "Daily at {{time}}",
+      "weeklyAt": "{{days}} at {{time}}",
+      "monthlyAt": "Monthly day {{day}} at {{time}}",
+      "interval": "Every {{minutes}} minutes"
+    },
+    "weekdays": {
+      "0": "Sun",
+      "1": "Mon",
+      "2": "Tue",
+      "3": "Wed",
+      "4": "Thu",
+      "5": "Fri",
+      "6": "Sat"
+    },
+    "threadPolicy": {
+      "new": "New thread",
+      "continue": "Continue thread"
+    },
+    "runStatus": {
+      "running": "Running",
+      "completed": "Completed",
+      "failed": "Failed",
+      "skipped": "Skipped"
+    },
+    "empty": {
+      "tasks": "No automations",
+      "runs": "No runs"
+    },
+    "loading": "Loading...",
+    "notScheduled": "Not scheduled"
+  },
   "terminal": {
     "resizePanel": "Resize terminal panel",
     "tabs": "Terminal tabs",
@@ -443,6 +517,8 @@
     "openSettings": "Open settings",
     "aiRadar": "AI news",
     "openAiRadar": "Open AI news",
+    "automations": "Automations",
+    "openAutomations": "Open automations",
     "debugLog": "Debug log",
     "openDebugLog": "Open debug log",
     "addAgentOptions": "Add agent options",

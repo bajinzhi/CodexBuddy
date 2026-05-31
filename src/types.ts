@@ -227,6 +227,83 @@ export type SendMessageResult = {
   status: "sent" | "blocked" | "steer_failed";
 };
 
+export type AutomationRunStatus =
+  | "running"
+  | "completed"
+  | "failed"
+  | "skipped";
+
+export type AutomationSchedule =
+  | { type: "once"; runAtMs: number }
+  | { type: "daily"; timeMinutes: number }
+  | { type: "weekly"; daysOfWeek: number[]; timeMinutes: number }
+  | { type: "monthly"; dayOfMonth: number; timeMinutes: number }
+  | { type: "interval"; intervalMinutes: number };
+
+export type AutomationThreadPolicy =
+  | { mode: "new" }
+  | { mode: "continue"; threadId: string };
+
+export type AutomationExecutionDefaults = {
+  modelId?: string | null;
+  reasoningEffort?: string | null;
+  serviceTier?: ServiceTier | null;
+  accessMode?: AccessMode | null;
+  collaborationMode?: Record<string, unknown> | null;
+};
+
+export type AutomationTask = {
+  id: string;
+  title: string;
+  enabled: boolean;
+  workspaceId: string;
+  prompt: string;
+  schedule: AutomationSchedule;
+  threadPolicy: AutomationThreadPolicy;
+  executionDefaults: AutomationExecutionDefaults;
+  createdAtMs: number;
+  updatedAtMs: number;
+  lastTriggeredAtMs?: number | null;
+  nextRunAtMs?: number | null;
+};
+
+export type AutomationRun = {
+  id: string;
+  taskId: string;
+  taskTitle: string;
+  workspaceId: string;
+  prompt: string;
+  status: AutomationRunStatus;
+  scheduledForMs: number;
+  startedAtMs: number;
+  finishedAtMs?: number | null;
+  threadId?: string | null;
+  error?: string | null;
+};
+
+export type AutomationClaimedRun = {
+  task: AutomationTask;
+  run: AutomationRun;
+};
+
+export type AutomationState = {
+  tasks: AutomationTask[];
+  runs: AutomationRun[];
+};
+
+export type AutomationClaimResponse = {
+  claims: AutomationClaimedRun[];
+  state: AutomationState;
+};
+
+export type AutomationRunUpdateRequest = {
+  runId: string;
+  status: AutomationRunStatus;
+  threadId?: string | null;
+  error?: string | null;
+  finishedAtMs?: number | null;
+};
+
 export type ComposerEditorPreset = "default" | "helpful" | "smart";
 
 export type ComposerEditorSettings = {

@@ -67,6 +67,8 @@ type UseMainAppLayoutSurfacesArgs = {
   onSwitchAccount: SidebarProps["onSwitchAccount"];
   onCancelSwitchAccount: SidebarProps["onCancelSwitchAccount"];
   onOpenAiRadar: SidebarProps["onOpenAiRadar"];
+  onOpenAutomations: SidebarProps["onOpenAutomations"];
+  automationsAttentionCount: SidebarProps["automationsAttentionCount"];
   onDecision: LayoutNodesOptions["primary"]["approvalToastsProps"]["onDecision"];
   onRemember: LayoutNodesOptions["primary"]["approvalToastsProps"]["onRemember"];
   onUserInputSubmit: LayoutNodesOptions["primary"]["messagesProps"]["onUserInputSubmit"];
@@ -267,6 +269,8 @@ export function useMainAppLayoutSurfaces({
   onSwitchAccount,
   onCancelSwitchAccount,
   onOpenAiRadar,
+  onOpenAutomations,
+  automationsAttentionCount,
   onDecision,
   onRemember,
   onUserInputSubmit,
@@ -431,6 +435,8 @@ export function useMainAppLayoutSurfaces({
         commonLinks: appSettings.commonLinks,
         onOpenSettings: sidebarHandlers.onOpenSettings,
         onOpenAiRadar,
+        onOpenAutomations,
+        automationsAttentionCount,
         onOpenDebug: handleDebugClick,
         showDebugButton,
         onAddWorkspace: handleAddWorkspace,

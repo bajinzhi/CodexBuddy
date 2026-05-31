@@ -257,6 +257,80 @@
       "requests": "{{value}} 次调用"
     }
   },
+  "automations": {
+    "title": "定时任务",
+    "statusLine": "{{active}} 个启用 · {{runs}} 次运行",
+    "close": "关闭",
+    "closeAria": "关闭定时任务",
+    "tabsAria": "定时任务视图",
+    "tabs": {
+      "tasks": "任务",
+      "runs": "运行"
+    },
+    "actions": {
+      "new": "新建定时任务",
+      "save": "保存定时任务",
+      "saving": "保存中",
+      "cancel": "取消",
+      "pause": "暂停",
+      "resume": "恢复",
+      "edit": "编辑定时任务",
+      "delete": "删除定时任务",
+      "openThread": "打开线程"
+    },
+    "fields": {
+      "name": "名称",
+      "workspace": "工作区",
+      "prompt": "提示词",
+      "scheduleType": "计划",
+      "runAt": "运行时间",
+      "time": "时间",
+      "weekdays": "星期",
+      "dayOfMonth": "每月日期",
+      "intervalMinutes": "间隔分钟",
+      "threadPolicy": "线程",
+      "threadId": "线程 ID"
+    },
+    "scheduleTypes": {
+      "once": "一次",
+      "daily": "每天",
+      "weekly": "每周",
+      "monthly": "每月",
+      "interval": "间隔"
+    },
+    "schedule": {
+      "onceAt": "{{time}} 运行一次",
+      "dailyAt": "每天 {{time}}",
+      "weeklyAt": "{{days}} {{time}}",
+      "monthlyAt": "每月 {{day}} 日 {{time}}",
+      "interval": "每 {{minutes}} 分钟"
+    },
+    "weekdays": {
+      "0": "日",
+      "1": "一",
+      "2": "二",
+      "3": "三",
+      "4": "四",
+      "5": "五",
+      "6": "六"
+    },
+    "threadPolicy": {
+      "new": "新线程",
+      "continue": "继续线程"
+    },
+    "runStatus": {
+      "running": "运行中",
+      "completed": "已完成",
+      "failed": "失败",
+      "skipped": "已跳过"
+    },
+    "empty": {
+      "tasks": "暂无定时任务",
+      "runs": "暂无运行记录"
+    },
+    "loading": "加载中...",
+    "notScheduled": "未计划"
+  },
   "terminal": {
     "resizePanel": "调整终端面板大小",
     "tabs": "终端标签页",
@@ -443,6 +517,8 @@
     "openSettings": "打开设置",
     "aiRadar": "AI 资讯",
     "openAiRadar": "打开 AI 资讯",
+    "automations": "定时任务",
+    "openAutomations": "打开定时任务",
     "debugLog": "调试日志",
     "openDebugLog": "打开调试日志",
     "addAgentOptions": "添加智能体选项",

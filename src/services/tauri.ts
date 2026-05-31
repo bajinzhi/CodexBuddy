@@ -6,6 +6,10 @@ import type {
   AiRadarRefreshRequest,
   AiRadarSchedulerStatus,
   AiRadarSettings,
+  AutomationClaimResponse,
+  AutomationRunUpdateRequest,
+  AutomationState,
+  AutomationTask,
   AppSettings,
   CodexUpdateCheckResult,
   CodexUpdateResult,
@@ -1104,6 +1108,46 @@ export async function aiRadarSourcesUpdate(
 
 export async function aiRadarSchedulerStatus(): Promise<AiRadarSchedulerStatus> {
   return invoke<AiRadarSchedulerStatus>("ai_radar_scheduler_status");
+}
+
+export async function automationsList(): Promise<AutomationState> {
+  return invoke<AutomationState>("automations_list");
+}
+
+export async function automationsUpsertTask(
+  task: AutomationTask,
+): Promise<AutomationState> {
+  return invoke<AutomationState>("automations_upsert_task", { task });
+}
+
+export async function automationsDeleteTask(
+  taskId: string,
+): Promise<AutomationState> {
+  return invoke<AutomationState>("automations_delete_task", { taskId });
+}
+
+export async function automationsSetTaskEnabled(
+  taskId: string,
+  enabled: boolean,
+): Promise<AutomationState> {
+  return invoke<AutomationState>("automations_set_task_enabled", {
+    taskId,
+    enabled,
+  });
+}
+
+export async function automationsClaimDue(
+  nowMs?: number | null,
+): Promise<AutomationClaimResponse> {
+  return invoke<AutomationClaimResponse>("automations_claim_due", {
+    nowMs: nowMs ?? null,
+  });
+}
+
+export async function automationsRecordRunFinished(
+  request: AutomationRunUpdateRequest,
+): Promise<AutomationState> {
+  return invoke<AutomationState>("automations_record_run_finished", { request });
 }
 
 export async function listPets(): Promise<PetDefinition[]> {

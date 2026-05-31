@@ -13,6 +13,23 @@ vi.mock("@/features/pets/hooks/useAvailablePets", () => ({
   useAvailablePets: () => ({
     pets: [
       {
+        id: "buddy-spark",
+        name: "Neon Core",
+        source: "builtin",
+        forms: [
+          {
+            id: "normal",
+            label: "Normal",
+            animations: [{ state: "idle" }, { state: "celebrate" }],
+          },
+          {
+            id: "charged",
+            label: "Charged",
+            animations: [{ state: "working" }],
+          },
+        ],
+      },
+      {
         id: "snow-fawn",
         name: "Snow Fawn",
         source: "builtin",
@@ -100,6 +117,27 @@ describe("PetOverlay", () => {
     );
 
     expect(container.querySelector(".pet-fawn-svg")).not.toBeNull();
+    expect(container.querySelector(".pet-fawn-antler")).not.toBeNull();
+    expect(container.querySelector(".pet-fawn-cheek")).not.toBeNull();
+    expect(readPetAsset).not.toHaveBeenCalled();
+  });
+
+  it("renders the Neon Core builtin pet with refined charged decor", () => {
+    mockReducedMotion(false);
+
+    const { container } = render(
+      <PetOverlay
+        visible
+        selectedPetId="buddy-spark"
+        runtimeState={chargedRuntimeState}
+        onVisibleChange={vi.fn()}
+      />,
+    );
+
+    expect(container.querySelector(".pet-core-svg")).not.toBeNull();
+    expect(container.querySelector(".pet-core-aurora")).not.toBeNull();
+    expect(container.querySelector(".pet-core-charge")).not.toBeNull();
+    expect(container.querySelector(".pet-core-terminal")).toBeNull();
     expect(readPetAsset).not.toHaveBeenCalled();
   });
 

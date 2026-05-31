@@ -1,6 +1,7 @@
 import type { CommonLink } from "@/types";
 import { isCommonLinkTargetUsable } from "@settings/components/settingsViewHelpers";
 import { openUrl } from "@tauri-apps/plugin-opener";
+import CalendarClock from "lucide-react/dist/esm/icons/calendar-clock";
 import ExternalLink from "lucide-react/dist/esm/icons/external-link";
 import Link2 from "lucide-react/dist/esm/icons/link-2";
 import Newspaper from "lucide-react/dist/esm/icons/newspaper";
@@ -20,6 +21,8 @@ type SidebarCornerActionsProps = {
   commonLinks: CommonLink[];
   onOpenSettings: (section?: "common-links") => void;
   onOpenAiRadar: () => void;
+  onOpenAutomations?: () => void;
+  automationsAttentionCount?: number;
   onOpenDebug: () => void;
   showDebugButton: boolean;
   showAccountSwitcher: boolean;
@@ -36,6 +39,8 @@ export function SidebarCornerActions({
   commonLinks,
   onOpenSettings,
   onOpenAiRadar,
+  onOpenAutomations = () => {},
+  automationsAttentionCount = 0,
   onOpenDebug,
   showDebugButton,
   showAccountSwitcher,
@@ -149,6 +154,22 @@ export function SidebarCornerActions({
         data-tooltip-align="start"
       >
         <Newspaper size={14} aria-hidden />
+      </button>
+      <button
+        className="ghost sidebar-corner-button ds-tooltip-trigger"
+        type="button"
+        onClick={onOpenAutomations}
+        aria-label={t("sidebar.openAutomations")}
+        title={t("sidebar.automations")}
+        data-tooltip={t("sidebar.automations")}
+        data-tooltip-align="start"
+      >
+        <CalendarClock size={14} aria-hidden />
+        {automationsAttentionCount > 0 && (
+          <span className="sidebar-corner-badge" aria-hidden>
+            {automationsAttentionCount > 9 ? "9+" : automationsAttentionCount}
+          </span>
+        )}
       </button>
       <button
         className="ghost sidebar-corner-button ds-tooltip-trigger"

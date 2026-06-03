@@ -348,6 +348,7 @@ export type AiRadarSourceKind =
   | "wechatOfficialAccount"
   | "toutiaoUser"
   | "githubSearch"
+  | "githubRepositories"
   | "modelRanking";
 
 export type AiRadarSource = {

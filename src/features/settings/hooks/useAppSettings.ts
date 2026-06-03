@@ -65,7 +65,7 @@ function buildDefaultAiRadarSettings(): AiRadarSettings {
     maxItems: 800,
     retentionDays: 30,
     translateToChinese: true,
-    defaultSourceVersion: 9,
+    defaultSourceVersion: 10,
     sources: [
       {
         id: "media-openai-news",
@@ -301,6 +301,16 @@ function buildDefaultAiRadarSettings(): AiRadarSettings {
         createdAtMs: null,
       },
       {
+        id: "github-watched-repositories",
+        name: "GitHub Watched Repositories",
+        kind: "githubRepositories",
+        query: "",
+        url: null,
+        enabled: true,
+        channel: "github",
+        createdAtMs: null,
+      },
+      {
         id: "models-openrouter-weekly",
         name: "OpenRouter Weekly Models",
         kind: "modelRanking",
@@ -370,21 +380,24 @@ function normalizeAiRadarSettings(
     const kind = source.kind ?? "rss";
     const channel =
       source.channel ??
-      (kind === "githubSearch"
+      (kind === "githubSearch" || kind === "githubRepositories"
         ? "github"
         : kind === "modelRanking"
           ? "models"
           : "media");
+    const query =
+      kind === "githubRepositories"
+        ? (source.query ?? "")
+        : source.query?.trim() ||
+          (kind === "wechatOfficialAccount" || kind === "toutiaoUser"
+            ? ""
+            : null);
     return {
       id,
       name: source.name?.trim() || id,
       kind,
       url: source.url?.trim() || null,
-      query:
-        source.query?.trim() ||
-        (kind === "wechatOfficialAccount" || kind === "toutiaoUser"
-          ? ""
-          : null),
+      query,
       enabled: source.enabled !== false,
       channel,
       createdAtMs:

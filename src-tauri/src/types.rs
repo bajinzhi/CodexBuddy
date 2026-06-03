@@ -387,6 +387,7 @@ pub(crate) enum AiRadarSourceKind {
     WechatOfficialAccount,
     ToutiaoUser,
     GithubSearch,
+    GithubRepositories,
     ModelRanking,
 }
 
@@ -1350,7 +1351,7 @@ fn default_ai_radar_translate_to_chinese() -> bool {
 }
 
 fn default_ai_radar_source_version() -> u32 {
-    9
+    10
 }
 
 fn default_ai_radar_sources() -> Vec<AiRadarSource> {
@@ -1595,6 +1596,16 @@ fn default_ai_radar_sources() -> Vec<AiRadarSource> {
             kind: AiRadarSourceKind::GithubSearch,
             url: None,
             query: Some("\"context engineering\" stars:>20 archived:false fork:false".to_string()),
+            enabled: true,
+            channel: AiRadarChannel::Github,
+            created_at_ms: None,
+        },
+        AiRadarSource {
+            id: "github-watched-repositories".to_string(),
+            name: "GitHub Watched Repositories".to_string(),
+            kind: AiRadarSourceKind::GithubRepositories,
+            url: None,
+            query: Some(String::new()),
             enabled: true,
             channel: AiRadarChannel::Github,
             created_at_ms: None,

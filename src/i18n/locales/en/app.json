@@ -203,10 +203,12 @@
       "wechatOfficialAccount": "WeChat Official Account",
       "toutiaoUser": "Toutiao",
       "githubSearch": "GitHub",
+      "githubRepositories": "Watched Repositories",
       "modelRanking": "Model Ranking"
     },
     "sourceTargets": {
       "githubSearch": "GitHub search query",
+      "githubRepositories": "GitHub repositories (owner/repo, one per line)",
       "wechatOfficialAccount": "WeChat RSSHub route or ID",
       "toutiaoUser": "Toutiao RSSHub route or user token",
       "modelRanking": "OpenRouter rankings URL",
@@ -214,6 +216,7 @@
     },
     "defaults": {
       "githubSearchName": "GitHub Search",
+      "githubRepositoriesName": "GitHub Watched Repositories",
       "wechatOfficialAccountName": "WeChat Official Account",
       "toutiaoUserName": "Toutiao Account",
       "modelRankingName": "OpenRouter Model Ranking",
@@ -255,6 +258,22 @@
     "metrics": {
       "tokens": "{{value}} tokens",
       "requests": "{{value}} calls"
+    },
+    "githubViews": {
+      "aria": "GitHub list view",
+      "ranking": "Trending",
+      "watched": "Watched"
+    },
+    "watched": {
+      "addLabel": "Add watched repository",
+      "addPlaceholder": "openai/codex or GitHub repository URL",
+      "addAction": "Add Watch",
+      "duplicate": "This repository is already watched.",
+      "invalid": "Enter a valid GitHub repository, for example openai/codex.",
+      "limit": "You can watch up to 30 GitHub repositories.",
+      "empty": "No watched repositories yet.",
+      "watchAria": "Watch {{repo}}",
+      "unwatchAria": "Unwatch {{repo}}"
     }
   },
   "automations": {

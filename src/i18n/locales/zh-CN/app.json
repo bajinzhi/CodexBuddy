@@ -203,10 +203,12 @@
       "wechatOfficialAccount": "微信公众号",
       "toutiaoUser": "今日头条",
       "githubSearch": "GitHub",
+      "githubRepositories": "关注项目",
       "modelRanking": "模型榜单"
     },
     "sourceTargets": {
       "githubSearch": "GitHub 搜索语句",
+      "githubRepositories": "GitHub 仓库（owner/repo，每行一个）",
       "wechatOfficialAccount": "微信公众号 RSSHub 路由或 ID",
       "toutiaoUser": "头条 RSSHub 路由或用户 token",
       "modelRanking": "OpenRouter 排行榜 URL",
@@ -214,6 +216,7 @@
     },
     "defaults": {
       "githubSearchName": "GitHub 搜索",
+      "githubRepositoriesName": "GitHub 关注项目",
       "wechatOfficialAccountName": "微信公众号",
       "toutiaoUserName": "今日头条号",
       "modelRankingName": "OpenRouter 模型调用榜",
@@ -255,6 +258,22 @@
     "metrics": {
       "tokens": "{{value}} tokens",
       "requests": "{{value}} 次调用"
+    },
+    "githubViews": {
+      "aria": "GitHub 列表视图",
+      "ranking": "热门",
+      "watched": "我的关注"
+    },
+    "watched": {
+      "addLabel": "添加关注仓库",
+      "addPlaceholder": "openai/codex 或 GitHub 仓库 URL",
+      "addAction": "添加关注",
+      "duplicate": "已经关注过这个仓库。",
+      "invalid": "请输入有效的 GitHub 仓库，例如 openai/codex。",
+      "limit": "最多关注 30 个 GitHub 仓库。",
+      "empty": "还没有关注项目。",
+      "watchAria": "关注 {{repo}}",
+      "unwatchAria": "取消关注 {{repo}}"
     }
   },
   "automations": {

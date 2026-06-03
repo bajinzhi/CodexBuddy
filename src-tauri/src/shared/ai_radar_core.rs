@@ -212,22 +212,16 @@ pub(crate) async fn ai_radar_refresh_core(
         )
         .await;
         match result {
-            Ok(mut items) => {
-                normalize_item_texts(&settings, &mut items);
-                let item_count = items.len() as u32;
-                for item in items {
-                    item_by_id.insert(item.id.clone(), item);
-                }
-                state_by_id.insert(
-                    source.id.clone(),
-                    AiRadarSourceState {
-                        source_id: source.id.clone(),
-                        source_name: source.name.clone(),
-                        ok: true,
-                        last_fetched_at_ms: Some(now),
-                        last_error: None,
-                        item_count,
-                    },
+            Ok(mut result) => {
+                normalize_item_texts(&settings, &mut result.items);
+                apply_source_items(
+                    &source,
+                    &mut item_by_id,
+                    &mut state_by_id,
+                    result.items,
+                    result.partial_error,
+                    result.failed_github_repositories,
+                    now,
                 );
             }
             Err(err) => {
@@ -480,10 +474,17 @@ fn sanitize_sources(sources: Vec<AiRadarSource>) -> Vec<AiRadarSource> {
                 .url
                 .map(|url| url.trim().to_string())
                 .filter(|url| !url.is_empty());
-            source.query = source
-                .query
-                .map(|query| sanitize_text(&query, 240))
-                .filter(|query| !query.is_empty());
+            source.query = if source.kind == AiRadarSourceKind::GithubRepositories {
+                Some(sanitize_text(
+                    source.query.as_deref().unwrap_or_default(),
+                    4000,
+                ))
+            } else {
+                source
+                    .query
+                    .map(|query| sanitize_text(&query, 240))
+                    .filter(|query| !query.is_empty())
+            };
             if source.id.is_empty() {
                 source.id = format!("source-{index}");
             }
@@ -492,6 +493,7 @@ fn sanitize_sources(sources: Vec<AiRadarSource>) -> Vec<AiRadarSource> {
             }
             let has_supported_target = match &source.kind {
                 AiRadarSourceKind::GithubSearch => source.query.is_some(),
+                AiRadarSourceKind::GithubRepositories => true,
                 AiRadarSourceKind::ModelRanking => source
                     .url
                     .as_deref()
@@ -559,6 +561,91 @@ fn normalize_runtime_settings(mut settings: AiRadarSettings) -> AiRadarSettings 
     settings
 }
 
+struct FetchSourceResult {
+    items: Vec<AiRadarItem>,
+    partial_error: Option<String>,
+    failed_github_repositories: HashSet<String>,
+}
+
+impl FetchSourceResult {
+    fn ok(items: Vec<AiRadarItem>) -> Self {
+        Self {
+            items,
+            partial_error: None,
+            failed_github_repositories: HashSet::new(),
+        }
+    }
+}
+
+fn apply_source_items(
+    source: &AiRadarSource,
+    item_by_id: &mut HashMap<String, AiRadarItem>,
+    state_by_id: &mut HashMap<String, AiRadarSourceState>,
+    items: Vec<AiRadarItem>,
+    partial_error: Option<String>,
+    failed_github_repositories: HashSet<String>,
+    now: i64,
+) {
+    let is_watched_github_source = matches!(&source.kind, AiRadarSourceKind::GithubRepositories);
+    let fetched_item_count = items.len() as u32;
+
+    if is_watched_github_source {
+        retain_watched_github_cache_for_partial_failures(
+            item_by_id,
+            &source.id,
+            &failed_github_repositories,
+        );
+    }
+
+    for item in items {
+        item_by_id.insert(item.id.clone(), item);
+    }
+
+    let item_count = if is_watched_github_source {
+        item_by_id
+            .values()
+            .filter(|item| item.source_id == source.id)
+            .count() as u32
+    } else {
+        fetched_item_count
+    };
+
+    state_by_id.insert(
+        source.id.clone(),
+        AiRadarSourceState {
+            source_id: source.id.clone(),
+            source_name: source.name.clone(),
+            ok: partial_error.is_none(),
+            last_fetched_at_ms: Some(now),
+            last_error: partial_error,
+            item_count,
+        },
+    );
+}
+
+fn retain_watched_github_cache_for_partial_failures(
+    item_by_id: &mut HashMap<String, AiRadarItem>,
+    source_id: &str,
+    failed_repositories: &HashSet<String>,
+) {
+    item_by_id.retain(|_, item| {
+        if item.source_id != source_id {
+            return true;
+        }
+        match github_repository_key_for_item(item) {
+            Some(repo) => failed_repositories.contains(&repo),
+            None => false,
+        }
+    });
+}
+
+fn github_repository_key_for_item(item: &AiRadarItem) -> Option<String> {
+    if item.channel != AiRadarChannel::Github {
+        return None;
+    }
+    normalize_github_repository(&item.title).or_else(|| normalize_github_repository(&item.url))
+}
+
 fn is_obsolete_default_source_id(source_id: &str) -> bool {
     matches!(source_id, "media-the-decoder")
 }
@@ -569,16 +656,25 @@ async fn fetch_source(
     previous_by_id: &HashMap<String, AiRadarItem>,
     translate_to_chinese: bool,
     now: i64,
-) -> Result<Vec<AiRadarItem>, String> {
+) -> Result<FetchSourceResult, String> {
     match &source.kind {
         AiRadarSourceKind::GithubSearch => {
             let mut items = fetch_github_search(client, source, previous_by_id, now).await?;
             if translate_to_chinese {
                 let _ = translate_items_to_chinese(client, &mut items, previous_by_id).await;
             }
-            Ok(items)
+            Ok(FetchSourceResult::ok(items))
         }
-        AiRadarSourceKind::ModelRanking => fetch_model_ranking(client, source, now).await,
+        AiRadarSourceKind::GithubRepositories => {
+            let mut result = fetch_github_repositories(client, source, previous_by_id, now).await?;
+            if translate_to_chinese {
+                let _ = translate_items_to_chinese(client, &mut result.items, previous_by_id).await;
+            }
+            Ok(result)
+        }
+        AiRadarSourceKind::ModelRanking => fetch_model_ranking(client, source, now)
+            .await
+            .map(FetchSourceResult::ok),
         AiRadarSourceKind::Rss
         | AiRadarSourceKind::Atom
         | AiRadarSourceKind::WechatOfficialAccount
@@ -592,14 +688,16 @@ async fn fetch_source(
                 | AiRadarSourceKind::ToutiaoUser => fetch_feed(client, source, now).await?,
                 AiRadarSourceKind::JsonFeed => fetch_json_feed(client, source, now).await?,
                 AiRadarSourceKind::Article => fetch_article(client, source, now).await?,
-                AiRadarSourceKind::GithubSearch | AiRadarSourceKind::ModelRanking => {
+                AiRadarSourceKind::GithubSearch
+                | AiRadarSourceKind::GithubRepositories
+                | AiRadarSourceKind::ModelRanking => {
                     unreachable!()
                 }
             };
             if translate_to_chinese {
                 let _ = translate_items_to_chinese(client, &mut items, previous_by_id).await;
             }
-            Ok(items)
+            Ok(FetchSourceResult::ok(items))
         }
     }
 }
@@ -836,6 +934,60 @@ async fn fetch_article(
     )])
 }
 
+fn parse_watched_github_repositories(value: &str) -> Vec<String> {
+    let mut repos = Vec::new();
+    let mut seen = HashSet::new();
+    for entry in value.split(|ch: char| ch.is_whitespace() || ch == ',' || ch == ';') {
+        if let Some(repo) = normalize_github_repository(entry) {
+            if seen.insert(repo.clone()) {
+                repos.push(repo);
+            }
+        }
+        if repos.len() >= 30 {
+            break;
+        }
+    }
+    repos
+}
+
+fn normalize_github_repository(value: &str) -> Option<String> {
+    let mut value = value.trim().trim_matches('"').trim_matches('\'').trim();
+    if value.is_empty() {
+        return None;
+    }
+    let parsed_url = Url::parse(value).ok();
+    let path = if let Some(url) = parsed_url.as_ref() {
+        let host = url.host_str()?.to_ascii_lowercase();
+        if host != "github.com" && host != "www.github.com" {
+            return None;
+        }
+        url.path().trim_start_matches('/')
+    } else {
+        value = value
+            .strip_prefix("git@github.com:")
+            .or_else(|| value.strip_prefix("ssh://git@github.com/"))
+            .unwrap_or(value);
+        value.trim_start_matches('/')
+    };
+    let mut parts = path.split('/').filter(|part| !part.trim().is_empty());
+    let owner = normalize_github_path_part(parts.next()?)?;
+    let repo = normalize_github_path_part(parts.next()?)?;
+    Some(format!("{owner}/{repo}"))
+}
+
+fn normalize_github_path_part(value: &str) -> Option<String> {
+    let normalized = value.trim().trim_end_matches(".git").to_ascii_lowercase();
+    if normalized.is_empty()
+        || normalized.len() > 100
+        || !normalized
+            .chars()
+            .all(|ch| ch.is_ascii_alphanumeric() || ch == '-' || ch == '_' || ch == '.')
+    {
+        return None;
+    }
+    Some(normalized)
+}
+
 async fn fetch_github_search(
     client: &Client,
     source: &AiRadarSource,
@@ -862,54 +1014,156 @@ async fn fetch_github_search(
         .items
         .into_iter()
         .take(30)
-        .filter_map(|repo| {
-            if repo.full_name.trim().is_empty() || !is_public_http_url(&repo.html_url) {
-                return None;
-            }
-            let id = stable_item_id(&AiRadarChannel::Github, &repo.html_url);
-            let previous_stars = previous_by_id
-                .get(&id)
-                .and_then(|item| item.metrics.stars)
-                .unwrap_or(repo.stargazers_count);
-            let star_delta = repo.stargazers_count.saturating_sub(previous_stars);
-            let updated_at_ms = repo
-                .updated_at
-                .as_deref()
-                .and_then(|value| parse_datetime_ms(value));
-            let mut tags = repo.topics.into_iter().take(8).collect::<Vec<_>>();
-            if let Some(language) = repo.language {
-                if !language.trim().is_empty() {
-                    tags.insert(0, language);
-                }
-            }
-            Some(AiRadarItem {
-                id,
-                channel: AiRadarChannel::Github,
-                source_id: source.id.clone(),
-                source_name: source.name.clone(),
-                title: repo.full_name,
-                summary: repo
-                    .description
-                    .map(|value| sanitize_summary_text(&value, 360))
-                    .filter(|value| !value.is_empty()),
-                title_zh: None,
-                summary_zh: None,
-                url: repo.html_url,
-                published_at_ms: updated_at_ms,
-                fetched_at_ms: now,
-                score: github_score(repo.stargazers_count, repo.forks_count, star_delta),
-                tags,
-                metrics: AiRadarItemMetrics {
-                    stars: Some(repo.stargazers_count),
-                    forks: Some(repo.forks_count),
-                    open_issues: Some(repo.open_issues_count),
-                    star_delta_24h: Some(star_delta),
-                    ..AiRadarItemMetrics::default()
-                },
-            })
-        })
+        .filter_map(|repo| github_repository_item(source, repo, previous_by_id, now))
         .collect();
     Ok(items)
+}
+
+async fn fetch_github_repositories(
+    client: &Client,
+    source: &AiRadarSource,
+    previous_by_id: &HashMap<String, AiRadarItem>,
+    now: i64,
+) -> Result<FetchSourceResult, String> {
+    let repos = parse_watched_github_repositories(source.query.as_deref().unwrap_or_default());
+    let mut items = Vec::new();
+    let mut errors = Vec::new();
+    let mut failed_github_repositories = HashSet::new();
+    for repo in repos {
+        let mut parts = repo.split('/');
+        let owner = parts.next().unwrap_or_default();
+        let name = parts.next().unwrap_or_default();
+        let url = format!(
+            "https://api.github.com/repos/{}/{}",
+            encode_path_segment(owner),
+            encode_path_segment(name)
+        );
+        let bytes = fetch_bytes(
+            client,
+            &url,
+            "application/vnd.github+json, application/json",
+        )
+        .await;
+        match bytes {
+            Ok(bytes) => match serde_json::from_slice::<GitHubRepository>(&bytes) {
+                Ok(repository) => {
+                    if let Some(item) =
+                        github_repository_item(source, repository, previous_by_id, now)
+                    {
+                        items.push(item);
+                    }
+                }
+                Err(err) => {
+                    failed_github_repositories.insert(repo.clone());
+                    errors.push(format!("{repo}: {err}"));
+                }
+            },
+            Err(err) => {
+                failed_github_repositories.insert(repo.clone());
+                errors.push(format!("{repo}: {err}"));
+            }
+        }
+    }
+    Ok(finish_github_repositories_fetch(
+        items,
+        errors,
+        failed_github_repositories,
+    ))
+}
+
+fn finish_github_repositories_fetch(
+    items: Vec<AiRadarItem>,
+    errors: Vec<String>,
+    failed_github_repositories: HashSet<String>,
+) -> FetchSourceResult {
+    let partial_error = if errors.is_empty() {
+        None
+    } else {
+        Some(format!(
+            "Failed to fetch watched GitHub repositories: {}",
+            errors.join("; ")
+        ))
+    };
+    FetchSourceResult {
+        items,
+        partial_error,
+        failed_github_repositories,
+    }
+}
+
+fn github_repository_item(
+    source: &AiRadarSource,
+    repo: GitHubRepository,
+    previous_by_id: &HashMap<String, AiRadarItem>,
+    now: i64,
+) -> Option<AiRadarItem> {
+    if repo.full_name.trim().is_empty() || !is_public_http_url(&repo.html_url) {
+        return None;
+    }
+    let legacy_id = stable_item_id(&AiRadarChannel::Github, &repo.html_url);
+    let id = github_repository_item_id(source, &repo.html_url);
+    let previous_stars = previous_by_id
+        .get(&id)
+        .or_else(|| {
+            if id == legacy_id {
+                None
+            } else {
+                previous_by_id.get(&legacy_id)
+            }
+        })
+        .and_then(|item| item.metrics.stars)
+        .unwrap_or(repo.stargazers_count);
+    let star_delta = repo.stargazers_count.saturating_sub(previous_stars);
+    let updated_at_ms = repo
+        .updated_at
+        .as_deref()
+        .and_then(|value| parse_datetime_ms(value));
+    let published_at_ms = if matches!(&source.kind, AiRadarSourceKind::GithubRepositories) {
+        Some(now)
+    } else {
+        updated_at_ms
+    };
+    let mut tags = repo.topics.into_iter().take(8).collect::<Vec<_>>();
+    if let Some(language) = repo.language {
+        if !language.trim().is_empty() {
+            tags.insert(0, sanitize_text(&language, 60));
+        }
+    }
+    Some(AiRadarItem {
+        id,
+        channel: AiRadarChannel::Github,
+        source_id: source.id.clone(),
+        source_name: source.name.clone(),
+        title: repo.full_name,
+        summary: repo
+            .description
+            .map(|value| sanitize_summary_text(&value, 360))
+            .filter(|value| !value.is_empty()),
+        title_zh: None,
+        summary_zh: None,
+        url: repo.html_url,
+        published_at_ms,
+        fetched_at_ms: now,
+        score: github_score(repo.stargazers_count, repo.forks_count, star_delta),
+        tags,
+        metrics: AiRadarItemMetrics {
+            stars: Some(repo.stargazers_count),
+            forks: Some(repo.forks_count),
+            open_issues: Some(repo.open_issues_count),
+            star_delta_24h: Some(star_delta),
+            ..AiRadarItemMetrics::default()
+        },
+    })
+}
+
+fn github_repository_item_id(source: &AiRadarSource, html_url: &str) -> String {
+    if matches!(&source.kind, AiRadarSourceKind::GithubRepositories) {
+        return stable_item_id(
+            &AiRadarChannel::Github,
+            &format!("{}::{html_url}", source.id),
+        );
+    }
+    stable_item_id(&AiRadarChannel::Github, html_url)
 }
 
 async fn fetch_model_ranking(
@@ -2203,22 +2457,35 @@ fn decode_minimal_html(value: &str) -> String {
 
 #[cfg(test)]
 mod tests {
+    use std::collections::{HashMap, HashSet};
+    use std::path::PathBuf;
+    use std::sync::atomic::{AtomicU64, Ordering};
+
     use tokio::sync::Mutex;
 
     use super::{
-        ai_radar_refresh_core, apply_translated_item_text, build_response, cache_path,
-        encode_path_segment, encode_query_component, extract_google_translation,
+        ai_radar_refresh_core, apply_source_items, apply_translated_item_text, build_response,
+        cache_path, encode_path_segment, encode_query_component, extract_google_translation,
         extract_next_chunk_paths, extract_openrouter_model_rankings_action_id,
-        extract_openrouter_ranking_rows, is_public_http_url, item_needs_chinese_translation,
-        merge_translations_into_cache, normalize_runtime_settings, now_ms, openrouter_ranking_item,
-        read_cache, sanitize_summary_text, sanitize_text, sanitize_translated_summary_text,
-        scheduler_status_for_cache, source_feed_url, source_feed_urls, write_cache, AiRadarCache,
-        OpenRouterRankingRow,
+        extract_openrouter_ranking_rows, finish_github_repositories_fetch, github_repository_item,
+        is_public_http_url, item_needs_chinese_translation, merge_translations_into_cache,
+        normalize_runtime_settings, now_ms, openrouter_ranking_item,
+        parse_watched_github_repositories, read_cache, sanitize_settings, sanitize_summary_text,
+        sanitize_text, sanitize_translated_summary_text, scheduler_status_for_cache,
+        source_feed_url, source_feed_urls, stable_item_id, trim_items, write_cache, AiRadarCache,
+        GitHubRepository, OpenRouterRankingRow,
     };
     use crate::types::{
         AiRadarChannel, AiRadarItem, AiRadarItemMetrics, AiRadarRefreshRequest, AiRadarSettings,
         AiRadarSource, AiRadarSourceKind, AiRadarSourceState, AppSettings,
     };
+
+    static TEST_DIR_COUNTER: AtomicU64 = AtomicU64::new(0);
+
+    fn test_temp_dir(prefix: &str) -> PathBuf {
+        let sequence = TEST_DIR_COUNTER.fetch_add(1, Ordering::Relaxed);
+        std::env::temp_dir().join(format!("{prefix}-{}-{sequence}", now_ms()))
+    }
 
     #[test]
     fn encodes_github_queries() {
@@ -2483,6 +2750,270 @@ mod tests {
             item.summary_zh.as_deref(),
             Some("用于构建自主智能体的框架。")
         );
+    }
+
+    #[test]
+    fn parses_watched_github_repositories_from_names_and_urls() {
+        let repos = parse_watched_github_repositories(
+            " OpenAI/Codex\nhttps://github.com/anthropics/claude-code.git, openai/codex ",
+        );
+
+        assert_eq!(
+            repos,
+            vec![
+                "openai/codex".to_string(),
+                "anthropics/claude-code".to_string()
+            ]
+        );
+    }
+
+    #[test]
+    fn keeps_empty_watched_repositories_source() {
+        let settings = sanitize_settings(AiRadarSettings {
+            enabled: true,
+            refresh_interval_minutes: 60,
+            max_items: 800,
+            retention_days: 30,
+            translate_to_chinese: true,
+            default_source_version: 10,
+            sources: vec![AiRadarSource {
+                id: "github-watched-repositories".to_string(),
+                name: "GitHub Watched Repositories".to_string(),
+                kind: AiRadarSourceKind::GithubRepositories,
+                url: None,
+                query: Some("".to_string()),
+                enabled: true,
+                channel: AiRadarChannel::Github,
+                created_at_ms: None,
+            }],
+        });
+
+        assert_eq!(settings.sources.len(), 1);
+        assert_eq!(settings.sources[0].id, "github-watched-repositories");
+        assert_eq!(settings.sources[0].query.as_deref(), Some(""));
+    }
+
+    #[test]
+    fn converts_watched_github_repository_to_item_with_star_delta() {
+        let source = AiRadarSource {
+            id: "github-watched-repositories".to_string(),
+            name: "GitHub Watched Repositories".to_string(),
+            kind: AiRadarSourceKind::GithubRepositories,
+            url: None,
+            query: Some("openai/codex".to_string()),
+            enabled: true,
+            channel: AiRadarChannel::Github,
+            created_at_ms: None,
+        };
+        let repo = GitHubRepository {
+            full_name: "openai/codex".to_string(),
+            html_url: "https://github.com/openai/codex".to_string(),
+            description: Some("Lightweight coding agent.".to_string()),
+            stargazers_count: 1200,
+            forks_count: 90,
+            open_issues_count: 12,
+            language: Some("Rust".to_string()),
+            topics: vec!["agent".to_string(), "llm".to_string()],
+            updated_at: Some("2026-06-01T12:00:00Z".to_string()),
+        };
+        let previous_id =
+            stable_item_id(&AiRadarChannel::Github, "https://github.com/openai/codex");
+        let previous_by_id = HashMap::from([(
+            previous_id,
+            AiRadarItem {
+                metrics: AiRadarItemMetrics {
+                    stars: Some(1000),
+                    ..AiRadarItemMetrics::default()
+                },
+                ..test_item("github-watched-repositories", 1)
+            },
+        )]);
+
+        let item =
+            github_repository_item(&source, repo, &previous_by_id, 123).expect("watched repo item");
+
+        assert_eq!(item.channel, AiRadarChannel::Github);
+        assert_eq!(item.title, "openai/codex");
+        assert_eq!(item.metrics.stars, Some(1200));
+        assert_eq!(item.metrics.forks, Some(90));
+        assert_eq!(item.metrics.open_issues, Some(12));
+        assert_eq!(item.metrics.star_delta_24h, Some(200));
+        assert_eq!(item.tags, vec!["Rust", "agent", "llm"]);
+        assert_eq!(item.published_at_ms, Some(123));
+    }
+
+    #[test]
+    fn watched_github_repository_items_use_fetch_time_for_retention() {
+        let source = AiRadarSource {
+            id: "github-watched-repositories".to_string(),
+            name: "GitHub Watched Repositories".to_string(),
+            kind: AiRadarSourceKind::GithubRepositories,
+            url: None,
+            query: Some("openai/codex".to_string()),
+            enabled: true,
+            channel: AiRadarChannel::Github,
+            created_at_ms: None,
+        };
+        let mut repo =
+            test_github_repository("openai/codex", "https://github.com/openai/codex", 1200);
+        repo.updated_at = Some("2020-01-01T00:00:00Z".to_string());
+        let now = 1780315200000;
+        let item = github_repository_item(&source, repo, &HashMap::new(), now)
+            .expect("watched repo item");
+        let settings = AiRadarSettings {
+            enabled: true,
+            refresh_interval_minutes: 60,
+            max_items: 800,
+            retention_days: 30,
+            translate_to_chinese: true,
+            default_source_version: 10,
+            sources: vec![source],
+        };
+
+        let items = trim_items(&settings, vec![item], now);
+
+        assert_eq!(items.len(), 1);
+        assert_eq!(items[0].published_at_ms, Some(now));
+    }
+
+    #[test]
+    fn gives_watched_github_repository_items_source_scoped_ids() {
+        let ranking_source = AiRadarSource {
+            id: "github-ai".to_string(),
+            name: "GitHub AI".to_string(),
+            kind: AiRadarSourceKind::GithubSearch,
+            url: None,
+            query: Some("topic:ai".to_string()),
+            enabled: true,
+            channel: AiRadarChannel::Github,
+            created_at_ms: None,
+        };
+        let watched_source = AiRadarSource {
+            id: "github-watched-repositories".to_string(),
+            name: "GitHub Watched Repositories".to_string(),
+            kind: AiRadarSourceKind::GithubRepositories,
+            url: None,
+            query: Some("openai/codex".to_string()),
+            enabled: true,
+            channel: AiRadarChannel::Github,
+            created_at_ms: None,
+        };
+
+        let ranking_item = github_repository_item(
+            &ranking_source,
+            test_github_repository("openai/codex", "https://github.com/openai/codex", 1200),
+            &HashMap::new(),
+            123,
+        )
+        .expect("ranking repo item");
+        let watched_item = github_repository_item(
+            &watched_source,
+            test_github_repository("openai/codex", "https://github.com/openai/codex", 1200),
+            &HashMap::new(),
+            123,
+        )
+        .expect("watched repo item");
+
+        assert_eq!(
+            ranking_item.id,
+            stable_item_id(&AiRadarChannel::Github, "https://github.com/openai/codex")
+        );
+        assert_eq!(ranking_item.url, watched_item.url);
+        assert_ne!(ranking_item.id, watched_item.id);
+    }
+
+    #[test]
+    fn partial_watched_github_refresh_preserves_failed_cached_repositories() {
+        let source_id = "github-watched-repositories";
+        let source = AiRadarSource {
+            id: source_id.to_string(),
+            name: "GitHub Watched Repositories".to_string(),
+            kind: AiRadarSourceKind::GithubRepositories,
+            url: None,
+            query: Some("openai/codex google-gemini/gemini-cli".to_string()),
+            enabled: true,
+            channel: AiRadarChannel::Github,
+            created_at_ms: None,
+        };
+        let mut cached_failed = test_github_item(source_id, "failed", "openai/codex", 1000, 1);
+        cached_failed.fetched_at_ms = 1;
+        let cached_removed =
+            test_github_item(source_id, "removed", "anthropics/claude-code", 900, 1);
+        let ranking_overlap = test_github_item("github-ai", "ranking", "openai/codex", 1000, 1);
+        let fetched_success =
+            test_github_item(source_id, "success", "google-gemini/gemini-cli", 1300, 2);
+        let mut item_by_id = HashMap::from([
+            (cached_failed.id.clone(), cached_failed),
+            (cached_removed.id.clone(), cached_removed),
+            (ranking_overlap.id.clone(), ranking_overlap),
+        ]);
+        let mut state_by_id =
+            HashMap::from([(source_id.to_string(), test_source_state(source_id))]);
+
+        apply_source_items(
+            &source,
+            &mut item_by_id,
+            &mut state_by_id,
+            vec![fetched_success],
+            Some("Failed to fetch watched GitHub repositories: openai/codex: HTTP 404".to_string()),
+            HashSet::from(["openai/codex".to_string()]),
+            2,
+        );
+
+        assert!(item_by_id.contains_key("failed"));
+        assert!(!item_by_id.contains_key("removed"));
+        assert!(item_by_id.contains_key("ranking"));
+        assert!(item_by_id.contains_key("success"));
+        let state = state_by_id.get(source_id).expect("source state");
+        assert!(!state.ok);
+        assert!(state.last_error.is_some());
+        assert_eq!(state.item_count, 2);
+    }
+
+    #[test]
+    fn all_failed_watched_github_refresh_prunes_removed_cached_repositories() {
+        let source_id = "github-watched-repositories";
+        let source = AiRadarSource {
+            id: source_id.to_string(),
+            name: "GitHub Watched Repositories".to_string(),
+            kind: AiRadarSourceKind::GithubRepositories,
+            url: None,
+            query: Some("openai/codex".to_string()),
+            enabled: true,
+            channel: AiRadarChannel::Github,
+            created_at_ms: None,
+        };
+        let cached_failed = test_github_item(source_id, "failed", "openai/codex", 1000, 1);
+        let cached_removed =
+            test_github_item(source_id, "removed", "anthropics/claude-code", 900, 1);
+        let mut item_by_id = HashMap::from([
+            (cached_failed.id.clone(), cached_failed),
+            (cached_removed.id.clone(), cached_removed),
+        ]);
+        let mut state_by_id =
+            HashMap::from([(source_id.to_string(), test_source_state(source_id))]);
+        let result = finish_github_repositories_fetch(
+            Vec::new(),
+            vec!["openai/codex: HTTP 404".to_string()],
+            HashSet::from(["openai/codex".to_string()]),
+        );
+
+        apply_source_items(
+            &source,
+            &mut item_by_id,
+            &mut state_by_id,
+            result.items,
+            result.partial_error,
+            result.failed_github_repositories,
+            2,
+        );
+
+        assert!(item_by_id.contains_key("failed"));
+        assert!(!item_by_id.contains_key("removed"));
+        let state = state_by_id.get(source_id).expect("source state");
+        assert!(!state.ok);
+        assert!(state.last_error.is_some());
+        assert_eq!(state.item_count, 1);
     }
 
     #[test]
@@ -2884,7 +3415,7 @@ mod tests {
             .build()
             .expect("runtime");
         runtime.block_on(async {
-            let dir = std::env::temp_dir().join(format!("codexbuddy-ai-radar-{}", now_ms()));
+            let dir = test_temp_dir("codexbuddy-ai-radar");
             let settings_path = dir.join("settings.json");
             let cache_file = cache_path(&settings_path);
             let previous_refresh = Some(123_456);
@@ -2938,7 +3469,7 @@ mod tests {
             .build()
             .expect("runtime");
         runtime.block_on(async {
-            let dir = std::env::temp_dir().join(format!("codexbuddy-ai-radar-{}", now_ms()));
+            let dir = test_temp_dir("codexbuddy-ai-radar");
             let settings_path = dir.join("settings.json");
             let cache_file = cache_path(&settings_path);
             let previous_refresh = Some(123_456);
@@ -2991,6 +3522,71 @@ mod tests {
     }
 
     #[test]
+    fn watched_github_refresh_removes_repositories_no_longer_configured() {
+        let runtime = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .expect("runtime");
+        runtime.block_on(async {
+            let dir = test_temp_dir("codexbuddy-ai-radar");
+            let settings_path = dir.join("settings.json");
+            let cache_file = cache_path(&settings_path);
+            let source_id = "github-watched-repositories";
+            let cached_at = now_ms();
+            let mut cached_item = test_item(source_id, cached_at);
+            cached_item.channel = AiRadarChannel::Github;
+            cached_item.title = "openai/codex".to_string();
+            cached_item.url = "https://github.com/openai/codex".to_string();
+            write_cache(
+                &cache_file,
+                &AiRadarCache {
+                    items: vec![cached_item],
+                    source_states: vec![test_source_state(source_id)],
+                    last_refreshed_at_ms: Some(cached_at),
+                },
+            )
+            .await
+            .expect("write cache");
+            let mut settings = AppSettings::default();
+            settings.ai_radar.sources = vec![AiRadarSource {
+                id: source_id.to_string(),
+                name: "GitHub Watched Repositories".to_string(),
+                kind: AiRadarSourceKind::GithubRepositories,
+                url: None,
+                query: Some(String::new()),
+                enabled: true,
+                channel: AiRadarChannel::Github,
+                created_at_ms: None,
+            }];
+            let app_settings = Mutex::new(settings);
+
+            let response = ai_radar_refresh_core(
+                &app_settings,
+                &settings_path,
+                AiRadarRefreshRequest {
+                    channel: None,
+                    source_id: Some(source_id.to_string()),
+                },
+            )
+            .await
+            .expect("refresh");
+            let cache = read_cache(&cache_file).await;
+            let state = response
+                .status
+                .source_states
+                .iter()
+                .find(|state| state.source_id == source_id)
+                .expect("source state");
+
+            assert!(response.items.is_empty());
+            assert!(cache.items.is_empty());
+            assert!(state.ok);
+            assert_eq!(state.item_count, 0);
+            let _ = tokio::fs::remove_dir_all(dir).await;
+        });
+    }
+
+    #[test]
     fn failed_source_refresh_keeps_cached_content_as_fallback() {
         let runtime = tokio::runtime::Builder::new_current_thread()
             .enable_all()
@@ -2998,7 +3594,7 @@ mod tests {
             .expect("runtime");
         runtime.block_on(async {
             let cached_at = now_ms();
-            let dir = std::env::temp_dir().join(format!("codexbuddy-ai-radar-{cached_at}"));
+            let dir = test_temp_dir("codexbuddy-ai-radar");
             let settings_path = dir.join("settings.json");
             let cache_file = cache_path(&settings_path);
             write_cache(
@@ -3092,5 +3688,35 @@ mod tests {
             tags: Vec::new(),
             metrics: AiRadarItemMetrics::default(),
         }
+    }
+
+    fn test_github_repository(full_name: &str, html_url: &str, stars: i64) -> GitHubRepository {
+        GitHubRepository {
+            full_name: full_name.to_string(),
+            html_url: html_url.to_string(),
+            description: Some("Lightweight coding agent.".to_string()),
+            stargazers_count: stars,
+            forks_count: 90,
+            open_issues_count: 12,
+            language: Some("Rust".to_string()),
+            topics: vec!["agent".to_string(), "llm".to_string()],
+            updated_at: Some("2026-06-01T12:00:00Z".to_string()),
+        }
+    }
+
+    fn test_github_item(
+        source_id: &str,
+        item_id: &str,
+        full_name: &str,
+        stars: i64,
+        now: i64,
+    ) -> AiRadarItem {
+        let mut item = test_item(source_id, now);
+        item.id = item_id.to_string();
+        item.channel = AiRadarChannel::Github;
+        item.title = full_name.to_string();
+        item.url = format!("https://github.com/{full_name}");
+        item.metrics.stars = Some(stars);
+        item
     }
 }

@@ -17,6 +17,7 @@ import type {
   AiRadarChannel,
   AiRadarItem,
   AiRadarListResponse,
+  AiRadarRefreshRequest,
   AiRadarSettings,
   AiRadarSource,
   AiRadarSourceKind,
@@ -28,6 +29,7 @@ import {
 } from "@services/tauri";
 
 type AiRadarTab = AiRadarChannel | "sources";
+type AiRadarGithubView = "ranking" | "watched";
 type AiRadarMediaGroup =
   | "all"
   | "official"
@@ -45,6 +47,9 @@ type AiRadarSortMode =
   | "requests"
   | "rank";
 
+const WATCHED_GITHUB_SOURCE_ID = "github-watched-repositories";
+const MAX_WATCHED_GITHUB_REPOSITORIES = 30;
+
 type AiRadarPanelProps = {
   onClose: () => void;
   onSettingsChange?: (settings: AiRadarSettings) => void;
@@ -61,6 +66,10 @@ const sourceKinds: Array<{ value: AiRadarSourceKind; labelKey: string }> = [
   },
   { value: "toutiaoUser", labelKey: "aiRadar.sourceKinds.toutiaoUser" },
   { value: "githubSearch", labelKey: "aiRadar.sourceKinds.githubSearch" },
+  {
+    value: "githubRepositories",
+    labelKey: "aiRadar.sourceKinds.githubRepositories",
+  },
   { value: "modelRanking", labelKey: "aiRadar.sourceKinds.modelRanking" },
 ];
 
@@ -81,6 +90,7 @@ const mediaGroups: AiRadarMediaGroup[] = [
 
 type SourceDefaults = {
   githubSearchName: string;
+  githubRepositoriesName: string;
   wechatOfficialAccountName: string;
   toutiaoUserName: string;
   modelRankingName: string;
@@ -154,6 +164,7 @@ function mediaGroupForSource(
 function sourceUsesQuery(kind: AiRadarSourceKind) {
   return (
     kind === "githubSearch" ||
+    kind === "githubRepositories" ||
     kind === "wechatOfficialAccount" ||
     kind === "toutiaoUser"
   );
@@ -162,6 +173,9 @@ function sourceUsesQuery(kind: AiRadarSourceKind) {
 function sourceTargetLabelKey(kind: AiRadarSourceKind) {
   if (kind === "githubSearch") {
     return "aiRadar.sourceTargets.githubSearch";
+  }
+  if (kind === "githubRepositories") {
+    return "aiRadar.sourceTargets.githubRepositories";
   }
   if (kind === "wechatOfficialAccount") {
     return "aiRadar.sourceTargets.wechatOfficialAccount";
@@ -177,7 +191,7 @@ function sourceTargetLabelKey(kind: AiRadarSourceKind) {
 
 export function normalizeSourceForKind(source: AiRadarSource): AiRadarSource {
   const channel: AiRadarChannel =
-    source.kind === "githubSearch"
+    source.kind === "githubSearch" || source.kind === "githubRepositories"
       ? "github"
       : source.kind === "modelRanking"
         ? "models"
@@ -197,7 +211,7 @@ function buildSource(
 ): AiRadarSource {
   const now = Date.now();
   const channel: AiRadarChannel =
-    kind === "githubSearch"
+    kind === "githubSearch" || kind === "githubRepositories"
       ? "github"
       : kind === "modelRanking"
         ? "models"
@@ -208,6 +222,10 @@ function buildSource(
     githubSearch: {
       name: defaults.githubSearchName,
       query: "agent topic:llm stars:>100 archived:false fork:false",
+    },
+    githubRepositories: {
+      name: defaults.githubRepositoriesName,
+      query: "",
     },
     wechatOfficialAccount: {
       name: defaults.wechatOfficialAccountName,
@@ -236,6 +254,139 @@ function buildSource(
     channel,
     createdAtMs: now,
   };
+}
+
+function isWatchedGithubSource(
+  source: AiRadarSource | null | undefined,
+  sourceId?: string,
+) {
+  if (source) {
+    return source.kind === "githubRepositories";
+  }
+  return sourceId === WATCHED_GITHUB_SOURCE_ID;
+}
+
+function isActiveWatchedGithubSource(
+  source: AiRadarSource | null | undefined,
+  sourceId?: string,
+) {
+  if (source) {
+    return source.enabled && isWatchedGithubSource(source);
+  }
+  return isWatchedGithubSource(source, sourceId);
+}
+
+function uniqueSourceId(sources: AiRadarSource[], preferredId: string) {
+  const usedIds = new Set(sources.map((source) => source.id));
+  if (!usedIds.has(preferredId)) {
+    return preferredId;
+  }
+  let suffix = 2;
+  let id = `${preferredId}-${suffix}`;
+  while (usedIds.has(id)) {
+    suffix += 1;
+    id = `${preferredId}-${suffix}`;
+  }
+  return id;
+}
+
+function normalizeGithubPathPart(value: string) {
+  const normalized = value.trim().replace(/\.git$/i, "").toLowerCase();
+  if (
+    normalized.length === 0 ||
+    normalized.length > 100 ||
+    !/^[a-z0-9._-]+$/i.test(normalized)
+  ) {
+    return null;
+  }
+  return normalized;
+}
+
+function normalizeGithubRepositoryInput(value: string) {
+  let text = value.trim().replace(/^["']+|["']+$/g, "").trim();
+  if (!text) {
+    return null;
+  }
+  let path = text;
+  if (text.startsWith("git@github.com:")) {
+    path = text.slice("git@github.com:".length);
+  } else {
+    const urlText =
+      text.startsWith("github.com/") || text.startsWith("www.github.com/")
+      ? `https://${text}`
+      : text;
+    try {
+      const url = new URL(urlText);
+      const host = url.hostname.toLowerCase();
+      if (host !== "github.com" && host !== "www.github.com") {
+        return null;
+      }
+      path = url.pathname;
+    } catch {
+      path = text;
+    }
+  }
+  const [ownerPart, repoPart] = path
+    .replace(/^\/+/, "")
+    .split("/")
+    .filter(Boolean);
+  const owner = ownerPart ? normalizeGithubPathPart(ownerPart) : null;
+  const repo = repoPart ? normalizeGithubPathPart(repoPart) : null;
+  return owner && repo ? `${owner}/${repo}` : null;
+}
+
+function watchedRepositoriesFromSource(
+  source: AiRadarSource | null | undefined,
+) {
+  const repositories: string[] = [];
+  const seen = new Set<string>();
+  for (const entry of (source?.query ?? "").split(/[\s,;]+/u)) {
+    const repository = normalizeGithubRepositoryInput(entry);
+    if (!repository || seen.has(repository)) {
+      continue;
+    }
+    repositories.push(repository);
+    seen.add(repository);
+    if (repositories.length >= MAX_WATCHED_GITHUB_REPOSITORIES) {
+      break;
+    }
+  }
+  return repositories;
+}
+
+function formatWatchedRepositories(repositories: string[]) {
+  return repositories.join("\n");
+}
+
+function watchedRepositoryStateFromSources(sources: AiRadarSource[]) {
+  const repositories: string[] = [];
+  const repositorySet = new Set<string>();
+  const repositoriesBySourceId = new Map<string, string[]>();
+  const sourceIdByRepository = new Map<string, string>();
+  for (const source of sources) {
+    const sourceRepositories = watchedRepositoriesFromSource(source);
+    repositoriesBySourceId.set(source.id, sourceRepositories);
+    for (const repository of sourceRepositories) {
+      if (!sourceIdByRepository.has(repository)) {
+        sourceIdByRepository.set(repository, source.id);
+      }
+      if (repositorySet.has(repository)) {
+        continue;
+      }
+      repositorySet.add(repository);
+      repositories.push(repository);
+    }
+  }
+  return {
+    repositories,
+    repositorySet,
+    repositoriesBySourceId,
+    sourceIdByRepository,
+  };
+}
+
+function githubRepositoryFromItem(item: AiRadarItem) {
+  return normalizeGithubRepositoryInput(item.title) ?? normalizeGithubRepositoryInput(item.url);
 }
 
 function itemTime(item: AiRadarItem, fallback: string) {
@@ -394,6 +545,8 @@ function channelNeedsInitialFetch(
 export function AiRadarPanel({ onClose, onSettingsChange }: AiRadarPanelProps) {
   const { t } = useTranslation(["app", "common"]);
   const [activeTab, setActiveTab] = useState<AiRadarTab>("media");
+  const [activeGithubView, setActiveGithubView] =
+    useState<AiRadarGithubView>("ranking");
   const [activeMediaGroup, setActiveMediaGroup] =
     useState<AiRadarMediaGroup>("all");
   const [sortModeByChannel, setSortModeByChannel] = useState<
@@ -407,6 +560,10 @@ export function AiRadarPanel({ onClose, onSettingsChange }: AiRadarPanelProps) {
   const [refreshing, setRefreshing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [watchedRepoInput, setWatchedRepoInput] = useState("");
+  const [watchedRepoMessage, setWatchedRepoMessage] = useState<string | null>(
+    null,
+  );
   const translationPollCountRef = useRef(0);
 
   const load = useCallback(async () => {
@@ -479,6 +636,31 @@ export function AiRadarPanel({ onClose, onSettingsChange }: AiRadarPanelProps) {
       ),
     [response?.settings.sources],
   );
+  const settingsSources =
+    draftSettings?.sources ?? response?.settings.sources ?? [];
+  const watchedGithubSources = useMemo(
+    () => settingsSources.filter((source) => isActiveWatchedGithubSource(source)),
+    [settingsSources],
+  );
+  const watchedGithubSource = watchedGithubSources[0] ?? null;
+  const watchedRepositoryState = useMemo(
+    () => watchedRepositoryStateFromSources(watchedGithubSources),
+    [watchedGithubSources],
+  );
+  const watchedRepositories = watchedRepositoryState.repositories;
+  const watchedRepositorySet = watchedRepositoryState.repositorySet;
+  const githubRankingCount = useMemo(
+    () =>
+      (response?.items ?? []).filter(
+        (item) =>
+          item.channel === "github" &&
+          !isActiveWatchedGithubSource(
+            sourceById.get(item.sourceId),
+            item.sourceId,
+          ),
+      ).length,
+    [response?.items, sourceById],
+  );
   const mediaGroupCounts = useMemo(() => {
     const counts = new Map<AiRadarMediaGroup, number>(
       mediaGroups.map((group) => [group, 0]),
@@ -528,6 +710,15 @@ export function AiRadarPanel({ onClose, onSettingsChange }: AiRadarPanelProps) {
         if (item.channel !== channel) {
           return false;
         }
+        if (channel === "github") {
+          const fromWatchedSource = isActiveWatchedGithubSource(
+            sourceById.get(item.sourceId),
+            item.sourceId,
+          );
+          return activeGithubView === "watched"
+            ? fromWatchedSource
+            : !fromWatchedSource;
+        }
         if (channel !== "media" || activeMediaGroup === "all") {
           return true;
         }
@@ -542,17 +733,18 @@ export function AiRadarPanel({ onClose, onSettingsChange }: AiRadarPanelProps) {
     );
   }, [
     activeChannel,
+    activeGithubView,
     activeMediaGroup,
     activeSortMode,
     response?.items,
     sourceById,
   ]);
 
-  const refresh = async (channel?: AiRadarChannel) => {
+  const refresh = async (request: AiRadarRefreshRequest = {}) => {
     setRefreshing(true);
     setError(null);
     try {
-      const next = await aiRadarRefresh(channel ? { channel } : {});
+      const next = await aiRadarRefresh(request);
       setResponse(next);
       setDraftSettings(next.settings);
     } catch (err) {
@@ -582,6 +774,7 @@ export function AiRadarPanel({ onClose, onSettingsChange }: AiRadarPanelProps) {
   const sourceDefaults = useMemo<SourceDefaults>(
     () => ({
       githubSearchName: t("aiRadar.defaults.githubSearchName"),
+      githubRepositoriesName: t("aiRadar.defaults.githubRepositoriesName"),
       wechatOfficialAccountName: t(
         "aiRadar.defaults.wechatOfficialAccountName",
       ),
@@ -627,11 +820,156 @@ export function AiRadarPanel({ onClose, onSettingsChange }: AiRadarPanelProps) {
     }
   };
 
+  const persistWatchedRepositories = async (
+    repositories: string[],
+    options: { sourceId?: string } = {},
+  ) => {
+    const baseSettings = draftSettings ?? response?.settings;
+    if (!baseSettings) {
+      return false;
+    }
+    const query = formatWatchedRepositories(repositories);
+    const savedAtMs = Date.now();
+    let targetSourceId = options.sourceId;
+    let updated = false;
+    const sources = baseSettings.sources.map((source) => {
+      if (!isActiveWatchedGithubSource(source) || updated) {
+        return source;
+      }
+      if (targetSourceId && source.id !== targetSourceId) {
+        return source;
+      }
+      const sourceId = source.id || WATCHED_GITHUB_SOURCE_ID;
+      targetSourceId = sourceId;
+      updated = true;
+      return {
+        ...source,
+        id: sourceId,
+        name: source.name || sourceDefaults.githubRepositoriesName,
+        kind: "githubRepositories" as const,
+        url: null,
+        query,
+        enabled: true,
+        channel: "github" as const,
+        createdAtMs:
+          typeof source.createdAtMs === "number" &&
+          Number.isFinite(source.createdAtMs)
+            ? source.createdAtMs
+            : savedAtMs,
+      };
+    });
+    if (!updated) {
+      targetSourceId = uniqueSourceId(sources, WATCHED_GITHUB_SOURCE_ID);
+      sources.push({
+        id: targetSourceId,
+        name: sourceDefaults.githubRepositoriesName,
+        kind: "githubRepositories",
+        url: null,
+        query,
+        enabled: true,
+        channel: "github",
+        createdAtMs: savedAtMs,
+      });
+    }
+    const nextSettings = { ...baseSettings, sources };
+
+    setSaving(true);
+    setError(null);
+    try {
+      const savedSettings = await aiRadarSourcesUpdate(nextSettings);
+      const watchedSourceId =
+        savedSettings.sources.find(
+          (source) =>
+            source.id === targetSourceId && isWatchedGithubSource(source),
+        )?.id ??
+        savedSettings.sources.find((source) =>
+          isActiveWatchedGithubSource(source),
+        )
+          ?.id ??
+        targetSourceId ??
+        WATCHED_GITHUB_SOURCE_ID;
+      const next = await aiRadarRefresh({ sourceId: watchedSourceId });
+      setDraftSettings(next.settings);
+      setResponse(next);
+      onSettingsChange?.(next.settings);
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const addWatchedRepository = async (
+    repository: string,
+    options: { clearInput?: boolean } = {},
+  ) => {
+    const normalized = normalizeGithubRepositoryInput(repository);
+    if (!normalized) {
+      setWatchedRepoMessage(t("aiRadar.watched.invalid"));
+      return;
+    }
+    if (watchedRepositorySet.has(normalized)) {
+      setWatchedRepoMessage(t("aiRadar.watched.duplicate"));
+      return;
+    }
+    const targetSourceId = watchedGithubSource?.id;
+    const targetRepositories = targetSourceId
+      ? watchedRepositoryState.repositoriesBySourceId.get(targetSourceId) ?? []
+      : [];
+    if (targetRepositories.length >= MAX_WATCHED_GITHUB_REPOSITORIES) {
+      setWatchedRepoMessage(t("aiRadar.watched.limit"));
+      setActiveGithubView("watched");
+      return;
+    }
+    const saved = await persistWatchedRepositories([
+      ...targetRepositories,
+      normalized,
+    ], { sourceId: targetSourceId });
+    if (saved) {
+      setWatchedRepoMessage(null);
+      if (options.clearInput) {
+        setWatchedRepoInput("");
+      }
+    }
+  };
+
+  const removeWatchedRepository = async (
+    repository: string,
+    sourceId?: string,
+  ) => {
+    const normalized = normalizeGithubRepositoryInput(repository);
+    if (!normalized) {
+      return;
+    }
+    const targetSourceId =
+      sourceId &&
+      watchedRepositoryState.repositoriesBySourceId
+        .get(sourceId)
+        ?.includes(normalized)
+        ? sourceId
+        : watchedRepositoryState.sourceIdByRepository.get(normalized);
+    if (!targetSourceId) {
+      return;
+    }
+    const targetRepositories =
+      watchedRepositoryState.repositoriesBySourceId.get(targetSourceId) ?? [];
+    const saved = await persistWatchedRepositories(
+      targetRepositories.filter((entry) => entry !== normalized),
+      { sourceId: targetSourceId },
+    );
+    if (saved) {
+      setWatchedRepoMessage(null);
+    }
+  };
+
   const sourceStates = response?.status.sourceStates ?? [];
   const mediaCount =
     response?.items.filter((item) => item.channel === "media").length ?? 0;
   const githubCount =
     response?.items.filter((item) => item.channel === "github").length ?? 0;
+  const githubWatchedCount = watchedRepositories.length;
   const modelsCount =
     response?.items.filter((item) => item.channel === "models").length ?? 0;
   const refreshLabel = refreshing
@@ -661,9 +999,16 @@ export function AiRadarPanel({ onClose, onSettingsChange }: AiRadarPanelProps) {
             <button
               type="button"
               className={`secondary icon-button ai-radar-header-action ai-radar-refresh-button${refreshing ? " is-refreshing" : ""}`}
-              onClick={() =>
-                void refresh(activeTab === "sources" ? undefined : activeTab)
-              }
+              onClick={() => {
+                if (
+                  activeTab === "github" &&
+                  activeGithubView === "watched"
+                ) {
+                  void refresh({ channel: "github" });
+                  return;
+                }
+                void refresh(activeTab === "sources" ? {} : { channel: activeTab });
+              }}
               disabled={refreshing}
               aria-label={refreshLabel}
               title={refreshLabel}
@@ -960,6 +1305,68 @@ export function AiRadarPanel({ onClose, onSettingsChange }: AiRadarPanelProps) {
                 })}
               </div>
             )}
+            {activeChannel === "github" && (
+              <>
+                <div
+                  className="ai-radar-github-views"
+                  role="group"
+                  aria-label={t("aiRadar.githubViews.aria")}
+                >
+                  <button
+                    type="button"
+                    className={activeGithubView === "ranking" ? "active" : ""}
+                    aria-pressed={activeGithubView === "ranking"}
+                    aria-label={`${t("aiRadar.githubViews.ranking")} ${formatNumber(githubRankingCount)}`}
+                    onClick={() => setActiveGithubView("ranking")}
+                  >
+                    <span>{t("aiRadar.githubViews.ranking")}</span>
+                    <span>{formatNumber(githubRankingCount)}</span>
+                  </button>
+                  <button
+                    type="button"
+                    className={activeGithubView === "watched" ? "active" : ""}
+                    aria-pressed={activeGithubView === "watched"}
+                    aria-label={`${t("aiRadar.githubViews.watched")} ${formatNumber(githubWatchedCount)}`}
+                    onClick={() => setActiveGithubView("watched")}
+                  >
+                    <span>{t("aiRadar.githubViews.watched")}</span>
+                    <span>{formatNumber(githubWatchedCount)}</span>
+                  </button>
+                </div>
+                {activeGithubView === "watched" && (
+                  <form
+                    className="ai-radar-watched-add"
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      void addWatchedRepository(watchedRepoInput, {
+                        clearInput: true,
+                      });
+                    }}
+                  >
+                    <label>
+                      <span>{t("aiRadar.watched.addLabel")}</span>
+                      <input
+                        value={watchedRepoInput}
+                        onChange={(event) =>
+                          setWatchedRepoInput(event.target.value)
+                        }
+                        aria-label={t("aiRadar.watched.addLabel")}
+                        placeholder={t("aiRadar.watched.addPlaceholder")}
+                      />
+                    </label>
+                    <button type="submit" className="secondary" disabled={saving}>
+                      <Plus size={13} aria-hidden />
+                      {t("aiRadar.watched.addAction")}
+                    </button>
+                    {watchedRepoMessage && (
+                      <div className="ai-radar-watched-message" role="alert">
+                        {watchedRepoMessage}
+                      </div>
+                    )}
+                  </form>
+                )}
+              </>
+            )}
             {activeChannel && (
               <div className="ai-radar-list-toolbar">
                 <span>{t("aiRadar.sort.label")}</span>
@@ -994,66 +1401,111 @@ export function AiRadarPanel({ onClose, onSettingsChange }: AiRadarPanelProps) {
                 {activeTab === "media"
                   ? t("aiRadar.empty.media")
                   : activeTab === "github"
-                    ? t("aiRadar.empty.github")
+                    ? activeGithubView === "watched"
+                      ? t("aiRadar.watched.empty")
+                      : t("aiRadar.empty.github")
                     : t("aiRadar.empty.models")}
               </div>
             ) : (
               items.map((item) => {
                 const title = displayTitle(item);
                 const summary = displaySummary(item);
+                const githubRepository =
+                  item.channel === "github" ? githubRepositoryFromItem(item) : null;
+                const watched = githubRepository
+                  ? watchedRepositorySet.has(githubRepository)
+                  : false;
                 return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    className="ai-radar-item"
-                    onClick={() => void openUrl(item.url)}
-                  >
-                    <div className="ai-radar-item-main">
-                      <div className="ai-radar-item-title" title={item.title}>
-                        {title}
-                      </div>
-                      {summary && (
-                        <div className="ai-radar-item-summary">{summary}</div>
-                      )}
-                      <div className="ai-radar-item-meta">
-                        <span>{item.sourceName}</span>
-                        <span>{itemTime(item, notFetchedLabel)}</span>
-                        {item.metrics.stars != null && (
-                          <span>
-                            <Star size={12} aria-hidden />
-                            {formatNumber(item.metrics.stars)}
-                          </span>
-                        )}
-                        {item.metrics.starDelta24h ? (
-                          <span>
-                            +{formatNumber(item.metrics.starDelta24h)}
-                          </span>
-                        ) : null}
-                        {item.metrics.tokens != null && (
-                          <span>
-                            {t("aiRadar.metrics.tokens", {
-                              value: formatNumber(item.metrics.tokens),
-                            })}
-                          </span>
-                        )}
-                        {item.metrics.requests != null && (
-                          <span>
-                            {t("aiRadar.metrics.requests", {
-                              value: formatNumber(item.metrics.requests),
-                            })}
-                          </span>
-                        )}
-                      </div>
-                      {item.tags.length > 0 && (
-                        <div className="ai-radar-tags">
-                          {item.tags.slice(0, 6).map((tag) => (
-                            <span key={tag}>{tag}</span>
-                          ))}
+                  <div key={item.id} className="ai-radar-item">
+                    <button
+                      type="button"
+                      className="ai-radar-item-link"
+                      onClick={() => void openUrl(item.url)}
+                    >
+                      <div className="ai-radar-item-main">
+                        <div className="ai-radar-item-title" title={item.title}>
+                          {title}
                         </div>
+                        {summary && (
+                          <div className="ai-radar-item-summary">
+                            {summary}
+                          </div>
+                        )}
+                        <div className="ai-radar-item-meta">
+                          <span>{item.sourceName}</span>
+                          <span>{itemTime(item, notFetchedLabel)}</span>
+                          {item.metrics.stars != null && (
+                            <span>
+                              <Star size={12} aria-hidden />
+                              {formatNumber(item.metrics.stars)}
+                            </span>
+                          )}
+                          {item.metrics.starDelta24h ? (
+                            <span>
+                              +{formatNumber(item.metrics.starDelta24h)}
+                            </span>
+                          ) : null}
+                          {item.metrics.tokens != null && (
+                            <span>
+                              {t("aiRadar.metrics.tokens", {
+                                value: formatNumber(item.metrics.tokens),
+                              })}
+                            </span>
+                          )}
+                          {item.metrics.requests != null && (
+                            <span>
+                              {t("aiRadar.metrics.requests", {
+                                value: formatNumber(item.metrics.requests),
+                              })}
+                            </span>
+                          )}
+                        </div>
+                        {item.tags.length > 0 && (
+                          <div className="ai-radar-tags">
+                            {item.tags.slice(0, 6).map((tag) => (
+                              <span key={tag}>{tag}</span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      <ExternalLink size={14} aria-hidden />
+                    </button>
+                    {activeChannel === "github" && githubRepository && (
+                      <div className="ai-radar-item-actions">
+                        <button
+                          type="button"
+                          className={`secondary icon-button ai-radar-watch-button${watched ? " is-watched" : ""}`}
+                          onClick={() =>
+                            void (watched
+                              ? removeWatchedRepository(
+                                  githubRepository,
+                                  item.sourceId,
+                                )
+                              : addWatchedRepository(githubRepository))
+                          }
+                          disabled={saving}
+                          aria-label={t(
+                            watched
+                              ? "aiRadar.watched.unwatchAria"
+                              : "aiRadar.watched.watchAria",
+                            { repo: githubRepository },
+                          )}
+                          title={t(
+                            watched
+                              ? "aiRadar.watched.unwatchAria"
+                              : "aiRadar.watched.watchAria",
+                            { repo: githubRepository },
+                          )}
+                        >
+                          {watched ? (
+                            <Trash2 size={14} aria-hidden />
+                          ) : (
+                            <Star size={14} aria-hidden />
+                          )}
+                        </button>
+                      </div>
                       )}
-                    </div>
-                    <ExternalLink size={14} aria-hidden />
-                  </button>
+                  </div>
                 );
               })
             )}

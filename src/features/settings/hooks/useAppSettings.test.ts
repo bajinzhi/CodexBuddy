@@ -228,7 +228,7 @@ describe("useAppSettings", () => {
     ]);
   });
 
-  it("upgrades legacy AI Radar defaults with media and agent GitHub sources", async () => {
+  it("RQ-001 AC-03 upgrades legacy AI Radar defaults with watched GitHub repositories", async () => {
     getAppSettingsMock.mockResolvedValue({
       aiRadar: {
         enabled: true,
@@ -285,7 +285,7 @@ describe("useAppSettings", () => {
       ]),
     );
     expect(result.current.settings.aiRadar.translateToChinese).toBe(true);
-    expect(result.current.settings.aiRadar.defaultSourceVersion).toBe(9);
+    expect(result.current.settings.aiRadar.defaultSourceVersion).toBe(10);
     expect(sourceIds).toContain("media-openai-news");
     expect(sourceIds).toContain("media-venturebeat-ai");
     expect(sourceIds).toContain("media-mit-ai");
@@ -306,7 +306,13 @@ describe("useAppSettings", () => {
     expect(sourceIds).toContain("github-long-context-topic");
     expect(sourceIds).toContain("github-context-engineering-topic");
     expect(sourceIds).toContain("github-ai-projects");
+    expect(sourceIds).toContain("github-watched-repositories");
     expect(sourceIds).toContain("models-openrouter-weekly");
+    expect(sourcesById.get("github-watched-repositories")).toMatchObject({
+      kind: "githubRepositories",
+      query: "",
+      channel: "github",
+    });
     expect(sourcesById.get("media-wechat-xinzhiyuan")?.query).toBe(
       "/wechat/sogou/%E6%96%B0%E6%99%BA%E5%85%83",
     );

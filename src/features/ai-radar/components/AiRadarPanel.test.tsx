@@ -559,4 +559,735 @@ describe("AiRadarPanel", () => {
 
     expect(titles()).toEqual(["#2 call/model", "#1 token/model"]);
   });
+
+  it("classifies the default watched source id by kind when the source is loaded", async () => {
+    const githubSearch = source({
+      id: "github-watched-repositories",
+      name: "GitHub Search Reused Id",
+      kind: "githubSearch",
+      url: null,
+      query: "agent topic:llm stars:>100 archived:false fork:false",
+      channel: "github",
+    });
+    aiRadarListMock.mockResolvedValueOnce(
+      response({
+        settings: settings({ sources: [githubSearch] }),
+        items: [
+          item({
+            id: "github-openai-codex",
+            channel: "github",
+            sourceId: "github-watched-repositories",
+            sourceName: "GitHub Search Reused Id",
+            title: "openai/codex",
+            summary: "Lightweight coding agent.",
+            url: "https://github.com/openai/codex",
+            metrics: { stars: 1200 },
+          }),
+        ],
+      }),
+    );
+
+    render(<AiRadarPanel onClose={vi.fn()} />);
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    fireEvent.click(tabButton(/GitHub/));
+
+    expect(screen.getByRole("button", { name: "热门 1" })).toBeTruthy();
+    expect(screen.getByText("openai/codex")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "我的关注 0" }));
+
+    expect(screen.queryByText("openai/codex")).toBeNull();
+  });
+
+  it("RQ-001 AC-01 adds ranking repositories to the watched list and removes them", async () => {
+    const githubSearch = source({
+      id: "github-agent-search",
+      name: "GitHub Agents",
+      kind: "githubSearch",
+      url: null,
+      query: "agent topic:llm stars:>100 archived:false fork:false",
+      channel: "github",
+    });
+    const watched = source({
+      id: "github-watched-repositories",
+      name: "GitHub Watched Repositories",
+      kind: "githubRepositories" as AiRadarSource["kind"],
+      url: null,
+      query: "",
+      channel: "github",
+    });
+    const nextSettings = settings({ sources: [githubSearch, watched] });
+    aiRadarListMock.mockResolvedValueOnce(
+      response({
+        settings: nextSettings,
+        items: [
+          item({
+            id: "github-openai-codex",
+            channel: "github",
+            sourceId: "github-agent-search",
+            sourceName: "GitHub Agents",
+            title: "openai/codex",
+            summary: "Lightweight coding agent.",
+            url: "https://github.com/openai/codex",
+            metrics: { stars: 1200, forks: 90, openIssues: 12 },
+            tags: ["Rust", "agent"],
+          }),
+        ],
+      }),
+    );
+    aiRadarRefreshMock
+      .mockResolvedValueOnce(
+        response({
+          settings: settings({
+            sources: [
+              { ...githubSearch },
+              { ...watched, query: "openai/codex" },
+            ],
+          }),
+          items: [
+            item({
+              id: "github-openai-codex",
+              channel: "github",
+              sourceId: "github-watched-repositories",
+              sourceName: "GitHub Watched Repositories",
+              title: "openai/codex",
+              summary: "Lightweight coding agent.",
+              url: "https://github.com/openai/codex",
+              metrics: { stars: 1200, forks: 90, openIssues: 12 },
+              tags: ["Rust", "agent"],
+            }),
+          ],
+        }),
+      )
+      .mockResolvedValueOnce(
+        response({
+          settings: nextSettings,
+          items: [],
+        }),
+      );
+    aiRadarSourcesUpdateMock
+      .mockResolvedValueOnce(
+        settings({
+          sources: [{ ...githubSearch }, { ...watched, query: "openai/codex" }],
+        }),
+      )
+      .mockResolvedValueOnce(nextSettings);
+
+    render(<AiRadarPanel onClose={vi.fn()} />);
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    fireEvent.click(tabButton(/GitHub/));
+    fireEvent.click(screen.getByRole("button", { name: "关注 openai/codex" }));
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(aiRadarSourcesUpdateMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sources: expect.arrayContaining([
+          expect.objectContaining({
+            id: "github-watched-repositories",
+            createdAtMs: expect.any(Number),
+            query: "openai/codex",
+          }),
+        ]),
+      }),
+    );
+    expect(aiRadarRefreshMock).toHaveBeenCalledWith({
+      sourceId: "github-watched-repositories",
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: "我的关注 1" }));
+    expect(screen.getByText("openai/codex")).toBeTruthy();
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "取消关注 openai/codex" }),
+    );
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(aiRadarSourcesUpdateMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        sources: expect.arrayContaining([
+          expect.objectContaining({
+            id: "github-watched-repositories",
+            query: "",
+          }),
+        ]),
+      }),
+    );
+    expect(aiRadarRefreshMock).toHaveBeenLastCalledWith({
+      sourceId: "github-watched-repositories",
+    });
+    expect(screen.getByText("还没有关注项目。")).toBeTruthy();
+  });
+
+  it("RQ-001 AC-02 manually adds watched repositories and reports duplicates", async () => {
+    const githubSearch = source({
+      id: "github-agent-search",
+      name: "GitHub Agents",
+      kind: "githubSearch",
+      url: null,
+      query: "agent topic:llm stars:>100 archived:false fork:false",
+      channel: "github",
+    });
+    const watched = source({
+      id: "github-watched-repositories",
+      name: "GitHub Watched Repositories",
+      kind: "githubRepositories" as AiRadarSource["kind"],
+      url: null,
+      query: "openai/codex",
+      channel: "github",
+    });
+    const savedSettings = settings({
+      sources: [{ ...githubSearch }, { ...watched, query: "openai/codex\nanthropics/claude-code" }],
+    });
+
+    aiRadarListMock.mockResolvedValueOnce(
+      response({
+        settings: settings({ sources: [githubSearch, watched] }),
+        items: [
+          item({
+            id: "github-openai-codex",
+            channel: "github",
+            sourceId: "github-watched-repositories",
+            sourceName: "GitHub Watched Repositories",
+            title: "openai/codex",
+            summary: "Lightweight coding agent.",
+            url: "https://github.com/openai/codex",
+            metrics: { stars: 1200 },
+          }),
+        ],
+      }),
+    );
+    aiRadarRefreshMock.mockResolvedValueOnce(
+      response({
+        settings: savedSettings,
+        items: [
+          item({
+            id: "github-openai-codex",
+            channel: "github",
+            sourceId: "github-watched-repositories",
+            sourceName: "GitHub Watched Repositories",
+            title: "openai/codex",
+            summary: "Lightweight coding agent.",
+            url: "https://github.com/openai/codex",
+            metrics: { stars: 1200 },
+          }),
+          item({
+            id: "github-anthropics-claude-code",
+            channel: "github",
+            sourceId: "github-watched-repositories",
+            sourceName: "GitHub Watched Repositories",
+            title: "anthropics/claude-code",
+            summary: "Agentic coding tool.",
+            url: "https://github.com/anthropics/claude-code",
+            metrics: { stars: 900 },
+          }),
+        ],
+      }),
+    );
+    aiRadarSourcesUpdateMock.mockResolvedValueOnce(savedSettings);
+
+    render(<AiRadarPanel onClose={vi.fn()} />);
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    fireEvent.click(tabButton(/GitHub/));
+    fireEvent.click(screen.getByRole("button", { name: "我的关注 1" }));
+    fireEvent.change(screen.getByLabelText("添加关注仓库"), {
+      target: { value: "https://github.com/anthropics/claude-code" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "添加关注" }));
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(aiRadarSourcesUpdateMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sources: expect.arrayContaining([
+          expect.objectContaining({
+            id: "github-watched-repositories",
+            query: "openai/codex\nanthropics/claude-code",
+          }),
+        ]),
+      }),
+    );
+    expect(aiRadarRefreshMock).toHaveBeenCalledWith({
+      sourceId: "github-watched-repositories",
+    });
+    expect(screen.getByText("anthropics/claude-code")).toBeTruthy();
+
+    fireEvent.change(screen.getByLabelText("添加关注仓库"), {
+      target: { value: "openai/codex" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "添加关注" }));
+
+    expect(screen.getByText("已经关注过这个仓库。")).toBeTruthy();
+  });
+
+  it("normalizes scheme-less GitHub repository URLs before saving watches", async () => {
+    const githubSearch = source({
+      id: "github-agent-search",
+      name: "GitHub Agents",
+      kind: "githubSearch",
+      url: null,
+      query: "agent topic:llm stars:>100 archived:false fork:false",
+      channel: "github",
+    });
+    const watched = source({
+      id: "github-watched-repositories",
+      name: "GitHub Watched Repositories",
+      kind: "githubRepositories" as AiRadarSource["kind"],
+      url: null,
+      query: "",
+      channel: "github",
+    });
+    const savedSettings = settings({
+      sources: [{ ...githubSearch }, { ...watched, query: "openai/codex" }],
+    });
+
+    aiRadarListMock.mockResolvedValueOnce(
+      response({
+        settings: settings({ sources: [githubSearch, watched] }),
+        items: [],
+      }),
+    );
+    aiRadarSourcesUpdateMock.mockResolvedValueOnce(savedSettings);
+    aiRadarRefreshMock.mockResolvedValueOnce(
+      response({ settings: savedSettings, items: [] }),
+    );
+
+    render(<AiRadarPanel onClose={vi.fn()} />);
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    fireEvent.click(tabButton(/GitHub/));
+    fireEvent.click(screen.getByRole("button", { name: "我的关注 0" }));
+    fireEvent.change(screen.getByLabelText("添加关注仓库"), {
+      target: { value: "github.com/openai/codex" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "添加关注" }));
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(aiRadarSourcesUpdateMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sources: expect.arrayContaining([
+          expect.objectContaining({
+            id: "github-watched-repositories",
+            createdAtMs: expect.any(Number),
+            query: "openai/codex",
+          }),
+        ]),
+      }),
+    );
+  });
+
+  it("preserves unsaved source drafts when saving watched repositories", async () => {
+    const githubSearch = source({
+      id: "github-agent-search",
+      name: "GitHub Agents",
+      kind: "githubSearch",
+      url: null,
+      query: "agent topic:llm stars:>100 archived:false fork:false",
+      channel: "github",
+    });
+    const watched = source({
+      id: "github-watched-repositories",
+      name: "GitHub Watched Repositories",
+      kind: "githubRepositories" as AiRadarSource["kind"],
+      url: null,
+      query: "",
+      channel: "github",
+    });
+    const draftSearchName = "Draft GitHub Agents";
+    const savedSettings = settings({
+      sources: [
+        { ...githubSearch, name: draftSearchName },
+        { ...watched, query: "openai/codex" },
+      ],
+    });
+
+    aiRadarListMock.mockResolvedValueOnce(
+      response({
+        settings: settings({ sources: [githubSearch, watched] }),
+        items: [],
+      }),
+    );
+    aiRadarSourcesUpdateMock.mockResolvedValueOnce(savedSettings);
+    aiRadarRefreshMock.mockResolvedValueOnce(
+      response({ settings: savedSettings, items: [] }),
+    );
+
+    render(<AiRadarPanel onClose={vi.fn()} />);
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    fireEvent.click(tabButton(/来源/));
+    fireEvent.change(screen.getAllByLabelText("来源名称")[0], {
+      target: { value: draftSearchName },
+    });
+    fireEvent.click(tabButton(/GitHub/));
+    fireEvent.click(screen.getByRole("button", { name: "我的关注 0" }));
+    fireEvent.change(screen.getByLabelText("添加关注仓库"), {
+      target: { value: "openai/codex" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "添加关注" }));
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(aiRadarSourcesUpdateMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sources: expect.arrayContaining([
+          expect.objectContaining({
+            id: "github-agent-search",
+            name: draftSearchName,
+          }),
+          expect.objectContaining({
+            id: "github-watched-repositories",
+            query: "openai/codex",
+          }),
+        ]),
+      }),
+    );
+  });
+
+  it("ignores disabled watched sources when adding repositories", async () => {
+    const githubSearch = source({
+      id: "github-agent-search",
+      name: "GitHub Agents",
+      kind: "githubSearch",
+      url: null,
+      query: "agent topic:llm stars:>100 archived:false fork:false",
+      channel: "github",
+    });
+    const disabledWatched = source({
+      id: "github-watched-repositories",
+      name: "Disabled Watched Repositories",
+      kind: "githubRepositories" as AiRadarSource["kind"],
+      url: null,
+      query: "openai/codex",
+      enabled: false,
+      channel: "github",
+    });
+    const savedSettings = settings({
+      sources: [
+        githubSearch,
+        disabledWatched,
+        source({
+          id: "github-watched-repositories-2",
+          name: "GitHub Watched Repositories",
+          kind: "githubRepositories" as AiRadarSource["kind"],
+          url: null,
+          query: "openai/codex",
+          enabled: true,
+          channel: "github",
+        }),
+      ],
+    });
+
+    aiRadarListMock.mockResolvedValueOnce(
+      response({
+        settings: settings({ sources: [githubSearch, disabledWatched] }),
+        items: [
+          item({
+            id: "github-openai-codex",
+            channel: "github",
+            sourceId: "github-agent-search",
+            sourceName: "GitHub Agents",
+            title: "openai/codex",
+            summary: "Lightweight coding agent.",
+            url: "https://github.com/openai/codex",
+            metrics: { stars: 1200 },
+          }),
+        ],
+      }),
+    );
+    aiRadarSourcesUpdateMock.mockResolvedValueOnce(savedSettings);
+    aiRadarRefreshMock.mockResolvedValueOnce(
+      response({ settings: savedSettings, items: [] }),
+    );
+
+    render(<AiRadarPanel onClose={vi.fn()} />);
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    fireEvent.click(tabButton(/GitHub/));
+    expect(screen.getByRole("button", { name: "我的关注 0" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "关注 openai/codex" }));
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(aiRadarSourcesUpdateMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sources: expect.arrayContaining([
+          expect.objectContaining({
+            id: "github-watched-repositories",
+            enabled: false,
+            query: "openai/codex",
+          }),
+          expect.objectContaining({
+            id: "github-watched-repositories-2",
+            enabled: true,
+            query: "openai/codex",
+          }),
+        ]),
+      }),
+    );
+  });
+
+  it("aggregates watched repositories across sources and removes from the item source", async () => {
+    const githubSearch = source({
+      id: "github-agent-search",
+      name: "GitHub Agents",
+      kind: "githubSearch",
+      url: null,
+      query: "agent topic:llm stars:>100 archived:false fork:false",
+      channel: "github",
+    });
+    const watchedPrimary = source({
+      id: "github-watched-repositories",
+      name: "GitHub Watched Repositories",
+      kind: "githubRepositories" as AiRadarSource["kind"],
+      url: null,
+      query: "openai/codex",
+      channel: "github",
+    });
+    const watchedSecondary = source({
+      id: "github-watched-repositories-2",
+      name: "Extra Watched Repositories",
+      kind: "githubRepositories" as AiRadarSource["kind"],
+      url: null,
+      query: "anthropics/claude-code",
+      channel: "github",
+    });
+    const savedSettings = settings({
+      sources: [
+        githubSearch,
+        watchedPrimary,
+        { ...watchedSecondary, query: "" },
+      ],
+    });
+
+    aiRadarListMock.mockResolvedValueOnce(
+      response({
+        settings: settings({
+          sources: [githubSearch, watchedPrimary, watchedSecondary],
+        }),
+        items: [
+          item({
+            id: "github-anthropics-claude-code",
+            channel: "github",
+            sourceId: "github-watched-repositories-2",
+            sourceName: "Extra Watched Repositories",
+            title: "anthropics/claude-code",
+            summary: "Agentic coding tool.",
+            url: "https://github.com/anthropics/claude-code",
+            metrics: { stars: 900 },
+          }),
+        ],
+      }),
+    );
+    aiRadarSourcesUpdateMock.mockResolvedValueOnce(savedSettings);
+    aiRadarRefreshMock.mockResolvedValueOnce(
+      response({ settings: savedSettings, items: [] }),
+    );
+
+    render(<AiRadarPanel onClose={vi.fn()} />);
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    fireEvent.click(tabButton(/GitHub/));
+    fireEvent.click(screen.getByRole("button", { name: "我的关注 2" }));
+    expect(screen.getByText("anthropics/claude-code")).toBeTruthy();
+
+    fireEvent.click(
+      screen.getByRole("button", {
+        name: "取消关注 anthropics/claude-code",
+      }),
+    );
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(aiRadarSourcesUpdateMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        sources: expect.arrayContaining([
+          expect.objectContaining({
+            id: "github-watched-repositories",
+            query: "openai/codex",
+          }),
+          expect.objectContaining({
+            id: "github-watched-repositories-2",
+            query: "",
+          }),
+        ]),
+      }),
+    );
+    expect(aiRadarRefreshMock).toHaveBeenCalledWith({
+      sourceId: "github-watched-repositories-2",
+    });
+  });
+
+  it("refreshes all GitHub sources from the watched repository view", async () => {
+    const githubSearch = source({
+      id: "github-agent-search",
+      name: "GitHub Agents",
+      kind: "githubSearch",
+      url: null,
+      query: "agent topic:llm stars:>100 archived:false fork:false",
+      channel: "github",
+    });
+    const watchedPrimary = source({
+      id: "github-watched-repositories",
+      name: "GitHub Watched Repositories",
+      kind: "githubRepositories" as AiRadarSource["kind"],
+      url: null,
+      query: "openai/codex",
+      channel: "github",
+    });
+    const watchedSecondary = source({
+      id: "github-watched-repositories-2",
+      name: "Extra Watched Repositories",
+      kind: "githubRepositories" as AiRadarSource["kind"],
+      url: null,
+      query: "anthropics/claude-code",
+      channel: "github",
+    });
+    const loadedSettings = settings({
+      sources: [githubSearch, watchedPrimary, watchedSecondary],
+    });
+
+    aiRadarListMock.mockResolvedValueOnce(
+      response({
+        settings: loadedSettings,
+        items: [
+          item({
+            id: "github-openai-codex",
+            channel: "github",
+            sourceId: "github-watched-repositories",
+            sourceName: "GitHub Watched Repositories",
+            title: "openai/codex",
+            url: "https://github.com/openai/codex",
+            metrics: { stars: 1200 },
+          }),
+          item({
+            id: "github-anthropics-claude-code",
+            channel: "github",
+            sourceId: "github-watched-repositories-2",
+            sourceName: "Extra Watched Repositories",
+            title: "anthropics/claude-code",
+            url: "https://github.com/anthropics/claude-code",
+            metrics: { stars: 900 },
+          }),
+        ],
+      }),
+    );
+    aiRadarRefreshMock.mockResolvedValueOnce(
+      response({ settings: loadedSettings, items: [] }),
+    );
+
+    render(<AiRadarPanel onClose={vi.fn()} />);
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    fireEvent.click(tabButton(/GitHub/));
+    fireEvent.click(screen.getByRole("button", { name: "我的关注 2" }));
+    fireEvent.click(screen.getByRole("button", { name: "刷新" }));
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(aiRadarRefreshMock).toHaveBeenCalledWith({ channel: "github" });
+  });
+
+  it("does not save watched repositories beyond the maximum list size", async () => {
+    const githubSearch = source({
+      id: "github-agent-search",
+      name: "GitHub Agents",
+      kind: "githubSearch",
+      url: null,
+      query: "agent topic:llm stars:>100 archived:false fork:false",
+      channel: "github",
+    });
+    const watchedQuery = Array.from(
+      { length: 30 },
+      (_, index) => `owner${index}/repo${index}`,
+    ).join("\n");
+    const watched = source({
+      id: "github-watched-repositories",
+      name: "GitHub Watched Repositories",
+      kind: "githubRepositories" as AiRadarSource["kind"],
+      url: null,
+      query: watchedQuery,
+      channel: "github",
+    });
+
+    aiRadarListMock.mockResolvedValueOnce(
+      response({
+        settings: settings({ sources: [githubSearch, watched] }),
+        items: [
+          item({
+            id: "github-openai-codex",
+            channel: "github",
+            sourceId: "github-agent-search",
+            sourceName: "GitHub Agents",
+            title: "openai/codex",
+            summary: "Lightweight coding agent.",
+            url: "https://github.com/openai/codex",
+            metrics: { stars: 1200 },
+          }),
+        ],
+      }),
+    );
+
+    render(<AiRadarPanel onClose={vi.fn()} />);
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    fireEvent.click(tabButton(/GitHub/));
+    fireEvent.click(screen.getByRole("button", { name: "我的关注 30" }));
+    fireEvent.change(screen.getByLabelText("添加关注仓库"), {
+      target: { value: "openai/codex" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "添加关注" }));
+
+    expect(screen.getByText("最多关注 30 个 GitHub 仓库。")).toBeTruthy();
+    expect(aiRadarSourcesUpdateMock).not.toHaveBeenCalled();
+    expect(aiRadarRefreshMock).not.toHaveBeenCalled();
+  });
 });

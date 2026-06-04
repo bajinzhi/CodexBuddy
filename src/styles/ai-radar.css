@@ -205,9 +205,9 @@
 }
 
 .ai-radar-items {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 8px;
-  align-content: start;
 }
 
 .ai-radar-media-groups {
@@ -386,9 +386,10 @@
 
 .ai-radar-item {
   width: 100%;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  display: flex;
+  align-items: stretch;
   gap: 0;
+  min-height: 78px;
   text-align: left;
   padding: 0;
   border: 1px solid var(--ai-radar-border);
@@ -404,19 +405,24 @@
 }
 
 .ai-radar-item-link {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
   gap: 12px;
+  flex: 1 1 auto;
   min-width: 0;
   width: 100%;
+  min-height: 76px;
   padding: 12px;
   border: 0;
   background: transparent;
   color: inherit;
   text-align: left;
+  line-height: normal;
 }
 
 .ai-radar-item-main {
+  flex: 1 1 auto;
   min-width: 0;
 }
 

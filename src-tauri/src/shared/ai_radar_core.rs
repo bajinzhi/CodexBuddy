@@ -257,6 +257,7 @@ pub(crate) async fn ai_radar_refresh_core(
             previous_last_refreshed_at_ms
         },
     };
+    sync_source_item_counts(&mut cache);
     write_cache(&cache_file, &cache).await?;
     Ok(build_response(settings, cache))
 }
@@ -332,6 +333,7 @@ fn build_response(settings: AiRadarSettings, mut cache: AiRadarCache) -> AiRadar
     retain_active_cache_entries(&settings, &mut cache);
     normalize_item_texts(&settings, &mut cache.items);
     cache.items = trim_items(&settings, cache.items, now);
+    sync_source_item_counts(&mut cache);
     let status = build_status(&settings, &cache, now);
     AiRadarListResponse {
         settings,
@@ -353,6 +355,22 @@ fn retain_active_cache_entries(settings: &AiRadarSettings, cache: &mut AiRadarCa
     cache
         .source_states
         .retain(|state| active_source_ids.contains(state.source_id.as_str()));
+}
+
+fn sync_source_item_counts(cache: &mut AiRadarCache) {
+    let mut counts_by_source_id = HashMap::new();
+    for item in &cache.items {
+        let count = counts_by_source_id
+            .entry(item.source_id.as_str())
+            .or_insert(0u32);
+        *count = count.saturating_add(1);
+    }
+    for state in &mut cache.source_states {
+        state.item_count = counts_by_source_id
+            .get(state.source_id.as_str())
+            .copied()
+            .unwrap_or(0);
+    }
 }
 
 fn build_status(settings: &AiRadarSettings, cache: &AiRadarCache, now: i64) -> AiRadarStatus {
@@ -1977,11 +1995,8 @@ fn media_item(
     }
 }
 
-fn trim_items(
-    settings: &AiRadarSettings,
-    mut items: Vec<AiRadarItem>,
-    now: i64,
-) -> Vec<AiRadarItem> {
+fn trim_items(settings: &AiRadarSettings, items: Vec<AiRadarItem>, now: i64) -> Vec<AiRadarItem> {
+    let mut items = dedupe_media_items(items);
     let retention_ms = (settings.retention_days.max(1) as i64) * 24 * 60 * 60 * 1000;
     let cutoff = now.saturating_sub(retention_ms);
     items.retain(|item| item.published_at_ms.unwrap_or(item.fetched_at_ms) >= cutoff);
@@ -1999,6 +2014,73 @@ fn trim_items(
     });
     items.truncate(settings.max_items.max(1));
     items
+}
+
+#[derive(Debug, PartialEq, Eq, Hash)]
+struct MediaDedupeKey {
+    source_id: String,
+    title: String,
+    published_at_ms: i64,
+}
+
+fn dedupe_media_items(items: Vec<AiRadarItem>) -> Vec<AiRadarItem> {
+    let mut deduped = Vec::with_capacity(items.len());
+    let mut media_indexes_by_key = HashMap::new();
+
+    for item in items {
+        let Some(key) = media_dedupe_key(&item) else {
+            deduped.push(item);
+            continue;
+        };
+        let Some(existing_index) = media_indexes_by_key.get(&key).copied() else {
+            media_indexes_by_key.insert(key, deduped.len());
+            deduped.push(item);
+            continue;
+        };
+
+        let existing = &mut deduped[existing_index];
+        if item.fetched_at_ms > existing.fetched_at_ms {
+            let mut latest = item;
+            merge_missing_translations(&mut latest, existing);
+            *existing = latest;
+        } else {
+            merge_missing_translations(existing, &item);
+        }
+    }
+
+    deduped
+}
+
+fn media_dedupe_key(item: &AiRadarItem) -> Option<MediaDedupeKey> {
+    if item.channel != AiRadarChannel::Media {
+        return None;
+    }
+    let title = normalize_media_dedupe_title(&item.title);
+    if title.is_empty() {
+        return None;
+    }
+    Some(MediaDedupeKey {
+        source_id: item.source_id.clone(),
+        title,
+        published_at_ms: item.published_at_ms?,
+    })
+}
+
+fn normalize_media_dedupe_title(title: &str) -> String {
+    title
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+        .to_lowercase()
+}
+
+fn merge_missing_translations(target: &mut AiRadarItem, source: &AiRadarItem) {
+    if target.title_zh.is_none() {
+        target.title_zh = source.title_zh.clone();
+    }
+    if target.summary_zh.is_none() {
+        target.summary_zh = source.summary_zh.clone();
+    }
 }
 
 fn media_score(published_at_ms: Option<i64>, now: i64) -> f64 {
@@ -2858,8 +2940,8 @@ mod tests {
             test_github_repository("openai/codex", "https://github.com/openai/codex", 1200);
         repo.updated_at = Some("2020-01-01T00:00:00Z".to_string());
         let now = 1780315200000;
-        let item = github_repository_item(&source, repo, &HashMap::new(), now)
-            .expect("watched repo item");
+        let item =
+            github_repository_item(&source, repo, &HashMap::new(), now).expect("watched repo item");
         let settings = AiRadarSettings {
             enabled: true,
             refresh_interval_minutes: 60,
@@ -3163,6 +3245,177 @@ mod tests {
         assert_eq!(
             response.items[0].summary_zh.as_deref(),
             Some("AI 智能体和大语言模型上下文。")
+        );
+    }
+
+    #[test]
+    fn dedupes_media_items_from_same_source_by_title_and_published_time() {
+        let now = now_ms();
+        let published_at = now - 60_000;
+        let mut first = test_item("media-wechat-infoq", now - 2_000);
+        first.id = "media:first-token-url".to_string();
+        first.title = "首届GalvInfo中国国际高端连续镀锌生产技术培训日程".to_string();
+        first.summary = Some("China周一 Monday,6月15日 June 15, 2026".to_string());
+        first.url = "https://weixin.sogou.com/link?url=first&token=one".to_string();
+        first.published_at_ms = Some(published_at);
+        first.fetched_at_ms = now - 2_000;
+
+        let mut latest = first.clone();
+        latest.id = "media:latest-token-url".to_string();
+        latest.url = "https://weixin.sogou.com/link?url=latest&token=two".to_string();
+        latest.fetched_at_ms = now;
+        latest.score = 99.0;
+
+        let response = build_response(
+            AiRadarSettings {
+                enabled: true,
+                refresh_interval_minutes: 60,
+                max_items: 20,
+                retention_days: 30,
+                translate_to_chinese: true,
+                default_source_version: 5,
+                sources: vec![test_source("media-wechat-infoq")],
+            },
+            AiRadarCache {
+                items: vec![first, latest],
+                source_states: vec![test_source_state("media-wechat-infoq")],
+                last_refreshed_at_ms: Some(now),
+            },
+        );
+
+        assert_eq!(response.items.len(), 1);
+        assert_eq!(response.items[0].id, "media:latest-token-url");
+        assert_eq!(
+            response.items[0].url,
+            "https://weixin.sogou.com/link?url=latest&token=two"
+        );
+        assert_eq!(response.items[0].score, 99.0);
+    }
+
+    #[test]
+    fn build_response_recomputes_source_counts_after_media_dedupe() {
+        let now = now_ms();
+        let published_at = now - 60_000;
+        let mut first = test_item("media-wechat-infoq", now - 2_000);
+        first.id = "media:first-token-url".to_string();
+        first.title = "Shared launch news".to_string();
+        first.published_at_ms = Some(published_at);
+
+        let mut latest = first.clone();
+        latest.id = "media:latest-token-url".to_string();
+        latest.fetched_at_ms = now;
+
+        let mut source_state = test_source_state("media-wechat-infoq");
+        source_state.item_count = 2;
+
+        let response = build_response(
+            AiRadarSettings {
+                enabled: true,
+                refresh_interval_minutes: 60,
+                max_items: 20,
+                retention_days: 30,
+                translate_to_chinese: true,
+                default_source_version: 5,
+                sources: vec![test_source("media-wechat-infoq")],
+            },
+            AiRadarCache {
+                items: vec![first, latest],
+                source_states: vec![source_state],
+                last_refreshed_at_ms: Some(now),
+            },
+        );
+
+        assert_eq!(response.items.len(), 1);
+        assert_eq!(response.status.source_states[0].item_count, 1);
+    }
+
+    #[test]
+    fn keeps_same_media_title_from_different_sources() {
+        let now = now_ms();
+        let published_at = now - 60_000;
+        let mut infoq = test_item("media-wechat-infoq", now);
+        infoq.id = "media:infoq".to_string();
+        infoq.title = "Shared launch news".to_string();
+        infoq.published_at_ms = Some(published_at);
+
+        let mut xinzhiyuan = test_item("media-wechat-xinzhiyuan", now);
+        xinzhiyuan.id = "media:xinzhiyuan".to_string();
+        xinzhiyuan.title = "Shared launch news".to_string();
+        xinzhiyuan.published_at_ms = Some(published_at);
+
+        let response = build_response(
+            AiRadarSettings {
+                enabled: true,
+                refresh_interval_minutes: 60,
+                max_items: 20,
+                retention_days: 30,
+                translate_to_chinese: true,
+                default_source_version: 5,
+                sources: vec![
+                    test_source("media-wechat-infoq"),
+                    test_source("media-wechat-xinzhiyuan"),
+                ],
+            },
+            AiRadarCache {
+                items: vec![infoq, xinzhiyuan],
+                source_states: vec![
+                    test_source_state("media-wechat-infoq"),
+                    test_source_state("media-wechat-xinzhiyuan"),
+                ],
+                last_refreshed_at_ms: Some(now),
+            },
+        );
+
+        assert_eq!(response.items.len(), 2);
+    }
+
+    #[test]
+    fn media_dedupe_preserves_cached_translations() {
+        let now = now_ms();
+        let published_at = now - 60_000;
+        let mut translated = test_item("media-wechat-infoq", now - 2_000);
+        translated.id = "media:translated".to_string();
+        translated.title = "OpenAI announces agent features".to_string();
+        translated.summary = Some("A concise update.".to_string());
+        translated.title_zh = Some("OpenAI 发布智能体功能".to_string());
+        translated.summary_zh = Some("一条简短更新。".to_string());
+        translated.url = "https://weixin.sogou.com/link?url=old&token=one".to_string();
+        translated.published_at_ms = Some(published_at);
+        translated.fetched_at_ms = now - 2_000;
+
+        let mut latest = translated.clone();
+        latest.id = "media:latest".to_string();
+        latest.title_zh = None;
+        latest.summary_zh = None;
+        latest.url = "https://weixin.sogou.com/link?url=new&token=two".to_string();
+        latest.fetched_at_ms = now;
+
+        let response = build_response(
+            AiRadarSettings {
+                enabled: true,
+                refresh_interval_minutes: 60,
+                max_items: 20,
+                retention_days: 30,
+                translate_to_chinese: true,
+                default_source_version: 5,
+                sources: vec![test_source("media-wechat-infoq")],
+            },
+            AiRadarCache {
+                items: vec![translated, latest],
+                source_states: vec![test_source_state("media-wechat-infoq")],
+                last_refreshed_at_ms: Some(now),
+            },
+        );
+
+        assert_eq!(response.items.len(), 1);
+        assert_eq!(response.items[0].id, "media:latest");
+        assert_eq!(
+            response.items[0].title_zh.as_deref(),
+            Some("OpenAI 发布智能体功能")
+        );
+        assert_eq!(
+            response.items[0].summary_zh.as_deref(),
+            Some("一条简短更新。")
         );
     }
 

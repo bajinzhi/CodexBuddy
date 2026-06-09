@@ -1,0 +1,17 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "identifier": "com.bajinzhi.codexbuddy.android",
+  "app": {
+    "windows": [
+      {
+        "title": "CodexBuddy",
+        "width": 390,
+        "height": 844,
+        "minWidth": 320,
+        "minHeight": 480,
+        "dragDropEnabled": false,
+        "devtools": true
+      }
+    ]
+  }
+}

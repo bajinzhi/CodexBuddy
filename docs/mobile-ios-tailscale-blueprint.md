@@ -1,10 +1,10 @@
-# CodexBuddy iOS Remote Blueprint (Tailscale + TCP)
+# CodexBuddy Mobile Remote Blueprint (Tailscale + TCP)
 
-This document is the canonical runbook for iOS remote usage with a desktop-hosted CodexBuddy backend over Tailscale.
+This document is the canonical runbook for iOS and Android remote usage with a desktop-hosted CodexBuddy backend over Tailscale.
 
 ## Scope
 
-- iOS app runs in remote backend mode.
+- iOS and Android apps run in remote backend mode.
 - Desktop app runs the TCP mobile access daemon.
 - Connectivity is provided by the user-managed Tailscale tailnet.
 - Hosted relay providers are out of scope.
@@ -12,15 +12,15 @@ This document is the canonical runbook for iOS remote usage with a desktop-hoste
 ## Current Architecture
 
 1. Desktop CodexBuddy hosts the daemon and executes Codex workflows.
-2. iOS CodexBuddy connects to the desktop daemon using `remoteBackendHost` + token.
+2. Mobile CodexBuddy connects to the desktop daemon using `remoteBackendHost` + token.
 3. Transport is TCP only (`remoteBackendProvider = "tcp"`).
-4. Tailscale is used as the network path between iOS and desktop.
+4. Tailscale is used as the network path between mobile devices and desktop.
 
 ## Prerequisites
 
-- Desktop and iPhone are signed into the same Tailscale tailnet.
+- Desktop and mobile device are signed into the same Tailscale tailnet.
 - Desktop CodexBuddy is installed and able to run local workspaces.
-- iOS build/runtime is available (simulator or device).
+- iOS or Android build/runtime is available (simulator/emulator or device).
 - A non-empty remote backend token is configured.
 
 ## Desktop Setup (Source of Truth)
@@ -47,9 +47,9 @@ Headless alternative (no desktop UI required):
 3. Verify daemon status:
    - `./target/debug/codex_buddy_daemonctl status`
 
-## iOS Setup
+## Mobile Setup
 
-In iOS CodexBuddy:
+In mobile CodexBuddy:
 
 1. Open `Settings > Server` (or the mobile setup wizard).
 2. Enter the desktop Tailscale host (including port).
@@ -63,9 +63,10 @@ Success criteria:
 
 ## Operational Notes
 
-- Desktop daemon must remain running while iOS is connected.
+- Desktop daemon must remain running while mobile clients are connected.
 - Mobile flow is remote-only and uses user infrastructure.
 - Desktop remains local-first unless switched to remote mode explicitly.
+- Android project files are generated with `npm run tauri:android:init` after Android SDK/NDK prerequisites are installed.
 
 ## Known Mobile Limits
 
@@ -80,7 +81,7 @@ Success criteria:
   - Verify both devices are online in the same tailnet.
 - `Token (required)` / auth failures:
   - Set a non-empty token in desktop Server settings.
-  - Re-enter the same token on iOS.
+  - Re-enter the same token on the mobile device.
 - No suggested host shown:
   - Confirm Tailscale is installed and connected on desktop.
   - Retry `Detect Tailscale`.

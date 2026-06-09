@@ -73,6 +73,19 @@ describe("isMobilePlatform", () => {
     );
   });
 
+  it("returns true for Android-like user agents", () => {
+    withNavigatorValues(
+      {
+        platform: "Linux armv8l",
+        userAgent:
+          "Mozilla/5.0 (Linux; Android 15; Pixel 9) AppleWebKit/537.36 Mobile Safari/537.36",
+      },
+      () => {
+        expect(isMobilePlatform()).toBe(true);
+      },
+    );
+  });
+
   it("returns false for desktop platforms", () => {
     withNavigatorValues(
       {

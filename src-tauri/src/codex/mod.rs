@@ -259,6 +259,7 @@ pub(crate) async fn list_threads(
     cursor: Option<String>,
     limit: Option<u32>,
     sort_key: Option<String>,
+    search_term: Option<String>,
     state: State<'_, AppState>,
     app: AppHandle,
 ) -> Result<Value, String> {
@@ -271,13 +272,22 @@ pub(crate) async fn list_threads(
                 "workspaceId": workspace_id,
                 "cursor": cursor,
                 "limit": limit,
-                "sortKey": sort_key
+                "sortKey": sort_key,
+                "searchTerm": search_term
             }),
         )
         .await;
     }
 
-    codex_core::list_threads_core(&state.sessions, workspace_id, cursor, limit, sort_key).await
+    codex_core::list_threads_core(
+        &state.sessions,
+        workspace_id,
+        cursor,
+        limit,
+        sort_key,
+        search_term,
+    )
+    .await
 }
 
 #[tauri::command]

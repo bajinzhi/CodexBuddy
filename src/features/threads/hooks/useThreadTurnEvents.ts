@@ -200,6 +200,16 @@ export function useThreadTurnEvents({
     [dispatch],
   );
 
+  const onThreadDeleted = useCallback(
+    (workspaceId: string, threadId: string) => {
+      if (!threadId) {
+        return;
+      }
+      dispatch({ type: "removeThread", workspaceId, threadId });
+    },
+    [dispatch],
+  );
+
   const onThreadUnarchived = useCallback(
     (workspaceId: string, threadId: string) => {
       if (!threadId) {
@@ -455,6 +465,7 @@ export function useThreadTurnEvents({
     onThreadStarted,
     onThreadNameUpdated,
     onThreadArchived,
+    onThreadDeleted,
     onThreadUnarchived,
     onTurnStarted,
     onTurnCompleted,

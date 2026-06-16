@@ -1361,8 +1361,15 @@ export async function listThreads(
   cursor?: string | null,
   limit?: number | null,
   sortKey?: "created_at" | "updated_at" | null,
+  searchTerm?: string | null,
 ) {
-  return invoke<any>("list_threads", { workspaceId, cursor, limit, sortKey });
+  return invoke<any>("list_threads", {
+    workspaceId,
+    cursor,
+    limit,
+    sortKey,
+    searchTerm,
+  });
 }
 
 export type ThreadSettingsUpdateInput = {

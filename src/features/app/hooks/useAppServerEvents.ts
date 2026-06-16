@@ -63,6 +63,7 @@ type AppServerEventHandlers = {
   ) => void;
   onThreadClosed?: (workspaceId: string, threadId: string) => void;
   onThreadArchived?: (workspaceId: string, threadId: string) => void;
+  onThreadDeleted?: (workspaceId: string, threadId: string) => void;
   onThreadUnarchived?: (workspaceId: string, threadId: string) => void;
   onBackgroundThreadAction?: (
     workspaceId: string,
@@ -192,6 +193,7 @@ export const METHODS_ROUTED_IN_USE_APP_SERVER_EVENTS = [
   "item/tool/requestUserInput",
   "thread/archived",
   "thread/closed",
+  "thread/deleted",
   "thread/goal/cleared",
   "thread/goal/updated",
   "thread/name/updated",
@@ -492,6 +494,16 @@ export function useAppServerEvents(handlers: AppServerEventHandlers) {
         ).trim();
         if (threadId) {
           currentHandlers.onThreadArchived?.(workspace_id, threadId);
+        }
+        return;
+      }
+
+      if (method === "thread/deleted") {
+        const threadId = String(
+          params.threadId ?? params.thread_id ?? "",
+        ).trim();
+        if (threadId) {
+          currentHandlers.onThreadDeleted?.(workspace_id, threadId);
         }
         return;
       }

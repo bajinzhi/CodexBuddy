@@ -1,4 +1,4 @@
-# App-Server Events Reference (Codex `9474e5cfc4494b0ba319352aa86ce436c59e65c8`)
+# App-Server Events Reference (Codex `314fa3d25b1f8a2542ddefa72a8cdb706e9ee3c6`)
 
 This document helps agents quickly answer:
 
@@ -10,8 +10,8 @@ This document helps agents quickly answer:
 When updating this document:
 
 1. Fetch latest refs with `git -C ../Codex fetch --all --prune`.
-2. Pick the comparison baseline. The current baseline is official stable
-   `@openai/codex@0.133.0` / `rust-v0.133.0`.
+2. Pick the comparison baseline. The current baseline is upstream
+   `openai/codex` main at commit `314fa3d25b1f8a2542ddefa72a8cdb706e9ee3c6`.
 3. Update the Codex hash in the title using the selected baseline commit.
 4. Compare Codex events vs CodexBuddy routing.
 5. Compare Codex client request methods vs CodexBuddy outgoing request methods.
@@ -62,6 +62,14 @@ Primary outgoing request layer:
 - `src-tauri/src/shared/codex_core.rs`
 - `src-tauri/src/codex/mod.rs`
 - `src-tauri/src/bin/codex_buddy_daemon.rs`
+- `src-tauri/src/bin/codex_buddy_daemon/rpc/*`
+
+## Support Policy
+
+CodexBuddy follows upstream app-server protocol changes when they add value to
+the current app workflows. Missing low-value, experimental, remote-control,
+filesystem, process, realtime, and marketplace capabilities are tracked for
+parity awareness but are not automatic backlog items.
 
 ## Supported Notifications (Codex v2)
 
@@ -87,8 +95,10 @@ subscriptions.
 - `item/reasoning/summaryTextDelta`
 - `item/reasoning/textDelta`
 - `item/started`
+- `skills/changed`
 - `thread/archived`
 - `thread/closed`
+- `thread/deleted`
 - `thread/goal/cleared`
 - `thread/goal/updated`
 - `thread/name/updated`
@@ -140,6 +150,7 @@ events are currently not routed:
 - `command/exec/outputDelta`
 - `deprecationNotice`
 - `externalAgentConfig/import/completed`
+- `externalAgentConfig/import/progress`
 - `fs/changed`
 - `fuzzyFileSearch/sessionCompleted`
 - `fuzzyFileSearch/sessionUpdated`
@@ -157,7 +168,6 @@ events are currently not routed:
 - `rawResponseItem/completed`
 - `remoteControl/status/changed`
 - `serverRequest/resolved`
-- `skills/changed`
 - `thread/compacted` (deprecated; intentionally not routed)
 - `thread/realtime/closed`
 - `thread/realtime/error`
@@ -167,6 +177,7 @@ events are currently not routed:
 - `thread/realtime/started`
 - `thread/realtime/transcript/delta`
 - `thread/realtime/transcript/done`
+- `turn/moderationMetadata`
 - `warning`
 - `windows/worldWritableWarning`
 - `windowsSandbox/setupCompleted`
@@ -205,6 +216,9 @@ These are v2 request methods CodexBuddy currently sends to Codex app-server:
 Notes:
 
 - `turn/start` now forwards the optional `serviceTier` override (`"fast"` for `/fast`, `null` for default/off) alongside `model`, `effort`, and `collaborationMode`.
+- `thread/list` forwards the official optional `searchTerm` parameter
+  (`search_term` in upstream Rust). CodexBuddy does not send the separate
+  experimental `thread/search` request.
 - `/goal` uses `thread/goal/get`, `thread/goal/set`, and `thread/goal/clear` when Codex supports them. Older Codex versions fall back to a local active-goal prefix on future `turn/start` messages.
 - `thread/settings/update` is exposed as a low-level compatibility wrapper only;
   there is no dedicated CodexBuddy settings UI for it yet.
@@ -214,7 +228,9 @@ Notes:
 Compared against Codex v2 request methods, CodexBuddy currently does not send:
 
 - `account/logout`
+- `account/rateLimitResetCredit/consume`
 - `account/sendAddCreditsNudgeEmail`
+- `account/usage/read`
 - `command/exec`
 - `command/exec/resize`
 - `command/exec/terminate`
@@ -228,6 +244,7 @@ Compared against Codex v2 request methods, CodexBuddy currently does not send:
 - `experimentalFeature/enablement/set`
 - `externalAgentConfig/detect`
 - `externalAgentConfig/import`
+- `externalAgentConfig/import/readHistories`
 - `feedback/upload`
 - `fs/copy`
 - `fs/createDirectory`
@@ -238,6 +255,9 @@ Compared against Codex v2 request methods, CodexBuddy currently does not send:
 - `fs/unwatch`
 - `fs/watch`
 - `fs/writeFile`
+- `fuzzyFileSearch/sessionStart`
+- `fuzzyFileSearch/sessionStop`
+- `fuzzyFileSearch/sessionUpdate`
 - `hooks/list`
 - `marketplace/add`
 - `marketplace/remove`
@@ -264,24 +284,34 @@ Compared against Codex v2 request methods, CodexBuddy currently does not send:
 - `process/resizePty`
 - `process/spawn`
 - `process/writeStdin`
+- `remoteControl/client/list`
+- `remoteControl/client/revoke`
 - `remoteControl/disable`
 - `remoteControl/enable`
+- `remoteControl/pairing/start`
+- `remoteControl/pairing/status`
 - `remoteControl/status/read`
 - `skills/config/write`
+- `skills/extraRoots/set`
 - `thread/approveGuardianDeniedAction`
 - `thread/backgroundTerminals/clean`
+- `thread/backgroundTerminals/list`
+- `thread/backgroundTerminals/terminate`
 - `thread/decrement_elicitation`
+- `thread/delete`
 - `thread/increment_elicitation`
 - `thread/inject_items`
 - `thread/loaded/list`
 - `thread/memoryMode/set`
 - `thread/metadata/update`
 - `thread/realtime/appendAudio`
+- `thread/realtime/appendSpeech`
 - `thread/realtime/appendText`
 - `thread/realtime/listVoices`
 - `thread/realtime/start`
 - `thread/realtime/stop`
 - `thread/rollback`
+- `thread/search`
 - `thread/shellCommand`
 - `thread/turns/items/list`
 - `thread/turns/list`

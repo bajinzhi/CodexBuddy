@@ -37,6 +37,8 @@ describe("appServerEvents", () => {
     expect(isSupportedAppServerMethod("turn/started")).toBe(true);
     expect(isSupportedAppServerMethod("hook/started")).toBe(true);
     expect(isSupportedAppServerMethod("thread/settings/updated")).toBe(true);
+    expect(isSupportedAppServerMethod("thread/deleted")).toBe(true);
+    expect(isSupportedAppServerMethod("skills/changed")).toBe(true);
     expect(isSupportedAppServerMethod("unknown/method")).toBe(false);
     expect(isApprovalRequestMethod("item/permissions/requestApproval")).toBe(
       true,

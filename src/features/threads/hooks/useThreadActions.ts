@@ -460,6 +460,7 @@ export function useThreadActions({
       options?: {
         preserveState?: boolean;
         sortKey?: ThreadListSortKey;
+        searchTerm?: string | null;
         maxPages?: number;
       },
     ) => {
@@ -469,6 +470,10 @@ export function useThreadActions({
       }
       const preserveState = options?.preserveState ?? false;
       const requestedSortKey = options?.sortKey ?? threadSortKey;
+      const requestedSearchTerm =
+        typeof options?.searchTerm === "string" && options.searchTerm.trim()
+          ? options.searchTerm.trim()
+          : null;
       const maxPages = Math.max(1, options?.maxPages ?? THREAD_LIST_MAX_PAGES_DEFAULT);
       if (!preserveState) {
         targets.forEach((workspace) => {
@@ -493,6 +498,7 @@ export function useThreadActions({
           workspaceIds: targets.map((workspace) => workspace.id),
           preserveState,
           maxPages,
+          searchTerm: requestedSearchTerm,
         },
       });
       try {
@@ -523,13 +529,16 @@ export function useThreadActions({
         do {
           const pageCursor = cursor;
           pagesFetched += 1;
+          const listThreadsArgs = [
+            requester.id,
+            cursor,
+            THREAD_LIST_PAGE_SIZE,
+            requestedSortKey,
+          ] as const;
           const response =
-            (await listThreadsService(
-              requester.id,
-              cursor,
-              THREAD_LIST_PAGE_SIZE,
-              requestedSortKey,
-            )) as Record<string, unknown>;
+            (await (requestedSearchTerm
+              ? listThreadsService(...listThreadsArgs, requestedSearchTerm)
+              : listThreadsService(...listThreadsArgs))) as Record<string, unknown>;
           onDebug?.({
             id: `${Date.now()}-server-thread-list`,
             timestamp: Date.now(),
@@ -672,6 +681,7 @@ export function useThreadActions({
       options?: {
         preserveState?: boolean;
         sortKey?: ThreadListSortKey;
+        searchTerm?: string | null;
         maxPages?: number;
       },
     ) => {

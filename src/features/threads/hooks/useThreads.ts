@@ -529,6 +529,17 @@ export function useThreads({
     [isSubagentThread, onDebug, threadHandlers, unpinThread],
   );
 
+  const handleThreadDeleted = useCallback(
+    (workspaceId: string, threadId: string) => {
+      if (!workspaceId || !threadId) {
+        return;
+      }
+      threadHandlers.onThreadDeleted?.(workspaceId, threadId);
+      unpinThread(workspaceId, threadId);
+    },
+    [threadHandlers, unpinThread],
+  );
+
   const handleThreadUnarchived = useCallback(
     (workspaceId: string, threadId: string) => {
       threadHandlers.onThreadUnarchived?.(workspaceId, threadId);
@@ -541,6 +552,7 @@ export function useThreads({
       ...threadHandlers,
       onThreadStarted: handleThreadStarted,
       onThreadArchived: handleThreadArchived,
+      onThreadDeleted: handleThreadDeleted,
       onThreadUnarchived: handleThreadUnarchived,
       onAccountUpdated: handleAccountUpdated,
       onAccountLoginCompleted: handleAccountLoginCompleted,
@@ -549,6 +561,7 @@ export function useThreads({
       threadHandlers,
       handleThreadStarted,
       handleThreadArchived,
+      handleThreadDeleted,
       handleThreadUnarchived,
       handleAccountUpdated,
       handleAccountLoginCompleted,

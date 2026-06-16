@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act, renderHook, waitFor } from "@testing-library/react";
+import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AppServerEvent, WorkspaceInfo } from "../../../types";
 import { getSkillsList } from "../../../services/tauri";
@@ -35,6 +35,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  cleanup();
   vi.clearAllMocks();
 });
 
@@ -63,6 +64,40 @@ describe("useSkills", () => {
         workspace_id: "workspace-1",
         message: {
           method: "codex/event/skills_update_available",
+        },
+      });
+    });
+
+    await waitFor(() => {
+      expect(getSkillsList).toHaveBeenCalledTimes(2);
+      expect(result.current.skills.map((skill) => skill.name)).toEqual(["first", "second"]);
+    });
+  });
+
+  it("refreshes skills on official skills/changed notifications", async () => {
+    vi.mocked(getSkillsList)
+      .mockResolvedValueOnce({ result: { skills: [{ name: "first", path: "/skills/first" }] } })
+      .mockResolvedValueOnce({
+        result: {
+          skills: [
+            { name: "first", path: "/skills/first" },
+            { name: "second", path: "/skills/second" },
+          ],
+        },
+      });
+
+    const { result } = renderHook(() => useSkills({ activeWorkspace: workspace }));
+
+    await waitFor(() => {
+      expect(getSkillsList).toHaveBeenCalledTimes(1);
+      expect(result.current.skills.map((skill) => skill.name)).toEqual(["first"]);
+    });
+
+    act(() => {
+      listener?.({
+        workspace_id: "workspace-1",
+        message: {
+          method: "skills/changed",
         },
       });
     });

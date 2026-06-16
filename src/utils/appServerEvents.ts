@@ -24,6 +24,7 @@ export const SUPPORTED_APP_SERVER_METHODS = [
   "item/tool/requestUserInput",
   "thread/archived",
   "thread/closed",
+  "thread/deleted",
   "thread/goal/cleared",
   "thread/goal/updated",
   "thread/name/updated",
@@ -32,6 +33,7 @@ export const SUPPORTED_APP_SERVER_METHODS = [
   "thread/started",
   "thread/tokenUsage/updated",
   "thread/unarchived",
+  "skills/changed",
   "turn/completed",
   "turn/diff/updated",
   "turn/plan/updated",
@@ -44,6 +46,7 @@ export type SupportedAppServerMethod =
 export const METHODS_HANDLED_OUTSIDE_USE_APP_SERVER_EVENTS = [
   "app/list/updated",
   "codex/event/skills_update_available",
+  "skills/changed",
 ] as const satisfies readonly SupportedAppServerMethod[];
 
 const SUPPORTED_METHOD_SET = new Set<string>(SUPPORTED_APP_SERVER_METHODS);
@@ -113,7 +116,11 @@ export function isApprovalRequestMethod(method: string): boolean {
 }
 
 export function isSkillsUpdateAvailableEvent(event: AppServerEvent): boolean {
-  return getAppServerRawMethod(event) === "codex/event/skills_update_available";
+  const method = getAppServerRawMethod(event);
+  return (
+    method === "codex/event/skills_update_available" ||
+    method === "skills/changed"
+  );
 }
 
 export function isAppListUpdatedEvent(event: AppServerEvent): boolean {

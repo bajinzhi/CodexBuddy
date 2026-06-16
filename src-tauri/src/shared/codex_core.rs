@@ -439,12 +439,14 @@ pub(crate) async fn list_threads_core(
     cursor: Option<String>,
     limit: Option<u32>,
     sort_key: Option<String>,
+    search_term: Option<String>,
 ) -> Result<Value, String> {
     let session = get_session_clone(sessions, &workspace_id).await?;
     let params = json!({
         "cursor": cursor,
         "limit": limit,
         "sortKey": sort_key,
+        "searchTerm": search_term,
         // Keep interactive and sub-agent sessions visible across CLI versions so
         // thread/list refreshes do not drop valid historical conversations.
         // Intentionally exclude generic "subAgent" so parentless internal jobs

@@ -57,6 +57,7 @@ describe("useAppServerEvents", () => {
       onThreadStatusChanged: vi.fn(),
       onThreadClosed: vi.fn(),
       onThreadArchived: vi.fn(),
+      onThreadDeleted: vi.fn(),
       onThreadUnarchived: vi.fn(),
       onBackgroundThreadAction: vi.fn(),
       onAgentMessageDelta: vi.fn(),
@@ -312,6 +313,17 @@ describe("useAppServerEvents", () => {
       });
     });
     expect(handlers.onThreadArchived).toHaveBeenCalledWith("ws-1", "thread-2");
+
+    act(() => {
+      listener?.({
+        workspace_id: "ws-1",
+        message: {
+          method: "thread/deleted",
+          params: { thread_id: "thread-2" },
+        },
+      });
+    });
+    expect(handlers.onThreadDeleted).toHaveBeenCalledWith("ws-1", "thread-2");
 
     act(() => {
       listener?.({

@@ -333,17 +333,18 @@ describe("tauri invoke wrappers", () => {
     });
   });
 
-  it("maps workspaceId/cursor/limit/sortKey for list_threads", async () => {
+  it("maps workspaceId/cursor/limit/sortKey/searchTerm for list_threads", async () => {
     const invokeMock = vi.mocked(invoke);
     invokeMock.mockResolvedValueOnce({});
 
-    await listThreads("ws-10", "cursor-1", 25, "updated_at");
+    await listThreads("ws-10", "cursor-1", 25, "updated_at", "review notes");
 
     expect(invokeMock).toHaveBeenCalledWith("list_threads", {
       workspaceId: "ws-10",
       cursor: "cursor-1",
       limit: 25,
       sortKey: "updated_at",
+      searchTerm: "review notes",
     });
   });
 

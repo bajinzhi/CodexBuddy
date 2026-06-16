@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, createEvent, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, createEvent, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { expectOpenedFileTarget } from "../test/fileLinkAssertions";
 import { Markdown } from "./Markdown";
@@ -578,6 +578,76 @@ describe("Markdown file-like href behavior", () => {
     ) as HTMLDivElement;
     expect(rerenderedTableWrap).toBe(tableWrap);
     expect(rerenderedTableWrap.scrollLeft).toBe(123);
+  });
+
+  it("test_rq_001_ac_01 copies only the fenced code contents from the explicit contents button", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    });
+
+    render(
+      <Markdown
+        value={["```bash", "pnpm test", "npm run build", "```"].join("\n")}
+        className="markdown"
+        codeBlockStyle="message"
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Copy contents" }));
+
+    expect(writeText).toHaveBeenCalledWith("pnpm test\nnpm run build");
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Copy contents" }).textContent).toBe("Copied"),
+    );
+  });
+
+  it("test_rq_001_ac_02 keeps the existing code block copy button copying fenced markdown by default", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    });
+
+    render(
+      <Markdown
+        value={["```bash", "pnpm test", "npm run build", "```"].join("\n")}
+        className="markdown"
+        codeBlockStyle="message"
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Copy code block" }));
+
+    expect(writeText).toHaveBeenCalledWith("```bash\npnpm test\nnpm run build\n```");
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Copy code block" }).textContent).toBe("Copied"),
+    );
+  });
+
+  it("test_rq_001_ac_03 copies raw contents from the contents button when modifier copy mode is enabled", async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, "clipboard", {
+      configurable: true,
+      value: { writeText },
+    });
+
+    render(
+      <Markdown
+        value={["```bash", "pnpm test", "npm run build", "```"].join("\n")}
+        className="markdown"
+        codeBlockStyle="message"
+        codeBlockCopyUseModifier
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Copy contents" }));
+
+    expect(writeText).toHaveBeenCalledWith("pnpm test\nnpm run build");
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "Copy contents" }).textContent).toBe("Copied"),
+    );
   });
 
 });

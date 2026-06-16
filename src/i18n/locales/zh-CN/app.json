@@ -958,6 +958,7 @@
     "copied": "已复制",
     "copy": "复制",
     "copyCodeBlock": "复制代码块",
+    "copyCodeBlockContents": "复制内容",
     "copyMessage": "复制消息",
     "cwd": "cwd：{{path}}",
     "doneIn": "{{duration}} 完成",

@@ -1222,6 +1222,16 @@
 
 .message .markdown-codeblock-language {
   font-weight: 600;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.message .markdown-codeblock-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
 }
 
 .message .markdown-codeblock-copy {
@@ -1232,6 +1242,7 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--text-stronger);
+  white-space: nowrap;
 }
 
 .message .markdown-codeblock-copy:hover {

@@ -958,6 +958,7 @@
     "copied": "Copied",
     "copy": "Copy",
     "copyCodeBlock": "Copy code block",
+    "copyCodeBlockContents": "Copy contents",
     "copyMessage": "Copy message",
     "cwd": "cwd: {{path}}",
     "doneIn": "Done in {{duration}}",

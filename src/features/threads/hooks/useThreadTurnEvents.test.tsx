@@ -120,6 +120,12 @@ describe("useThreadTurnEvents", () => {
       timestamp: 1_700_000_000_000,
     });
     expect(dispatch).toHaveBeenCalledWith({
+      type: "setThreadRecencyTimestamp",
+      workspaceId: "ws-1",
+      threadId: "thread-1",
+      timestamp: 1_700_000_000_000,
+    });
+    expect(dispatch).toHaveBeenCalledWith({
       type: "setThreadName",
       workspaceId: "ws-1",
       threadId: "thread-1",
@@ -420,11 +426,17 @@ describe("useThreadTurnEvents", () => {
     });
     expect(markProcessing).toHaveBeenCalledWith("thread-1", true);
     expect(setActiveTurnId).toHaveBeenCalledWith("thread-1", "turn-1");
+    expect(dispatch).toHaveBeenCalledWith({
+      type: "setThreadRecencyTimestamp",
+      workspaceId: "ws-1",
+      threadId: "thread-1",
+      timestamp: expect.any(Number),
+    });
     expect(interruptTurn).not.toHaveBeenCalled();
   });
 
   it("interrupts immediately when a pending interrupt is queued", () => {
-    const { result, markProcessing, setActiveTurnId, pendingInterruptsRef } =
+    const { result, dispatch, markProcessing, setActiveTurnId, pendingInterruptsRef } =
       makeOptions({ pendingInterrupts: ["thread-1"] });
     vi.mocked(interruptTurn).mockResolvedValue({});
 
@@ -434,6 +446,12 @@ describe("useThreadTurnEvents", () => {
 
     expect(pendingInterruptsRef.current.has("thread-1")).toBe(false);
     expect(interruptTurn).toHaveBeenCalledWith("ws-1", "thread-1", "turn-2");
+    expect(dispatch).toHaveBeenCalledWith({
+      type: "setThreadRecencyTimestamp",
+      workspaceId: "ws-1",
+      threadId: "thread-1",
+      timestamp: expect.any(Number),
+    });
     expect(markProcessing).not.toHaveBeenCalled();
     expect(setActiveTurnId).not.toHaveBeenCalled();
   });

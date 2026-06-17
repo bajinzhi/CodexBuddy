@@ -2,7 +2,7 @@ import { useCallback, useRef } from "react";
 import type { Dispatch, MutableRefObject } from "react";
 import type { RateLimitSnapshot, TurnPlan } from "@/types";
 import { interruptTurn as interruptTurnService } from "@services/tauri";
-import { getThreadTimestamp } from "@utils/threadItems";
+import { getThreadRecencyTimestamp, getThreadTimestamp } from "@utils/threadItems";
 import {
   asString,
   normalizePlanUpdate,
@@ -139,12 +139,19 @@ export function useThreadTurnEvents({
       }
       const timestamp = getThreadTimestamp(thread);
       const activityTimestamp = timestamp > 0 ? timestamp : Date.now();
+      const recencyTimestamp = getThreadRecencyTimestamp(thread) || activityTimestamp;
       recordThreadActivity(workspaceId, threadId, activityTimestamp);
       dispatch({
         type: "setThreadTimestamp",
         workspaceId,
         threadId,
         timestamp: activityTimestamp,
+      });
+      dispatch({
+        type: "setThreadRecencyTimestamp",
+        workspaceId,
+        threadId,
+        timestamp: recencyTimestamp,
       });
 
       const customName = getCustomName(workspaceId, threadId);
@@ -240,10 +247,17 @@ export function useThreadTurnEvents({
 
   const onTurnStarted = useCallback(
     (workspaceId: string, threadId: string, turnId: string) => {
+      const turnStartedAt = Date.now();
       dispatch({
         type: "ensureThread",
         workspaceId,
         threadId,
+      });
+      dispatch({
+        type: "setThreadRecencyTimestamp",
+        workspaceId,
+        threadId,
+        timestamp: turnStartedAt,
       });
       if (pendingInterruptsRef.current.has(threadId)) {
         pendingInterruptsRef.current.delete(threadId);
@@ -455,6 +469,7 @@ export function useThreadTurnEvents({
       getLatestKnownActiveTurnId,
       markProcessing,
       markReviewing,
+      pendingInterruptsRef,
       pushThreadErrorMessage,
       safeMessageActivity,
       setActiveTurnId,

@@ -138,6 +138,18 @@ export function getThreadCreatedTimestamp(thread: Record<string, unknown>) {
   return normalizeThreadTimestamp(raw);
 }
 
+export function getThreadRecencyTimestamp(thread: Record<string, unknown>) {
+  const raw =
+    (thread.recencyAt ??
+      thread.recency_at ??
+      thread.updatedAt ??
+      thread.updated_at ??
+      thread.createdAt ??
+      thread.created_at) ??
+    0;
+  return normalizeThreadTimestamp(raw);
+}
+
 export function previewThreadName(text: string, fallback: string) {
   const trimmed = text.trim();
   if (!trimmed) {

@@ -425,6 +425,9 @@ export const Sidebar = memo(function Sidebar({
       if (threadListSortKey === "created_at") {
         return thread.createdAt ?? thread.updatedAt ?? 0;
       }
+      if (threadListSortKey === "recency_at") {
+        return thread.recencyAt ?? thread.updatedAt ?? thread.createdAt ?? 0;
+      }
       return thread.updatedAt ?? thread.createdAt ?? 0;
     },
     [threadListSortKey],

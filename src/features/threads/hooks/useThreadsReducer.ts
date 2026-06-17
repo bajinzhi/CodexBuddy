@@ -81,6 +81,7 @@ export type ThreadAction =
           | "subagentNickname"
           | "subagentRole"
           | "createdAt"
+          | "recencyAt"
           | "modelId"
           | "effort"
         >
@@ -88,6 +89,12 @@ export type ThreadAction =
     }
   | {
       type: "setThreadTimestamp";
+      workspaceId: string;
+      threadId: string;
+      timestamp: number;
+    }
+  | {
+      type: "setThreadRecencyTimestamp";
       workspaceId: string;
       threadId: string;
       timestamp: number;

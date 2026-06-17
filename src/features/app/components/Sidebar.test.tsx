@@ -122,6 +122,22 @@ describe("Sidebar", () => {
     expect(screen.queryByRole("menu")).toBeNull();
   });
 
+  it("selects recency sorting from the header filter menu", () => {
+    const onSetThreadListSortKey = vi.fn();
+    render(
+      <Sidebar
+        {...baseProps}
+        threadListSortKey="updated_at"
+        onSetThreadListSortKey={onSetThreadListSortKey}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Organize and sort threads" }));
+    fireEvent.click(screen.getByRole("menuitemradio", { name: "Recent" }));
+
+    expect(onSetThreadListSortKey).toHaveBeenCalledWith("recency_at");
+  });
+
   it("changes organize mode from the header filter menu", () => {
     const onSetThreadListOrganizeMode = vi.fn();
     render(

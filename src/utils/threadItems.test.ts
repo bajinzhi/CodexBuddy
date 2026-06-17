@@ -4,6 +4,7 @@ import {
   buildConversationItem,
   buildConversationItemFromThreadItem,
   getThreadCreatedTimestamp,
+  getThreadRecencyTimestamp,
   getThreadTimestamp,
   mergeThreadItems,
   normalizeItem,
@@ -941,6 +942,21 @@ describe("threadItems", () => {
 
   it("parses created timestamps", () => {
     const timestamp = getThreadCreatedTimestamp({ created_at: "2025-01-01T00:00:00Z" });
+    expect(timestamp).toBe(Date.parse("2025-01-01T00:00:00Z"));
+  });
+
+  it("parses recency timestamps before update timestamps", () => {
+    const timestamp = getThreadRecencyTimestamp({
+      recencyAt: "2025-01-02T00:00:00Z",
+      updated_at: "2025-01-01T00:00:00Z",
+    });
+    expect(timestamp).toBe(Date.parse("2025-01-02T00:00:00Z"));
+  });
+
+  it("falls back to updated timestamps for recency when absent", () => {
+    const timestamp = getThreadRecencyTimestamp({
+      updated_at: "2025-01-01T00:00:00Z",
+    });
     expect(timestamp).toBe(Date.parse("2025-01-01T00:00:00Z"));
   });
 

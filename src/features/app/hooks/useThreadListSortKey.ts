@@ -9,7 +9,11 @@ function getStoredThreadListSortKey(): ThreadListSortKey {
     return "updated_at";
   }
   const stored = window.localStorage.getItem(THREAD_LIST_SORT_KEY_STORAGE_KEY);
-  if (stored === "created_at" || stored === "updated_at") {
+  if (
+    stored === "created_at" ||
+    stored === "updated_at" ||
+    stored === "recency_at"
+  ) {
     return stored;
   }
   return "updated_at";

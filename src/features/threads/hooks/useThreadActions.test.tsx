@@ -13,6 +13,7 @@ import {
 import {
   buildItemsFromThread,
   getThreadCreatedTimestamp,
+  getThreadRecencyTimestamp,
   getThreadTimestamp,
   isReviewingFromThread,
   mergeThreadItems,
@@ -33,6 +34,7 @@ vi.mock("@services/tauri", () => ({
 vi.mock("@utils/threadItems", () => ({
   buildItemsFromThread: vi.fn(),
   getThreadCreatedTimestamp: vi.fn(),
+  getThreadRecencyTimestamp: vi.fn(),
   getThreadTimestamp: vi.fn(),
   isReviewingFromThread: vi.fn(),
   mergeThreadItems: vi.fn(),
@@ -63,6 +65,7 @@ describe("useThreadActions", () => {
     vi.clearAllMocks();
     vi.mocked(listWorkspaces).mockResolvedValue([]);
     vi.mocked(getThreadCreatedTimestamp).mockReturnValue(0);
+    vi.mocked(getThreadRecencyTimestamp).mockReturnValue(0);
   });
 
   function renderActions(
@@ -1449,6 +1452,73 @@ describe("useThreadActions", () => {
       100,
       "created_at",
     );
+  });
+
+  it("requests and applies recency_at sorting when provided", async () => {
+    vi.mocked(listThreads).mockResolvedValue({
+      result: {
+        data: [
+          {
+            id: "thread-updated",
+            cwd: "/tmp/codex",
+            preview: "Updated later",
+            updated_at: 5000,
+            recency_at: 1000,
+          },
+          {
+            id: "thread-recent",
+            cwd: "/tmp/codex",
+            preview: "Recent turn",
+            updated_at: 2000,
+            recency_at: 7000,
+          },
+        ],
+        nextCursor: null,
+      },
+    });
+    vi.mocked(getThreadTimestamp).mockImplementation((thread) => {
+      const value = (thread as Record<string, unknown>).updated_at as number;
+      return value ?? 0;
+    });
+    vi.mocked(getThreadRecencyTimestamp).mockImplementation((thread) => {
+      const value = (thread as Record<string, unknown>).recency_at as number;
+      return value ?? 0;
+    });
+
+    const { result, dispatch } = renderActions({ threadSortKey: "recency_at" });
+
+    await act(async () => {
+      await result.current.listThreadsForWorkspace(workspace);
+    });
+
+    expect(listThreads).toHaveBeenCalledWith(
+      "ws-1",
+      null,
+      100,
+      "recency_at",
+    );
+    expect(dispatch).toHaveBeenCalledWith({
+      type: "setThreads",
+      workspaceId: "ws-1",
+      sortKey: "recency_at",
+      preserveAnchors: true,
+      threads: [
+        {
+          id: "thread-recent",
+          name: "Recent turn",
+          updatedAt: 2000,
+          createdAt: 0,
+          recencyAt: 7000,
+        },
+        {
+          id: "thread-updated",
+          name: "Updated later",
+          updatedAt: 5000,
+          createdAt: 0,
+          recencyAt: 1000,
+        },
+      ],
+    });
   });
 
   it("loads older threads when a cursor is available", async () => {

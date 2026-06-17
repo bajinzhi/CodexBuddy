@@ -337,13 +337,13 @@ describe("tauri invoke wrappers", () => {
     const invokeMock = vi.mocked(invoke);
     invokeMock.mockResolvedValueOnce({});
 
-    await listThreads("ws-10", "cursor-1", 25, "updated_at", "review notes");
+    await listThreads("ws-10", "cursor-1", 25, "recency_at", "review notes");
 
     expect(invokeMock).toHaveBeenCalledWith("list_threads", {
       workspaceId: "ws-10",
       cursor: "cursor-1",
       limit: 25,
-      sortKey: "updated_at",
+      sortKey: "recency_at",
       searchTerm: "review notes",
     });
   });

@@ -184,3 +184,7 @@ export function isDuplicateReviewById(
 export function prefersUpdatedSort(state: ThreadState, workspaceId: string) {
   return (state.threadSortKeyByWorkspace[workspaceId] ?? "updated_at") === "updated_at";
 }
+
+export function prefersRecencySort(state: ThreadState, workspaceId: string) {
+  return state.threadSortKeyByWorkspace[workspaceId] === "recency_at";
+}

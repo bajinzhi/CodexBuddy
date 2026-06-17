@@ -1,6 +1,6 @@
 import type { ThreadSummary } from "@/types";
 import type { ThreadAction, ThreadState } from "../useThreadsReducer";
-import { prefersUpdatedSort } from "./common";
+import { prefersRecencySort, prefersUpdatedSort } from "./common";
 
 type ThreadStatus = ThreadState["threadStatusById"][string];
 
@@ -347,6 +347,40 @@ export function reduceThreadLifecycle(
         return state;
       }
       const sorted = prefersUpdatedSort(state, action.workspaceId)
+        ? [
+            ...next.filter((thread) => thread.id === action.threadId),
+            ...next.filter((thread) => thread.id !== action.threadId),
+          ]
+        : next;
+      return {
+        ...state,
+        threadsByWorkspace: {
+          ...state.threadsByWorkspace,
+          [action.workspaceId]: sorted,
+        },
+      };
+    }
+    case "setThreadRecencyTimestamp": {
+      const list = state.threadsByWorkspace[action.workspaceId] ?? [];
+      if (!list.length) {
+        return state;
+      }
+      let didChange = false;
+      const next = list.map((thread) => {
+        if (thread.id !== action.threadId) {
+          return thread;
+        }
+        const current = thread.recencyAt ?? 0;
+        if (current >= action.timestamp) {
+          return thread;
+        }
+        didChange = true;
+        return { ...thread, recencyAt: action.timestamp };
+      });
+      if (!didChange) {
+        return state;
+      }
+      const sorted = prefersRecencySort(state, action.workspaceId)
         ? [
             ...next.filter((thread) => thread.id === action.threadId),
             ...next.filter((thread) => thread.id !== action.threadId),

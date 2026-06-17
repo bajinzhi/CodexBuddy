@@ -20,6 +20,7 @@ import type {
   TcpDaemonStatus,
   TailscaleDaemonCommandPreview,
   TailscaleStatus,
+  ThreadListSortKey,
   TrayRecentThreadEntry,
   TraySessionUsage,
   WorkspaceInfo,
@@ -1360,7 +1361,7 @@ export async function listThreads(
   workspaceId: string,
   cursor?: string | null,
   limit?: number | null,
-  sortKey?: "created_at" | "updated_at" | null,
+  sortKey?: ThreadListSortKey | null,
   searchTerm?: string | null,
 ) {
   return invoke<any>("list_threads", {

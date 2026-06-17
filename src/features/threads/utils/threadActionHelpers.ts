@@ -7,6 +7,7 @@ import type {
 import {
   buildItemsFromThread,
   getThreadCreatedTimestamp,
+  getThreadRecencyTimestamp,
   getThreadTimestamp,
   isReviewingFromThread,
   mergeThreadItems,
@@ -261,6 +262,16 @@ export function buildWorkspaceThreadListState({
       const aActivity = Math.max(nextActivityByThread[aId] ?? 0, aCreated);
       const bActivity = Math.max(nextActivityByThread[bId] ?? 0, bCreated);
       return bActivity - aActivity;
+    });
+  } else if (requestedSortKey === "recency_at") {
+    uniqueThreads.sort((a, b) => {
+      const delta = getThreadRecencyTimestamp(b) - getThreadRecencyTimestamp(a);
+      if (delta !== 0) {
+        return delta;
+      }
+      const aId = String(a.id ?? "");
+      const bId = String(b.id ?? "");
+      return aId.localeCompare(bId);
     });
   } else {
     uniqueThreads.sort((a, b) => {

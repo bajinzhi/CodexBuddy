@@ -4,6 +4,7 @@ export { buildConversationItem, buildConversationItemFromThreadItem, buildItemsF
 export { normalizeItem, prepareThreadItems } from "./threadItems.explore";
 export {
   getThreadCreatedTimestamp,
+  getThreadRecencyTimestamp,
   getThreadTimestamp,
   mergeThreadItems,
   previewThreadName,

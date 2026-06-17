@@ -1,4 +1,4 @@
-# App-Server Events Reference (Codex `314fa3d25b1f8a2542ddefa72a8cdb706e9ee3c6`)
+# App-Server Events Reference (Codex `0a3ad4c4baca405367d470c9a255fb5642873ec1`)
 
 This document helps agents quickly answer:
 
@@ -11,7 +11,7 @@ When updating this document:
 
 1. Fetch latest refs with `git -C ../Codex fetch --all --prune`.
 2. Pick the comparison baseline. The current baseline is upstream
-   `openai/codex` main at commit `314fa3d25b1f8a2542ddefa72a8cdb706e9ee3c6`.
+   `openai/codex` main at commit `0a3ad4c4baca405367d470c9a255fb5642873ec1`.
 3. Update the Codex hash in the title using the selected baseline commit.
 4. Compare Codex events vs CodexBuddy routing.
 5. Compare Codex client request methods vs CodexBuddy outgoing request methods.
@@ -217,8 +217,9 @@ Notes:
 
 - `turn/start` now forwards the optional `serviceTier` override (`"fast"` for `/fast`, `null` for default/off) alongside `model`, `effort`, and `collaborationMode`.
 - `thread/list` forwards the official optional `searchTerm` parameter
-  (`search_term` in upstream Rust). CodexBuddy does not send the separate
-  experimental `thread/search` request.
+  (`search_term` in upstream Rust) and supports `created_at`, `updated_at`, and
+  `recency_at` sort keys. CodexBuddy does not send the separate experimental
+  `thread/search` request.
 - `/goal` uses `thread/goal/get`, `thread/goal/set`, and `thread/goal/clear` when Codex supports them. Older Codex versions fall back to a local active-goal prefix on future `turn/start` messages.
 - `thread/settings/update` is exposed as a low-level compatibility wrapper only;
   there is no dedicated CodexBuddy settings UI for it yet.

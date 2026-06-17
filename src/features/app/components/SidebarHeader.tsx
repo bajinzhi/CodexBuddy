@@ -1,6 +1,7 @@
 import ArrowDownUp from "lucide-react/dist/esm/icons/arrow-down-up";
 import BetweenHorizontalStart from "lucide-react/dist/esm/icons/between-horizontal-start";
 import Calendar from "lucide-react/dist/esm/icons/calendar";
+import Clock3 from "lucide-react/dist/esm/icons/clock-3";
 import FolderPlus from "lucide-react/dist/esm/icons/folder-plus";
 import FolderTree from "lucide-react/dist/esm/icons/folder-tree";
 import ListFilter from "lucide-react/dist/esm/icons/list-filter";
@@ -212,6 +213,17 @@ export function SidebarHeader({
               </PopoverMenuItem>
               <div className="sidebar-sort-divider" aria-hidden />
               <div className="sidebar-sort-section-label">{t("sidebar.sortBy")}</div>
+              <PopoverMenuItem
+                className="sidebar-sort-option"
+                role="menuitemradio"
+                aria-checked={threadListSortKey === "recency_at"}
+                onClick={() => handleSelectSort("recency_at")}
+                data-tauri-drag-region="false"
+                icon={<Clock3 aria-hidden />}
+                active={threadListSortKey === "recency_at"}
+              >
+                {t("sidebar.recent")}
+              </PopoverMenuItem>
               <PopoverMenuItem
                 className="sidebar-sort-option"
                 role="menuitemradio"

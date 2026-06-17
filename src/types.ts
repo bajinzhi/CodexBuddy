@@ -150,6 +150,7 @@ export type ThreadSummary = {
   name: string;
   updatedAt: number;
   createdAt?: number;
+  recencyAt?: number;
   modelId?: string | null;
   effort?: string | null;
   isSubagent?: boolean;
@@ -157,7 +158,7 @@ export type ThreadSummary = {
   subagentRole?: string | null;
 };
 
-export type ThreadListSortKey = "created_at" | "updated_at";
+export type ThreadListSortKey = "created_at" | "updated_at" | "recency_at";
 export type ThreadListOrganizeMode =
   | "by_project"
   | "by_project_activity"

@@ -1,6 +1,7 @@
 import type { ThreadSummary } from "@/types";
 import {
   getThreadCreatedTimestamp,
+  getThreadRecencyTimestamp,
   getThreadTimestamp,
 } from "@utils/threadItems";
 import { extractThreadCodexMetadata } from "@threads/utils/threadCodexMetadata";
@@ -61,11 +62,16 @@ export function buildThreadSummaryFromThread({
     isSubagentThreadSource(thread.source) ||
     Boolean(getParentThreadIdFromThread(thread)) ||
     Boolean(subagentMetadata.nickname || subagentMetadata.role);
+  const hasRecencyTimestamp =
+    thread.recencyAt !== undefined || thread.recency_at !== undefined;
   return {
     id,
     name,
     updatedAt: getThreadTimestamp(thread),
     createdAt: getThreadCreatedTimestamp(thread),
+    ...(hasRecencyTimestamp
+      ? { recencyAt: getThreadRecencyTimestamp(thread) }
+      : {}),
     ...(metadata.modelId ? { modelId: metadata.modelId } : {}),
     ...(metadata.effort ? { effort: metadata.effort } : {}),
     ...(isSubagent ? { isSubagent: true } : {}),

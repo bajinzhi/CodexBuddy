@@ -14,6 +14,10 @@ import {
 } from "@/features/design-system/components/settings/SettingsPrimitives";
 import { FileEditorCard } from "@/features/shared/components/FileEditorCard";
 import { SettingsModelProvidersSection } from "./SettingsModelProvidersSection";
+import {
+  ArchivedThreadsSection,
+  LoadedThreadsSection,
+} from "./CodexThreadManagementSections";
 
 type CodexUpdateDisplayResult = CodexUpdateResult & {
   displayTone?: "ok" | "info" | "error";
@@ -553,6 +557,12 @@ export function SettingsCodexSection({
           onRefreshGlobalConfig();
         }}
       />
+
+      <div className="settings-divider" />
+      <ArchivedThreadsSection />
+
+      <div className="settings-divider" />
+      <LoadedThreadsSection />
 
       <FileEditorCard
         title={t("codex.globalAgentsTitle")}

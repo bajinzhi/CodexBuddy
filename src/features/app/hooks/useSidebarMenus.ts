@@ -9,6 +9,7 @@ import { pushErrorToast } from "../../../services/toasts";
 import { fileManagerName } from "../../../utils/platformPaths";
 
 type SidebarMenuHandlers = {
+  onArchiveThread: (workspaceId: string, threadId: string) => void;
   onDeleteThread: (workspaceId: string, threadId: string) => void;
   onSyncThread: (workspaceId: string, threadId: string) => void;
   onPinThread: (workspaceId: string, threadId: string) => void;
@@ -21,6 +22,7 @@ type SidebarMenuHandlers = {
 };
 
 export function useSidebarMenus({
+  onArchiveThread,
   onDeleteThread,
   onSyncThread,
   onPinThread,
@@ -51,6 +53,10 @@ export function useSidebarMenus({
       });
       const archiveItem = await MenuItem.new({
         text: t("actions.archive", { ns: "common" }),
+        action: () => onArchiveThread(workspaceId, threadId),
+      });
+      const deleteItem = await MenuItem.new({
+        text: t("actions.delete", { ns: "common" }),
         action: () => onDeleteThread(workspaceId, threadId),
       });
       const copyItem = await MenuItem.new({
@@ -81,7 +87,7 @@ export function useSidebarMenus({
           }),
         );
       }
-      items.push(copyItem, archiveItem);
+      items.push(copyItem, archiveItem, deleteItem);
       const menu = await Menu.new({ items });
       const window = getCurrentWindow();
       const position = new LogicalPosition(event.clientX, event.clientY);
@@ -89,6 +95,7 @@ export function useSidebarMenus({
     },
     [
       isThreadPinned,
+      onArchiveThread,
       onDeleteThread,
       onPinThread,
       onRenameThread,

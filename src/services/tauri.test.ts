@@ -7,8 +7,12 @@ import {
   addWorkspace,
   compactThread,
   createGitHubRepo,
+  cleanThreadBackgroundTerminals,
+  deleteThread,
   fetchGit,
   forkThread,
+  listThreadBackgroundTerminals,
+  listLoadedThreads,
   getAppsList,
   getAgentsSettings,
   getExperimentalFeatureList,
@@ -36,9 +40,12 @@ import {
   setTraySessionUsage,
   startReview,
   setThreadName,
+  terminateThreadBackgroundTerminal,
   threadGoalClear,
   threadGoalGet,
   threadGoalSet,
+  unsubscribeThread,
+  unarchiveThread,
   tailscaleDaemonStart,
   tailscaleDaemonCommandPreview,
   tailscaleDaemonStatus,
@@ -333,11 +340,11 @@ describe("tauri invoke wrappers", () => {
     });
   });
 
-  it("maps workspaceId/cursor/limit/sortKey/searchTerm for list_threads", async () => {
+  it("maps workspaceId/cursor/limit/sortKey/searchTerm/archived for list_threads", async () => {
     const invokeMock = vi.mocked(invoke);
     invokeMock.mockResolvedValueOnce({});
 
-    await listThreads("ws-10", "cursor-1", 25, "recency_at", "review notes");
+    await listThreads("ws-10", "cursor-1", 25, "recency_at", "review notes", true);
 
     expect(invokeMock).toHaveBeenCalledWith("list_threads", {
       workspaceId: "ws-10",
@@ -345,6 +352,98 @@ describe("tauri invoke wrappers", () => {
       limit: 25,
       sortKey: "recency_at",
       searchTerm: "review notes",
+      archived: true,
+    });
+  });
+
+  it("maps workspaceId/threadId for unarchive_thread", async () => {
+    const invokeMock = vi.mocked(invoke);
+    invokeMock.mockResolvedValueOnce({});
+
+    await unarchiveThread("ws-10", "thread-1");
+
+    expect(invokeMock).toHaveBeenCalledWith("unarchive_thread", {
+      workspaceId: "ws-10",
+      threadId: "thread-1",
+    });
+  });
+
+  it("maps workspaceId/threadId for delete_thread", async () => {
+    const invokeMock = vi.mocked(invoke);
+    invokeMock.mockResolvedValueOnce({});
+
+    await deleteThread("ws-10", "thread-1");
+
+    expect(invokeMock).toHaveBeenCalledWith("delete_thread", {
+      workspaceId: "ws-10",
+      threadId: "thread-1",
+    });
+  });
+
+  it("maps workspaceId/cursor/limit for list_loaded_threads", async () => {
+    const invokeMock = vi.mocked(invoke);
+    invokeMock.mockResolvedValueOnce({});
+
+    await listLoadedThreads("ws-10", "cursor-2", 20);
+
+    expect(invokeMock).toHaveBeenCalledWith("list_loaded_threads", {
+      workspaceId: "ws-10",
+      cursor: "cursor-2",
+      limit: 20,
+    });
+  });
+
+  it("maps workspaceId/threadId for unsubscribe_thread", async () => {
+    const invokeMock = vi.mocked(invoke);
+    invokeMock.mockResolvedValueOnce({});
+
+    await unsubscribeThread("ws-10", "thread-1");
+
+    expect(invokeMock).toHaveBeenCalledWith("unsubscribe_thread", {
+      workspaceId: "ws-10",
+      threadId: "thread-1",
+    });
+  });
+
+  it("maps workspaceId/threadId/cursor/limit for background terminal list", async () => {
+    const invokeMock = vi.mocked(invoke);
+    invokeMock.mockResolvedValueOnce({});
+
+    await listThreadBackgroundTerminals("ws-10", "thread-1", "cursor-3", 15);
+
+    expect(invokeMock).toHaveBeenCalledWith("list_thread_background_terminals", {
+      workspaceId: "ws-10",
+      threadId: "thread-1",
+      cursor: "cursor-3",
+      limit: 15,
+    });
+  });
+
+  it("maps workspaceId/threadId/processId for background terminal terminate", async () => {
+    const invokeMock = vi.mocked(invoke);
+    invokeMock.mockResolvedValueOnce({});
+
+    await terminateThreadBackgroundTerminal("ws-10", "thread-1", "proc-1");
+
+    expect(invokeMock).toHaveBeenCalledWith(
+      "terminate_thread_background_terminal",
+      {
+        workspaceId: "ws-10",
+        threadId: "thread-1",
+        processId: "proc-1",
+      },
+    );
+  });
+
+  it("maps workspaceId/threadId for background terminal clean", async () => {
+    const invokeMock = vi.mocked(invoke);
+    invokeMock.mockResolvedValueOnce({});
+
+    await cleanThreadBackgroundTerminals("ws-10", "thread-1");
+
+    expect(invokeMock).toHaveBeenCalledWith("clean_thread_background_terminals", {
+      workspaceId: "ws-10",
+      threadId: "thread-1",
     });
   });
 

@@ -440,6 +440,7 @@ pub(crate) async fn list_threads_core(
     limit: Option<u32>,
     sort_key: Option<String>,
     search_term: Option<String>,
+    archived: Option<bool>,
 ) -> Result<Value, String> {
     let session = get_session_clone(sessions, &workspace_id).await?;
     let params = json!({
@@ -447,6 +448,7 @@ pub(crate) async fn list_threads_core(
         "limit": limit,
         "sortKey": sort_key,
         "searchTerm": search_term,
+        "archived": archived,
         // Keep interactive and sub-agent sessions visible across CLI versions so
         // thread/list refreshes do not drop valid historical conversations.
         // Intentionally exclude generic "subAgent" so parentless internal jobs
@@ -509,6 +511,94 @@ pub(crate) async fn archive_thread_core(
     let params = json!({ "threadId": thread_id });
     session
         .send_request_for_workspace(&workspace_id, "thread/archive", params)
+        .await
+}
+
+pub(crate) async fn unarchive_thread_core(
+    sessions: &Mutex<HashMap<String, Arc<WorkspaceSession>>>,
+    workspace_id: String,
+    thread_id: String,
+) -> Result<Value, String> {
+    let session = get_session_clone(sessions, &workspace_id).await?;
+    let params = json!({ "threadId": thread_id });
+    session
+        .send_request_for_workspace(&workspace_id, "thread/unarchive", params)
+        .await
+}
+
+pub(crate) async fn delete_thread_core(
+    sessions: &Mutex<HashMap<String, Arc<WorkspaceSession>>>,
+    workspace_id: String,
+    thread_id: String,
+) -> Result<Value, String> {
+    let session = get_session_clone(sessions, &workspace_id).await?;
+    let params = json!({ "threadId": thread_id });
+    session
+        .send_request_for_workspace(&workspace_id, "thread/delete", params)
+        .await
+}
+
+pub(crate) async fn list_loaded_threads_core(
+    sessions: &Mutex<HashMap<String, Arc<WorkspaceSession>>>,
+    workspace_id: String,
+    cursor: Option<String>,
+    limit: Option<u32>,
+) -> Result<Value, String> {
+    let session = get_session_clone(sessions, &workspace_id).await?;
+    let params = json!({ "cursor": cursor, "limit": limit });
+    session
+        .send_request_for_workspace(&workspace_id, "thread/loaded/list", params)
+        .await
+}
+
+pub(crate) async fn unsubscribe_thread_core(
+    sessions: &Mutex<HashMap<String, Arc<WorkspaceSession>>>,
+    workspace_id: String,
+    thread_id: String,
+) -> Result<Value, String> {
+    let session = get_session_clone(sessions, &workspace_id).await?;
+    let params = json!({ "threadId": thread_id });
+    session
+        .send_request_for_workspace(&workspace_id, "thread/unsubscribe", params)
+        .await
+}
+
+pub(crate) async fn list_thread_background_terminals_core(
+    sessions: &Mutex<HashMap<String, Arc<WorkspaceSession>>>,
+    workspace_id: String,
+    thread_id: String,
+    cursor: Option<String>,
+    limit: Option<u32>,
+) -> Result<Value, String> {
+    let session = get_session_clone(sessions, &workspace_id).await?;
+    let params = json!({ "threadId": thread_id, "cursor": cursor, "limit": limit });
+    session
+        .send_request_for_workspace(&workspace_id, "thread/backgroundTerminals/list", params)
+        .await
+}
+
+pub(crate) async fn terminate_thread_background_terminal_core(
+    sessions: &Mutex<HashMap<String, Arc<WorkspaceSession>>>,
+    workspace_id: String,
+    thread_id: String,
+    process_id: String,
+) -> Result<Value, String> {
+    let session = get_session_clone(sessions, &workspace_id).await?;
+    let params = json!({ "threadId": thread_id, "processId": process_id });
+    session
+        .send_request_for_workspace(&workspace_id, "thread/backgroundTerminals/terminate", params)
+        .await
+}
+
+pub(crate) async fn clean_thread_background_terminals_core(
+    sessions: &Mutex<HashMap<String, Arc<WorkspaceSession>>>,
+    workspace_id: String,
+    thread_id: String,
+) -> Result<Value, String> {
+    let session = get_session_clone(sessions, &workspace_id).await?;
+    let params = json!({ "threadId": thread_id });
+    session
+        .send_request_for_workspace(&workspace_id, "thread/backgroundTerminals/clean", params)
         .await
 }
 

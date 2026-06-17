@@ -806,6 +806,7 @@ impl DaemonState {
         limit: Option<u32>,
         sort_key: Option<String>,
         search_term: Option<String>,
+        archived: Option<bool>,
     ) -> Result<Value, String> {
         codex_core::list_threads_core(
             &self.sessions,
@@ -814,6 +815,7 @@ impl DaemonState {
             limit,
             sort_key,
             search_term,
+            archived,
         )
         .await
     }
@@ -843,6 +845,84 @@ impl DaemonState {
         thread_id: String,
     ) -> Result<Value, String> {
         codex_core::archive_thread_core(&self.sessions, workspace_id, thread_id).await
+    }
+
+    async fn unarchive_thread(
+        &self,
+        workspace_id: String,
+        thread_id: String,
+    ) -> Result<Value, String> {
+        codex_core::unarchive_thread_core(&self.sessions, workspace_id, thread_id).await
+    }
+
+    async fn delete_thread(
+        &self,
+        workspace_id: String,
+        thread_id: String,
+    ) -> Result<Value, String> {
+        codex_core::delete_thread_core(&self.sessions, workspace_id, thread_id).await
+    }
+
+    async fn list_loaded_threads(
+        &self,
+        workspace_id: String,
+        cursor: Option<String>,
+        limit: Option<u32>,
+    ) -> Result<Value, String> {
+        codex_core::list_loaded_threads_core(&self.sessions, workspace_id, cursor, limit).await
+    }
+
+    async fn unsubscribe_thread(
+        &self,
+        workspace_id: String,
+        thread_id: String,
+    ) -> Result<Value, String> {
+        codex_core::unsubscribe_thread_core(&self.sessions, workspace_id, thread_id).await
+    }
+
+    async fn list_thread_background_terminals(
+        &self,
+        workspace_id: String,
+        thread_id: String,
+        cursor: Option<String>,
+        limit: Option<u32>,
+    ) -> Result<Value, String> {
+        codex_core::list_thread_background_terminals_core(
+            &self.sessions,
+            workspace_id,
+            thread_id,
+            cursor,
+            limit,
+        )
+        .await
+    }
+
+    async fn terminate_thread_background_terminal(
+        &self,
+        workspace_id: String,
+        thread_id: String,
+        process_id: String,
+    ) -> Result<Value, String> {
+        codex_core::terminate_thread_background_terminal_core(
+            &self.sessions,
+            workspace_id,
+            thread_id,
+            process_id,
+        )
+        .await
+    }
+
+    async fn clean_thread_background_terminals(
+        &self,
+        workspace_id: String,
+        thread_id: String,
+    ) -> Result<Value, String> {
+        codex_core::clean_thread_background_terminals_core(
+            &self.sessions,
+            workspace_id,
+            thread_id,
+        )
+        .await
     }
 
     async fn compact_thread(

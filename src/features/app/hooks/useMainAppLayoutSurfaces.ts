@@ -1,4 +1,5 @@
 import type { RefObject } from "react";
+import { createElement } from "react";
 import { useTranslation } from "react-i18next";
 import type { AppSettings, ComposerEditorSettings, WorkspaceInfo } from "@/types";
 import type { ThreadState } from "@/features/threads/hooks/useThreadsReducer";
@@ -11,6 +12,7 @@ import type { useMainAppPromptActions } from "@app/hooks/useMainAppPromptActions
 import type { useMainAppSidebarMenuOrchestration } from "@app/hooks/useMainAppSidebarMenuOrchestration";
 import type { useMainAppWorktreeState } from "@app/hooks/useMainAppWorktreeState";
 import type { LayoutNodesOptions } from "@/features/layout/hooks/layoutNodes/types";
+import { BackgroundTerminalsPanel } from "@/features/terminal/components/BackgroundTerminalsPanel";
 
 type SidebarProps = LayoutNodesOptions["primary"]["sidebarProps"];
 type ComposerProps = NonNullable<LayoutNodesOptions["primary"]["composerProps"]>;
@@ -448,6 +450,7 @@ export function useMainAppLayoutSurfaces({
         onAddCloneAgent: handleAddCloneAgent,
         onToggleWorkspaceCollapse: sidebarHandlers.onToggleWorkspaceCollapse,
         onSelectThread: sidebarHandlers.onSelectThread,
+        onArchiveThread: sidebarHandlers.onArchiveThread,
         onDeleteThread: sidebarHandlers.onDeleteThread,
         onSyncThread: sidebarHandlers.onSyncThread,
         pinThread: threadPinning.pinThread,
@@ -904,6 +907,13 @@ export function useMainAppLayoutSurfaces({
         onNewTerminal,
         onCloseTerminal,
         onResizeStart: onResizeTerminal,
+        backgroundTerminalsNode:
+          activeWorkspaceId && activeThreadId
+            ? createElement(BackgroundTerminalsPanel, {
+                workspaceId: activeWorkspaceId,
+                threadId: activeThreadId,
+              })
+            : null,
       },
       terminalState,
       debugPanelProps: {

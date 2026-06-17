@@ -354,7 +354,18 @@
     "resizePanel": "调整终端面板大小",
     "tabs": "终端标签页",
     "newTerminal": "新建终端",
-    "closeTab": "关闭 {{title}}"
+    "closeTab": "关闭 {{title}}",
+    "background": {
+      "shortTitle": "后台",
+      "title": "后台终端",
+      "empty": "当前线程没有后台终端。",
+      "clean": "清理全部",
+      "unsupported": "当前无法管理后台终端：{{error}}",
+      "terminateTitle": "终止后台终端",
+      "terminateConfirm": "要停止这个后台终端进程吗？",
+      "cleanTitle": "清理后台终端",
+      "cleanConfirm": "要停止当前线程的所有后台终端进程吗？"
+    }
   },
   "tabBar": {
     "primaryAria": "主导航",
@@ -459,7 +470,9 @@
       "syncFromServer": "从服务端同步",
       "copyId": "复制 ID",
       "pin": "置顶",
-      "unpin": "取消置顶"
+      "unpin": "取消置顶",
+      "deleteConfirmTitle": "删除线程",
+      "deleteConfirmMessage": "确定要永久删除该线程及其派生线程吗？此操作无法撤销。"
     },
     "workspace": {
       "reloadThreads": "重新加载线程"

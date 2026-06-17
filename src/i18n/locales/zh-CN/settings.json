@@ -749,6 +749,20 @@
       "detached": "分离（新建审查线程）"
     },
     "reviewModeHelp": "选择 /review 在当前线程运行，还是在独立审查线程中运行。",
+    "archived": {
+      "title": "已归档线程",
+      "subtitle": "查看所有已连接工作区中的归档 Codex 线程。继续对话前需要先恢复归档。",
+      "empty": "暂无已归档线程。",
+      "unarchive": "恢复",
+      "deleteConfirmTitle": "删除已归档线程",
+      "deleteConfirmMessage": "确定要永久删除该归档线程及其派生线程吗？此操作无法撤销。"
+    },
+    "loaded": {
+      "title": "运行时线程",
+      "subtitle": "当前由 app-server 保持在内存中的 Codex 线程。释放只取消本客户端订阅，不会删除历史记录。",
+      "empty": "暂无已加载线程。",
+      "release": "释放"
+    },
     "nodeLabel": "Node",
     "pathLabel": "PATH",
     "configModelDisplayName": "{{configModel}}（配置）",

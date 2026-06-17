@@ -1,7 +1,7 @@
 /** @vitest-environment jsdom */
 import type { MouseEvent as ReactMouseEvent } from "react";
 import { renderHook } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { WorkspaceInfo } from "../../../types";
 import { useSidebarMenus } from "./useSidebarMenus";
@@ -43,7 +43,12 @@ vi.mock("../../../services/toasts", () => ({
 }));
 
 describe("useSidebarMenus", () => {
-  it("adds a show in file manager option for worktrees", async () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("adds separate archive and delete actions for thread menus", async () => {
+    const onArchiveThread = vi.fn();
     const onDeleteThread = vi.fn();
     const onSyncThread = vi.fn();
     const onPinThread = vi.fn();
@@ -56,6 +61,59 @@ describe("useSidebarMenus", () => {
 
     const { result } = renderHook(() =>
       useSidebarMenus({
+        onArchiveThread,
+        onDeleteThread,
+        onSyncThread,
+        onPinThread,
+        onUnpinThread,
+        isThreadPinned,
+        onRenameThread,
+        onReloadWorkspaceThreads,
+        onDeleteWorkspace,
+        onDeleteWorktree,
+      }),
+    );
+
+    const event = {
+      preventDefault: vi.fn(),
+      stopPropagation: vi.fn(),
+      clientX: 12,
+      clientY: 34,
+    } as unknown as ReactMouseEvent;
+
+    await result.current.showThreadMenu(event, "ws-1", "thread-1", true);
+
+    const menuArgs = menuNew.mock.calls[0]?.[0];
+    const archiveItem = menuArgs.items.find(
+      (item: { text: string }) => item.text === "Archive",
+    );
+    const deleteItem = menuArgs.items.find(
+      (item: { text: string }) => item.text === "Delete",
+    );
+
+    expect(archiveItem).toBeDefined();
+    expect(deleteItem).toBeDefined();
+    archiveItem.action();
+    deleteItem.action();
+    expect(onArchiveThread).toHaveBeenCalledWith("ws-1", "thread-1");
+    expect(onDeleteThread).toHaveBeenCalledWith("ws-1", "thread-1");
+  });
+
+  it("adds a show in file manager option for worktrees", async () => {
+    const onArchiveThread = vi.fn();
+    const onDeleteThread = vi.fn();
+    const onSyncThread = vi.fn();
+    const onPinThread = vi.fn();
+    const onUnpinThread = vi.fn();
+    const isThreadPinned = vi.fn(() => false);
+    const onRenameThread = vi.fn();
+    const onReloadWorkspaceThreads = vi.fn();
+    const onDeleteWorkspace = vi.fn();
+    const onDeleteWorktree = vi.fn();
+
+    const { result } = renderHook(() =>
+      useSidebarMenus({
+        onArchiveThread,
         onDeleteThread,
         onSyncThread,
         onPinThread,

@@ -102,6 +102,7 @@ type SidebarProps = {
   onAddCloneAgent: (workspace: WorkspaceInfo) => void;
   onToggleWorkspaceCollapse: (workspaceId: string, collapsed: boolean) => void;
   onSelectThread: (workspaceId: string, threadId: string) => void;
+  onArchiveThread: (workspaceId: string, threadId: string) => void;
   onDeleteThread: (workspaceId: string, threadId: string) => void;
   onSyncThread: (workspaceId: string, threadId: string) => void;
   pinThread: (workspaceId: string, threadId: string) => boolean;
@@ -167,6 +168,7 @@ export const Sidebar = memo(function Sidebar({
   onAddCloneAgent,
   onToggleWorkspaceCollapse,
   onSelectThread,
+  onArchiveThread,
   onDeleteThread,
   onSyncThread,
   pinThread,
@@ -221,6 +223,7 @@ export const Sidebar = memo(function Sidebar({
   const { getThreadRows } = useThreadRows(threadParentById);
   const { showThreadMenu, showWorkspaceMenu, showWorktreeMenu, showCloneMenu } =
     useSidebarMenus({
+      onArchiveThread,
       onDeleteThread,
       onSyncThread,
       onPinThread: pinThread,

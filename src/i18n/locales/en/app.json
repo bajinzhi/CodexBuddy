@@ -354,7 +354,18 @@
     "resizePanel": "Resize terminal panel",
     "tabs": "Terminal tabs",
     "newTerminal": "New terminal",
-    "closeTab": "Close {{title}}"
+    "closeTab": "Close {{title}}",
+    "background": {
+      "shortTitle": "Background",
+      "title": "Background terminals",
+      "empty": "No background terminals for this thread.",
+      "clean": "Clean all",
+      "unsupported": "Background terminal management is unavailable: {{error}}",
+      "terminateTitle": "Terminate background terminal",
+      "terminateConfirm": "Stop this background terminal process?",
+      "cleanTitle": "Clean background terminals",
+      "cleanConfirm": "Stop all background terminal processes for this thread?"
+    }
   },
   "tabBar": {
     "primaryAria": "Primary",
@@ -459,7 +470,9 @@
       "syncFromServer": "Sync from server",
       "copyId": "Copy ID",
       "pin": "Pin",
-      "unpin": "Unpin"
+      "unpin": "Unpin",
+      "deleteConfirmTitle": "Delete thread",
+      "deleteConfirmMessage": "Permanently delete this thread and its spawned descendants? This cannot be undone."
     },
     "workspace": {
       "reloadThreads": "Reload threads"

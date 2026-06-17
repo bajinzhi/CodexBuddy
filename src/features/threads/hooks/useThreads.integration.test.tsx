@@ -42,6 +42,7 @@ vi.mock("@services/tauri", () => ({
   resumeThread: vi.fn(),
   readThread: vi.fn(),
   archiveThread: vi.fn(),
+  deleteThread: vi.fn(),
   setThreadName: vi.fn(),
   getAccountRateLimits: vi.fn(),
   getAccountInfo: vi.fn(),
@@ -1424,7 +1425,7 @@ describe("useThreads UX integration", () => {
     );
   });
 
-  it("cascades archive to subagent descendants when parent archived", async () => {
+  it("does not cascade archive to subagent descendants on the client", () => {
     const { result } = renderHook(() =>
       useThreads({
         activeWorkspace: workspace,
@@ -1463,17 +1464,7 @@ describe("useThreads UX integration", () => {
       handlers?.onThreadArchived?.("ws-1", "thread-parent");
     });
 
-    await waitFor(() => {
-      expect(vi.mocked(archiveThread)).toHaveBeenCalledWith("ws-1", "thread-child");
-      expect(vi.mocked(archiveThread)).toHaveBeenCalledWith(
-        "ws-1",
-        "thread-grandchild",
-      );
-    });
-    expect(vi.mocked(archiveThread)).not.toHaveBeenCalledWith("ws-1", "thread-parent");
-    expect(vi.mocked(archiveThread)).toHaveBeenCalledTimes(2);
-
-    vi.mocked(archiveThread).mockClear();
+    expect(vi.mocked(archiveThread)).not.toHaveBeenCalled();
 
     act(() => {
       handlers?.onThreadArchived?.("ws-1", "thread-child");
@@ -1482,7 +1473,7 @@ describe("useThreads UX integration", () => {
     expect(vi.mocked(archiveThread)).not.toHaveBeenCalled();
   });
 
-  it("does not archive detached review children when parent archived", async () => {
+  it("leaves detached review relationships to app-server archive handling", async () => {
     vi.mocked(startReview).mockResolvedValue({
       result: { reviewThreadId: "thread-review-1" },
     });
@@ -1526,13 +1517,10 @@ describe("useThreads UX integration", () => {
       handlers?.onThreadArchived?.("ws-1", "thread-parent");
     });
 
-    await waitFor(() => {
-      expect(vi.mocked(archiveThread)).toHaveBeenCalledWith("ws-1", "thread-child");
-    });
-    expect(vi.mocked(archiveThread)).not.toHaveBeenCalledWith("ws-1", "thread-review-1");
+    expect(vi.mocked(archiveThread)).not.toHaveBeenCalled();
   });
 
-  it("archives subagent descendants spawned from detached review threads when parent archived", async () => {
+  it("does not archive subagent descendants spawned from detached review threads on the client", async () => {
     vi.mocked(startReview).mockResolvedValue({
       result: { reviewThreadId: "thread-review-1" },
     });
@@ -1578,13 +1566,7 @@ describe("useThreads UX integration", () => {
       handlers?.onThreadArchived?.("ws-1", "thread-parent");
     });
 
-    await waitFor(() => {
-      expect(vi.mocked(archiveThread)).toHaveBeenCalledWith(
-        "ws-1",
-        "thread-review-subagent",
-      );
-    });
-    expect(vi.mocked(archiveThread)).not.toHaveBeenCalledWith("ws-1", "thread-review-1");
+    expect(vi.mocked(archiveThread)).not.toHaveBeenCalled();
   });
 
   it("keeps parent unlocked and pings parent when detached child exits", async () => {

@@ -59,6 +59,7 @@ const baseProps = {
   onAddCloneAgent: vi.fn(),
   onToggleWorkspaceCollapse: vi.fn(),
   onSelectThread: vi.fn(),
+  onArchiveThread: vi.fn(),
   onDeleteThread: vi.fn(),
   onSyncThread: vi.fn(),
   pinThread: vi.fn(() => false),

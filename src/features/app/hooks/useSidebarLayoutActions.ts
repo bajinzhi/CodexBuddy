@@ -1,4 +1,6 @@
 import { useCallback } from "react";
+import { ask } from "@tauri-apps/plugin-dialog";
+import { useTranslation } from "react-i18next";
 
 import type { WorkspaceInfo, WorkspaceSettings } from "../../../types";
 import type { SettingsSection } from "./useSettingsModalState";
@@ -23,6 +25,7 @@ type UseSidebarLayoutActionsOptions = {
     patch: Partial<WorkspaceSettings>,
   ) => void | Promise<unknown>;
   removeThread: (workspaceId: string, threadId: string) => void;
+  deleteThread: (workspaceId: string, threadId: string) => void | Promise<unknown>;
   clearDraftForThread: (threadId: string) => void;
   removeImagesForThread: (threadId: string) => void;
   refreshThread: (workspaceId: string, threadId: string) => void | Promise<unknown>;
@@ -48,6 +51,7 @@ export function useSidebarLayoutActions({
   workspacesById,
   updateWorkspaceSettings,
   removeThread,
+  deleteThread,
   clearDraftForThread,
   removeImagesForThread,
   refreshThread,
@@ -57,6 +61,7 @@ export function useSidebarLayoutActions({
   loadOlderThreadsForWorkspace,
   listThreadsForWorkspace,
 }: UseSidebarLayoutActionsOptions) {
+  const { t } = useTranslation(["app", "common"]);
   const onOpenSettings = useCallback((section?: SettingsSection) => {
     openSettings(section);
   }, [openSettings]);
@@ -124,13 +129,38 @@ export function useSidebarLayoutActions({
     ],
   );
 
-  const onDeleteThread = useCallback(
+  const onArchiveThread = useCallback(
     (workspaceId: string, threadId: string) => {
       removeThread(workspaceId, threadId);
       clearDraftForThread(threadId);
       removeImagesForThread(threadId);
     },
     [clearDraftForThread, removeImagesForThread, removeThread],
+  );
+
+  const onDeleteThread = useCallback(
+    async (workspaceId: string, threadId: string) => {
+      const confirmed = await ask(
+        t("menus.thread.deleteConfirmMessage", { ns: "app" }),
+        {
+          title: t("menus.thread.deleteConfirmTitle", { ns: "app" }),
+          kind: "warning",
+          okLabel: t("common:actions.delete"),
+          cancelLabel: t("common:actions.cancel"),
+        },
+      );
+      if (!confirmed) {
+        return;
+      }
+      try {
+        await deleteThread(workspaceId, threadId);
+      } catch {
+        return;
+      }
+      clearDraftForThread(threadId);
+      removeImagesForThread(threadId);
+    },
+    [clearDraftForThread, deleteThread, removeImagesForThread, t],
   );
 
   const onSyncThread = useCallback(
@@ -190,6 +220,7 @@ export function useSidebarLayoutActions({
     onConnectWorkspace,
     onToggleWorkspaceCollapse,
     onSelectThread,
+    onArchiveThread,
     onDeleteThread,
     onSyncThread,
     onRenameThread,

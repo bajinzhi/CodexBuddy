@@ -192,6 +192,13 @@ These are v2 request methods CodexBuddy currently sends to Codex app-server:
 - `thread/fork`
 - `thread/list`
 - `thread/archive`
+- `thread/unarchive`
+- `thread/delete`
+- `thread/loaded/list`
+- `thread/unsubscribe`
+- `thread/backgroundTerminals/clean`
+- `thread/backgroundTerminals/list`
+- `thread/backgroundTerminals/terminate`
 - `thread/compact/start`
 - `thread/settings/update`
 - `thread/goal/clear`
@@ -216,10 +223,19 @@ These are v2 request methods CodexBuddy currently sends to Codex app-server:
 Notes:
 
 - `turn/start` now forwards the optional `serviceTier` override (`"fast"` for `/fast`, `null` for default/off) alongside `model`, `effort`, and `collaborationMode`.
-- `thread/list` forwards the official optional `searchTerm` parameter
-  (`search_term` in upstream Rust) and supports `created_at`, `updated_at`, and
-  `recency_at` sort keys. CodexBuddy does not send the separate experimental
-  `thread/search` request.
+- `thread/list` forwards official optional `searchTerm` and `archived`
+  parameters and supports `created_at`, `updated_at`, and `recency_at` sort
+  keys. CodexBuddy does not send the separate experimental `thread/search`
+  request.
+- `thread/archive`, `thread/unarchive`, and `thread/delete` are surfaced for
+  active and archived thread management. Upstream handles spawned-descendant
+  archive/delete semantics; CodexBuddy does not issue client-side cascade
+  archive requests.
+- `thread/loaded/list` and `thread/unsubscribe` are surfaced for runtime
+  resource management in Settings > Codex.
+- `thread/backgroundTerminals/*` is exposed in the terminal area as an
+  experimental API; unsupported upstream versions/configurations should degrade
+  to a user-visible unsupported/error state.
 - `/goal` uses `thread/goal/get`, `thread/goal/set`, and `thread/goal/clear` when Codex supports them. Older Codex versions fall back to a local active-goal prefix on future `turn/start` messages.
 - `thread/settings/update` is exposed as a low-level compatibility wrapper only;
   there is no dedicated CodexBuddy settings UI for it yet.
@@ -295,14 +311,9 @@ Compared against Codex v2 request methods, CodexBuddy currently does not send:
 - `skills/config/write`
 - `skills/extraRoots/set`
 - `thread/approveGuardianDeniedAction`
-- `thread/backgroundTerminals/clean`
-- `thread/backgroundTerminals/list`
-- `thread/backgroundTerminals/terminate`
 - `thread/decrement_elicitation`
-- `thread/delete`
 - `thread/increment_elicitation`
 - `thread/inject_items`
-- `thread/loaded/list`
 - `thread/memoryMode/set`
 - `thread/metadata/update`
 - `thread/realtime/appendAudio`
@@ -316,8 +327,6 @@ Compared against Codex v2 request methods, CodexBuddy currently does not send:
 - `thread/shellCommand`
 - `thread/turns/items/list`
 - `thread/turns/list`
-- `thread/unarchive`
-- `thread/unsubscribe`
 - `windowsSandbox/readiness`
 - `windowsSandbox/setupStart`
 

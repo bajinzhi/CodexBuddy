@@ -25,7 +25,7 @@ import { useThreadUserInput } from "./useThreadUserInput";
 import { useThreadTitleAutogeneration } from "./useThreadTitleAutogeneration";
 import { useDetachedReviewTracking } from "./useDetachedReviewTracking";
 import {
-  archiveThread as archiveThreadService,
+  deleteThread as deleteThreadService,
   readThread as readThreadService,
   setThreadName as setThreadNameService,
 } from "@services/tauri";
@@ -38,7 +38,6 @@ import {
   buildThreadSummaryFromThread,
   extractThreadFromResponse,
 } from "@threads/utils/threadSummary";
-import { getSubagentDescendantThreadIds } from "@threads/utils/subagentTree";
 
 type UseThreadsOptions = {
   activeWorkspace: WorkspaceInfo | null;
@@ -71,8 +70,6 @@ type UseThreadsOptions = {
 function buildWorkspaceThreadKey(workspaceId: string, threadId: string) {
   return `${workspaceId}:${threadId}`;
 }
-
-const CASCADE_ARCHIVE_SKIP_TTL_MS = 120_000;
 
 export function useThreads({
   activeWorkspace,
@@ -118,14 +115,11 @@ export function useThreads({
   const threadsByWorkspaceRef = useRef(state.threadsByWorkspace);
   const activeTurnIdByThreadRef = useRef(state.activeTurnIdByThread);
   const subagentThreadByWorkspaceThreadRef = useRef<Record<string, true>>({});
-  const threadParentByIdRef = useRef(state.threadParentById);
-  const cascadeArchiveSkipRef = useRef<Record<string, number>>({});
   const subagentHydrationInFlightRef = useRef<Record<string, true>>({});
   planByThreadRef.current = state.planByThread;
   itemsByThreadRef.current = state.itemsByThread;
   threadsByWorkspaceRef.current = state.threadsByWorkspace;
   activeTurnIdByThreadRef.current = state.activeTurnIdByThread;
-  threadParentByIdRef.current = state.threadParentById;
   const rateLimitsByWorkspaceRef = useRef(state.rateLimitsByWorkspace);
   rateLimitsByWorkspaceRef.current = state.rateLimitsByWorkspace;
   const { approvalAllowlistRef, handleApprovalDecision, handleApprovalRemember } =
@@ -463,70 +457,8 @@ export function useThreads({
       }
       threadHandlers.onThreadArchived?.(workspaceId, threadId);
       unpinThread(workspaceId, threadId);
-
-      const skipKey = buildWorkspaceThreadKey(workspaceId, threadId);
-      const skipAt = cascadeArchiveSkipRef.current[skipKey] ?? null;
-      if (skipAt !== null) {
-        delete cascadeArchiveSkipRef.current[skipKey];
-        if (
-          skipAt > 0 &&
-          Date.now() - skipAt >= 0 &&
-          Date.now() - skipAt < CASCADE_ARCHIVE_SKIP_TTL_MS
-        ) {
-          return;
-        }
-      }
-
-      const descendants = getSubagentDescendantThreadIds({
-        rootThreadId: threadId,
-        threadParentById: threadParentByIdRef.current,
-        isSubagentThread: (candidateId) =>
-          isSubagentThread(workspaceId, candidateId),
-      });
-      if (descendants.length === 0) {
-        return;
-      }
-
-      onDebug?.({
-        id: `${Date.now()}-client-thread-archive-cascade`,
-        timestamp: Date.now(),
-        source: "client",
-        label: "thread/archive cascade",
-        payload: { workspaceId, rootThreadId: threadId, descendantCount: descendants.length },
-      });
-
-      const now = Date.now();
-      Object.entries(cascadeArchiveSkipRef.current).forEach(([key, timestamp]) => {
-        if (now - timestamp >= CASCADE_ARCHIVE_SKIP_TTL_MS) {
-          delete cascadeArchiveSkipRef.current[key];
-        }
-      });
-
-      void (async () => {
-        for (const descendantId of descendants) {
-          const descendantKey = buildWorkspaceThreadKey(workspaceId, descendantId);
-          cascadeArchiveSkipRef.current[descendantKey] = Date.now();
-          try {
-            await archiveThreadService(workspaceId, descendantId);
-          } catch (error) {
-            delete cascadeArchiveSkipRef.current[descendantKey];
-            onDebug?.({
-              id: `${Date.now()}-client-thread-archive-cascade-error`,
-              timestamp: Date.now(),
-              source: "error",
-              label: "thread/archive cascade error",
-              payload: {
-                workspaceId,
-                rootThreadId: threadId,
-                threadId: descendantId,
-                error: error instanceof Error ? error.message : String(error),
-              },
-            });
-          }
-        }
-      })();
     },
-    [isSubagentThread, onDebug, threadHandlers, unpinThread],
+    [threadHandlers, unpinThread],
   );
 
   const handleThreadDeleted = useCallback(
@@ -873,6 +805,26 @@ export function useThreads({
     [archiveThread, unpinThread],
   );
 
+  const deleteThread = useCallback(
+    async (workspaceId: string, threadId: string) => {
+      try {
+        await deleteThreadService(workspaceId, threadId);
+        unpinThread(workspaceId, threadId);
+        dispatch({ type: "removeThread", workspaceId, threadId });
+      } catch (error) {
+        onDebug?.({
+          id: `${Date.now()}-client-thread-delete-error`,
+          timestamp: Date.now(),
+          source: "error",
+          label: "thread/delete error",
+          payload: error instanceof Error ? error.message : String(error),
+        });
+        throw error;
+      }
+    },
+    [onDebug, unpinThread],
+  );
+
   return {
     activeThreadId,
     setActiveThreadId,
@@ -900,6 +852,7 @@ export function useThreads({
     refreshAccountInfo,
     interruptTurn,
     removeThread,
+    deleteThread,
     pinThread,
     unpinThread,
     isThreadPinned,

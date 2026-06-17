@@ -1,4 +1,4 @@
-import type { MouseEvent as ReactMouseEvent, ReactNode } from "react";
+import { useState, type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import type { TerminalTab } from "../hooks/useTerminalTabs";
 
@@ -11,6 +11,7 @@ type TerminalDockProps = {
   onCloseTerminal: (terminalId: string) => void;
   onResizeStart?: (event: ReactMouseEvent) => void;
   terminalNode: ReactNode;
+  backgroundTerminalsNode?: ReactNode;
 };
 
 export function TerminalDock({
@@ -22,8 +23,10 @@ export function TerminalDock({
   onCloseTerminal,
   onResizeStart,
   terminalNode,
+  backgroundTerminalsNode,
 }: TerminalDockProps) {
   const { t } = useTranslation("app");
+  const [backgroundOpen, setBackgroundOpen] = useState(false);
   if (!isOpen) {
     return null;
   }
@@ -76,7 +79,18 @@ export function TerminalDock({
             +
           </button>
         </div>
+        {backgroundTerminalsNode && (
+          <button
+            type="button"
+            className={`terminal-background-toggle${backgroundOpen ? " active" : ""}`}
+            onClick={() => setBackgroundOpen((open) => !open)}
+            aria-expanded={backgroundOpen}
+          >
+            {t("terminal.background.shortTitle", { ns: "app" })}
+          </button>
+        )}
       </div>
+      {backgroundOpen && backgroundTerminalsNode}
       <div className="terminal-body">{terminalNode}</div>
     </section>
   );

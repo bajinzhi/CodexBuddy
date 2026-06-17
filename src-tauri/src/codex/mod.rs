@@ -260,6 +260,7 @@ pub(crate) async fn list_threads(
     limit: Option<u32>,
     sort_key: Option<String>,
     search_term: Option<String>,
+    archived: Option<bool>,
     state: State<'_, AppState>,
     app: AppHandle,
 ) -> Result<Value, String> {
@@ -273,7 +274,8 @@ pub(crate) async fn list_threads(
                 "cursor": cursor,
                 "limit": limit,
                 "sortKey": sort_key,
-                "searchTerm": search_term
+                "searchTerm": search_term,
+                "archived": archived
             }),
         )
         .await;
@@ -286,6 +288,7 @@ pub(crate) async fn list_threads(
         limit,
         sort_key,
         search_term,
+        archived,
     )
     .await
 }
@@ -351,6 +354,173 @@ pub(crate) async fn archive_thread(
     }
 
     codex_core::archive_thread_core(&state.sessions, workspace_id, thread_id).await
+}
+
+#[tauri::command]
+pub(crate) async fn unarchive_thread(
+    workspace_id: String,
+    thread_id: String,
+    state: State<'_, AppState>,
+    app: AppHandle,
+) -> Result<Value, String> {
+    if remote_backend::is_remote_mode(&*state).await {
+        return remote_backend::call_remote(
+            &*state,
+            app,
+            "unarchive_thread",
+            json!({ "workspaceId": workspace_id, "threadId": thread_id }),
+        )
+        .await;
+    }
+
+    codex_core::unarchive_thread_core(&state.sessions, workspace_id, thread_id).await
+}
+
+#[tauri::command]
+pub(crate) async fn delete_thread(
+    workspace_id: String,
+    thread_id: String,
+    state: State<'_, AppState>,
+    app: AppHandle,
+) -> Result<Value, String> {
+    if remote_backend::is_remote_mode(&*state).await {
+        return remote_backend::call_remote(
+            &*state,
+            app,
+            "delete_thread",
+            json!({ "workspaceId": workspace_id, "threadId": thread_id }),
+        )
+        .await;
+    }
+
+    codex_core::delete_thread_core(&state.sessions, workspace_id, thread_id).await
+}
+
+#[tauri::command]
+pub(crate) async fn list_loaded_threads(
+    workspace_id: String,
+    cursor: Option<String>,
+    limit: Option<u32>,
+    state: State<'_, AppState>,
+    app: AppHandle,
+) -> Result<Value, String> {
+    if remote_backend::is_remote_mode(&*state).await {
+        return remote_backend::call_remote(
+            &*state,
+            app,
+            "list_loaded_threads",
+            json!({ "workspaceId": workspace_id, "cursor": cursor, "limit": limit }),
+        )
+        .await;
+    }
+
+    codex_core::list_loaded_threads_core(&state.sessions, workspace_id, cursor, limit).await
+}
+
+#[tauri::command]
+pub(crate) async fn unsubscribe_thread(
+    workspace_id: String,
+    thread_id: String,
+    state: State<'_, AppState>,
+    app: AppHandle,
+) -> Result<Value, String> {
+    if remote_backend::is_remote_mode(&*state).await {
+        return remote_backend::call_remote(
+            &*state,
+            app,
+            "unsubscribe_thread",
+            json!({ "workspaceId": workspace_id, "threadId": thread_id }),
+        )
+        .await;
+    }
+
+    codex_core::unsubscribe_thread_core(&state.sessions, workspace_id, thread_id).await
+}
+
+#[tauri::command]
+pub(crate) async fn list_thread_background_terminals(
+    workspace_id: String,
+    thread_id: String,
+    cursor: Option<String>,
+    limit: Option<u32>,
+    state: State<'_, AppState>,
+    app: AppHandle,
+) -> Result<Value, String> {
+    if remote_backend::is_remote_mode(&*state).await {
+        return remote_backend::call_remote(
+            &*state,
+            app,
+            "list_thread_background_terminals",
+            json!({
+                "workspaceId": workspace_id,
+                "threadId": thread_id,
+                "cursor": cursor,
+                "limit": limit
+            }),
+        )
+        .await;
+    }
+
+    codex_core::list_thread_background_terminals_core(
+        &state.sessions,
+        workspace_id,
+        thread_id,
+        cursor,
+        limit,
+    )
+    .await
+}
+
+#[tauri::command]
+pub(crate) async fn terminate_thread_background_terminal(
+    workspace_id: String,
+    thread_id: String,
+    process_id: String,
+    state: State<'_, AppState>,
+    app: AppHandle,
+) -> Result<Value, String> {
+    if remote_backend::is_remote_mode(&*state).await {
+        return remote_backend::call_remote(
+            &*state,
+            app,
+            "terminate_thread_background_terminal",
+            json!({
+                "workspaceId": workspace_id,
+                "threadId": thread_id,
+                "processId": process_id
+            }),
+        )
+        .await;
+    }
+
+    codex_core::terminate_thread_background_terminal_core(
+        &state.sessions,
+        workspace_id,
+        thread_id,
+        process_id,
+    )
+    .await
+}
+
+#[tauri::command]
+pub(crate) async fn clean_thread_background_terminals(
+    workspace_id: String,
+    thread_id: String,
+    state: State<'_, AppState>,
+    app: AppHandle,
+) -> Result<Value, String> {
+    if remote_backend::is_remote_mode(&*state).await {
+        return remote_backend::call_remote(
+            &*state,
+            app,
+            "clean_thread_background_terminals",
+            json!({ "workspaceId": workspace_id, "threadId": thread_id }),
+        )
+        .await;
+    }
+
+    codex_core::clean_thread_background_terminals_core(&state.sessions, workspace_id, thread_id)
+        .await
 }
 
 #[tauri::command]

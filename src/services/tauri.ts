@@ -1363,6 +1363,7 @@ export async function listThreads(
   limit?: number | null,
   sortKey?: ThreadListSortKey | null,
   searchTerm?: string | null,
+  archived?: boolean | null,
 ) {
   return invoke<any>("list_threads", {
     workspaceId,
@@ -1370,6 +1371,7 @@ export async function listThreads(
     limit,
     sortKey,
     searchTerm,
+    archived,
   });
 }
 
@@ -1431,6 +1433,62 @@ export async function threadLiveUnsubscribe(
 
 export async function archiveThread(workspaceId: string, threadId: string) {
   return invoke<any>("archive_thread", { workspaceId, threadId });
+}
+
+export async function unarchiveThread(workspaceId: string, threadId: string) {
+  return invoke<any>("unarchive_thread", { workspaceId, threadId });
+}
+
+export async function deleteThread(workspaceId: string, threadId: string) {
+  return invoke<any>("delete_thread", { workspaceId, threadId });
+}
+
+export async function listLoadedThreads(
+  workspaceId: string,
+  cursor?: string | null,
+  limit?: number | null,
+) {
+  return invoke<any>("list_loaded_threads", { workspaceId, cursor, limit });
+}
+
+export async function unsubscribeThread(workspaceId: string, threadId: string) {
+  return invoke<any>("unsubscribe_thread", { workspaceId, threadId });
+}
+
+export async function listThreadBackgroundTerminals(
+  workspaceId: string,
+  threadId: string,
+  cursor?: string | null,
+  limit?: number | null,
+) {
+  return invoke<any>("list_thread_background_terminals", {
+    workspaceId,
+    threadId,
+    cursor,
+    limit,
+  });
+}
+
+export async function terminateThreadBackgroundTerminal(
+  workspaceId: string,
+  threadId: string,
+  processId: string,
+) {
+  return invoke<any>("terminate_thread_background_terminal", {
+    workspaceId,
+    threadId,
+    processId,
+  });
+}
+
+export async function cleanThreadBackgroundTerminals(
+  workspaceId: string,
+  threadId: string,
+) {
+  return invoke<any>("clean_thread_background_terminals", {
+    workspaceId,
+    threadId,
+  });
 }
 
 export async function setThreadName(

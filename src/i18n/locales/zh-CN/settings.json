@@ -755,6 +755,10 @@
       "empty": "暂无已归档线程。",
       "unarchive": "恢复",
       "loadMore": "加载更多",
+      "untitledThread": "未命名线程",
+      "lastActiveLabel": "最近活动",
+      "createdLabel": "创建时间",
+      "idLabel": "ID",
       "deleteConfirmTitle": "删除已归档线程",
       "deleteConfirmMessage": "确定要永久删除该归档线程及其派生线程吗？此操作无法撤销。"
     },

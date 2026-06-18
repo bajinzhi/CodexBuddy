@@ -16,6 +16,7 @@ import { buildThreadSummaryFromThread } from "@threads/utils/threadSummary";
 type ArchivedThreadEntry = {
   workspace: WorkspaceInfo;
   thread: ThreadSummary;
+  hasReadableTitle: boolean;
 };
 
 type ArchivedThreadPage = {
@@ -103,6 +104,61 @@ function getThreadSortTimestamp(thread: ThreadSummary) {
   return thread.recencyAt ?? thread.updatedAt ?? 0;
 }
 
+function getShortThreadId(threadId: string) {
+  return threadId.slice(0, 8);
+}
+
+function getCompactThreadId(threadId: string) {
+  if (threadId.length <= 18) {
+    return threadId;
+  }
+  return `${threadId.slice(0, 8)}...${threadId.slice(-5)}`;
+}
+
+function isThreadIdTitle(title: string, threadId: string) {
+  const normalizedTitle = title.trim().toLowerCase();
+  const normalizedThreadId = threadId.trim().toLowerCase();
+  return normalizedTitle === normalizedThreadId || normalizedTitle.includes(normalizedThreadId);
+}
+
+function getArchivedThreadTitle(
+  thread: ThreadSummary,
+  hasReadableTitle: boolean,
+  untitledLabel: string,
+) {
+  const title = thread.name.trim();
+  if (!hasReadableTitle || !title || isThreadIdTitle(title, thread.id)) {
+    return `${untitledLabel} · ${getShortThreadId(thread.id)}`;
+  }
+  return title;
+}
+
+function getWorkspaceContextLabel(workspace: WorkspaceInfo) {
+  const path = workspace.path.trim();
+  return path ? `${workspace.name} · ${path}` : workspace.name;
+}
+
+function getModelContextLabel(thread: ThreadSummary) {
+  const modelId = thread.modelId?.trim();
+  const effort = thread.effort?.trim();
+  if (modelId && effort) {
+    return `${modelId} · ${effort}`;
+  }
+  return modelId || effort || null;
+}
+
+function getSubagentContextLabel(thread: ThreadSummary) {
+  if (!thread.isSubagent) {
+    return null;
+  }
+  const nickname = thread.subagentNickname?.trim();
+  const role = thread.subagentRole?.trim();
+  if (nickname && role) {
+    return `${nickname} · ${role}`;
+  }
+  return nickname || role || null;
+}
+
 function sortArchivedEntries(entries: ArchivedThreadEntry[]) {
   return [...entries].sort(
     (a, b) => getThreadSortTimestamp(b.thread) - getThreadSortTimestamp(a.thread),
@@ -135,12 +191,17 @@ function readArchivedThreadPage(
         Boolean(thread),
       )
       .map((thread, index) => {
+        const threadId = typeof thread.id === "string" ? thread.id : "";
+        const preview = typeof thread.preview === "string" ? thread.preview.trim() : "";
+        const hasReadableTitle = Boolean(
+          preview && (!threadId || !isThreadIdTitle(preview, threadId)),
+        );
         const summary = buildThreadSummaryFromThread({
           workspaceId: workspace.id,
           thread,
           fallbackIndex: index,
         });
-        return summary ? { workspace, thread: summary } : null;
+        return summary ? { workspace, thread: summary, hasReadableTitle } : null;
       })
       .filter((entry): entry is ArchivedThreadEntry => Boolean(entry)),
     nextCursor: getThreadListNextCursor(result),
@@ -388,16 +449,46 @@ export function ArchivedThreadsSection() {
         ) : null}
         {entries.map((entry) => {
           const key = `${entry.workspace.id}:${entry.thread.id}`;
-          const time = formatThreadTime(entry.thread.recencyAt ?? entry.thread.updatedAt);
+          const title = getArchivedThreadTitle(
+            entry.thread,
+            entry.hasReadableTitle,
+            t("codex.archived.untitledThread"),
+          );
+          const workspaceContext = getWorkspaceContextLabel(entry.workspace);
+          const activeTime = formatThreadTime(
+            entry.thread.recencyAt ?? entry.thread.updatedAt,
+          );
+          const createdTime = entry.thread.createdAt
+            ? formatThreadTime(entry.thread.createdAt)
+            : null;
+          const detailItems = [
+            activeTime ? `${t("codex.archived.lastActiveLabel")}: ${activeTime}` : null,
+            createdTime ? `${t("codex.archived.createdLabel")}: ${createdTime}` : null,
+            getModelContextLabel(entry.thread),
+            getSubagentContextLabel(entry.thread),
+          ].filter((item): item is string => Boolean(item));
           return (
             <div className="settings-thread-row" key={key}>
               <div className="settings-thread-main">
-                <div className="settings-thread-title">{entry.thread.name}</div>
-                <div className="settings-thread-meta">
-                  {entry.workspace.name}
-                  {time ? ` · ${time}` : ""}
+                <div
+                  className="settings-thread-title"
+                  title={entry.hasReadableTitle ? entry.thread.name : entry.thread.id}
+                >
+                  {title}
                 </div>
-                <div className="settings-thread-id">{entry.thread.id}</div>
+                <div className="settings-thread-meta" title={entry.workspace.path}>
+                  {workspaceContext}
+                </div>
+                {detailItems.length > 0 ? (
+                  <div className="settings-thread-detail">
+                    {detailItems.map((item) => (
+                      <span key={item}>{item}</span>
+                    ))}
+                  </div>
+                ) : null}
+                <div className="settings-thread-id" title={entry.thread.id}>
+                  {t("codex.archived.idLabel")}: {getCompactThreadId(entry.thread.id)}
+                </div>
               </div>
               <div className="settings-thread-actions">
                 <button

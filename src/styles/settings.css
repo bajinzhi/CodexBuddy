@@ -984,6 +984,7 @@
 
 .settings-thread-main {
   min-width: 0;
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -999,10 +1000,32 @@
 }
 
 .settings-thread-meta,
+.settings-thread-detail,
 .settings-thread-id,
 .settings-empty-state {
   color: var(--text-muted);
   font-size: 11px;
+}
+
+.settings-thread-detail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+}
+
+.settings-thread-meta {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings-thread-detail span {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .settings-thread-id {

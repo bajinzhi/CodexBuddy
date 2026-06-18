@@ -3,6 +3,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/re
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { WorkspaceInfo } from "@/types";
 import {
+  deleteThread,
   listLoadedThreads,
   listThreads,
   listWorkspaces,
@@ -30,6 +31,7 @@ const listWorkspacesMock = vi.mocked(listWorkspaces);
 const listThreadsMock = vi.mocked(listThreads);
 const listLoadedThreadsMock = vi.mocked(listLoadedThreads);
 const unarchiveThreadMock = vi.mocked(unarchiveThread);
+const deleteThreadMock = vi.mocked(deleteThread);
 
 function workspace(
   id: string,
@@ -49,6 +51,7 @@ describe("Codex thread management settings sections", () => {
   afterEach(() => {
     cleanup();
     vi.clearAllMocks();
+    vi.unstubAllGlobals();
   });
 
   it("loads archived threads from connected workspaces while ignoring disconnected and failed workspaces", async () => {
@@ -178,6 +181,48 @@ describe("Codex thread management settings sections", () => {
       true,
     );
     expect(screen.queryByRole("button", { name: "Load more" })).toBeNull();
+  });
+
+  it("shows archived thread context when the server only returns ids and metadata", async () => {
+    const writeText = vi.fn();
+    vi.stubGlobal("navigator", {
+      clipboard: { writeText },
+    });
+    listWorkspacesMock.mockResolvedValueOnce([
+      workspace("ws-good", "Good workspace", true),
+    ]);
+    listThreadsMock.mockResolvedValueOnce({
+      result: {
+        data: [
+          {
+            id: "019ecf23-4388-7352-9661-7e950b7fc15a",
+            createdAt: 1_699_900_000,
+            updatedAt: 1_700_000_000,
+            recencyAt: 1_700_000_500,
+            modelId: "gpt-5-codex",
+            effort: "high",
+            source: "subagent",
+            agentNickname: "Reviewer",
+            agentRole: "reviewer",
+          },
+        ],
+      },
+    });
+
+    render(<ArchivedThreadsSection />);
+
+    expect(await screen.findByText("Untitled thread · 019ecf23")).toBeTruthy();
+    expect(screen.getByText(/Good workspace · \/repo\/ws-good/i)).toBeTruthy();
+    expect(screen.getByText(/Last active:/i)).toBeTruthy();
+    expect(screen.getByText(/Created:/i)).toBeTruthy();
+    expect(screen.getByText("gpt-5-codex · high")).toBeTruthy();
+    expect(screen.getByText("Reviewer · reviewer")).toBeTruthy();
+    expect(screen.getByText("ID: 019ecf23...fc15a")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Copy" }));
+
+    expect(writeText).toHaveBeenCalledWith("019ecf23-4388-7352-9661-7e950b7fc15a");
+    expect(deleteThreadMock).not.toHaveBeenCalled();
   });
 
   it("loads runtime threads from connected workspaces only", async () => {

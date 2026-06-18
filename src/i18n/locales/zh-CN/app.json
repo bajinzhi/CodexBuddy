@@ -472,7 +472,8 @@
       "pin": "置顶",
       "unpin": "取消置顶",
       "deleteConfirmTitle": "删除线程",
-      "deleteConfirmMessage": "确定要永久删除该线程及其派生线程吗？此操作无法撤销。"
+      "deleteConfirmMessage": "确定要永久删除该线程及其派生线程吗？此操作无法撤销。",
+      "deleteFailedTitle": "无法删除线程"
     },
     "workspace": {
       "reloadThreads": "重新加载线程"

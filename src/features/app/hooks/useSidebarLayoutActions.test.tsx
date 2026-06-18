@@ -4,10 +4,15 @@ import { ask } from "@tauri-apps/plugin-dialog";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { WorkspaceInfo } from "../../../types";
+import { pushErrorToast } from "../../../services/toasts";
 import { useSidebarLayoutActions } from "./useSidebarLayoutActions";
 
 vi.mock("@tauri-apps/plugin-dialog", () => ({
   ask: vi.fn(),
+}));
+
+vi.mock("../../../services/toasts", () => ({
+  pushErrorToast: vi.fn(),
 }));
 
 const workspace: WorkspaceInfo = {
@@ -325,5 +330,10 @@ describe("useSidebarLayoutActions", () => {
     expect(deleteThread).toHaveBeenCalledWith("ws-1", "thread-1");
     expect(clearDraftForThread).not.toHaveBeenCalled();
     expect(removeImagesForThread).not.toHaveBeenCalled();
+    expect(pushErrorToast).toHaveBeenCalledWith(
+      expect.objectContaining({
+        message: expect.stringContaining("delete failed"),
+      }),
+    );
   });
 });

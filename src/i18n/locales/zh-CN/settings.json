@@ -754,6 +754,7 @@
       "subtitle": "查看所有已连接工作区中的归档 Codex 线程。继续对话前需要先恢复归档。",
       "empty": "暂无已归档线程。",
       "unarchive": "恢复",
+      "loadMore": "加载更多",
       "deleteConfirmTitle": "删除已归档线程",
       "deleteConfirmMessage": "确定要永久删除该归档线程及其派生线程吗？此操作无法撤销。"
     },

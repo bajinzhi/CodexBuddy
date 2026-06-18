@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { ask } from "@tauri-apps/plugin-dialog";
 import { useTranslation } from "react-i18next";
 
+import { pushErrorToast } from "../../../services/toasts";
 import type { WorkspaceInfo, WorkspaceSettings } from "../../../types";
 import type { SettingsSection } from "./useSettingsModalState";
 
@@ -35,6 +36,10 @@ type UseSidebarLayoutActionsOptions = {
   loadOlderThreadsForWorkspace: (workspace: WorkspaceInfo) => void | Promise<unknown>;
   listThreadsForWorkspace: (workspace: WorkspaceInfo) => void | Promise<unknown>;
 };
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : String(error);
+}
 
 export function useSidebarLayoutActions({
   openSettings,
@@ -154,7 +159,11 @@ export function useSidebarLayoutActions({
       }
       try {
         await deleteThread(workspaceId, threadId);
-      } catch {
+      } catch (error) {
+        pushErrorToast({
+          title: t("menus.thread.deleteFailedTitle", { ns: "app" }),
+          message: getErrorMessage(error),
+        });
         return;
       }
       clearDraftForThread(threadId);

@@ -133,6 +133,53 @@ describe("Codex thread management settings sections", () => {
     expect(screen.getByText("Archived review thread")).toBeTruthy();
   });
 
+  it("loads additional archived thread pages when the server returns a cursor", async () => {
+    listWorkspacesMock.mockResolvedValueOnce([
+      workspace("ws-good", "Good workspace", true),
+    ]);
+    listThreadsMock
+      .mockResolvedValueOnce({
+        result: {
+          data: [
+            {
+              id: "thread-1",
+              preview: "Archived first page",
+              updatedAt: 1_700_000_000,
+            },
+          ],
+          nextCursor: "cursor-2",
+        },
+      })
+      .mockResolvedValueOnce({
+        result: {
+          data: [
+            {
+              id: "thread-2",
+              preview: "Archived second page",
+              updatedAt: 1_699_999_000,
+            },
+          ],
+          nextCursor: null,
+        },
+      });
+
+    render(<ArchivedThreadsSection />);
+
+    expect(await screen.findByText("Archived first page")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Load more" }));
+
+    expect(await screen.findByText("Archived second page")).toBeTruthy();
+    expect(listThreadsMock).toHaveBeenLastCalledWith(
+      "ws-good",
+      "cursor-2",
+      50,
+      "recency_at",
+      null,
+      true,
+    );
+    expect(screen.queryByRole("button", { name: "Load more" })).toBeNull();
+  });
+
   it("loads runtime threads from connected workspaces only", async () => {
     listWorkspacesMock.mockResolvedValueOnce([
       workspace("ws-good", "Good workspace", true),

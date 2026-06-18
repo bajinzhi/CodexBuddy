@@ -10,11 +10,19 @@ import {
   unarchiveThread,
   unsubscribeThread,
 } from "@services/tauri";
+import { getThreadListNextCursor } from "@threads/utils/threadActionHelpers";
 import { buildThreadSummaryFromThread } from "@threads/utils/threadSummary";
 
 type ArchivedThreadEntry = {
   workspace: WorkspaceInfo;
   thread: ThreadSummary;
+};
+
+type ArchivedThreadPage = {
+  workspaceId: string;
+  entries: ArchivedThreadEntry[];
+  nextCursor: string | null;
+  error: string | null;
 };
 
 type LoadedThreadEntry = {
@@ -91,12 +99,70 @@ function getWorkspaceErrorMessage(workspace: WorkspaceInfo, error: unknown) {
   return `${workspace.name}: ${getErrorMessage(error)}`;
 }
 
+function getThreadSortTimestamp(thread: ThreadSummary) {
+  return thread.recencyAt ?? thread.updatedAt ?? 0;
+}
+
+function sortArchivedEntries(entries: ArchivedThreadEntry[]) {
+  return [...entries].sort(
+    (a, b) => getThreadSortTimestamp(b.thread) - getThreadSortTimestamp(a.thread),
+  );
+}
+
+function mergeArchivedEntries(
+  current: ArchivedThreadEntry[],
+  next: ArchivedThreadEntry[],
+) {
+  const byKey = new Map<string, ArchivedThreadEntry>();
+  current.forEach((entry) => {
+    byKey.set(`${entry.workspace.id}:${entry.thread.id}`, entry);
+  });
+  next.forEach((entry) => {
+    byKey.set(`${entry.workspace.id}:${entry.thread.id}`, entry);
+  });
+  return sortArchivedEntries([...byKey.values()]);
+}
+
+function readArchivedThreadPage(
+  workspace: WorkspaceInfo,
+  response: unknown,
+): Pick<ArchivedThreadPage, "entries" | "nextCursor"> {
+  const result = readResultObject(response);
+  return {
+    entries: readDataArray(response)
+      .map(readThreadRecord)
+      .filter((thread): thread is Record<string, unknown> =>
+        Boolean(thread),
+      )
+      .map((thread, index) => {
+        const summary = buildThreadSummaryFromThread({
+          workspaceId: workspace.id,
+          thread,
+          fallbackIndex: index,
+        });
+        return summary ? { workspace, thread: summary } : null;
+      })
+      .filter((entry): entry is ArchivedThreadEntry => Boolean(entry)),
+    nextCursor: getThreadListNextCursor(result),
+  };
+}
+
 export function ArchivedThreadsSection() {
   const { t } = useTranslation(["settings", "common"]);
   const [entries, setEntries] = useState<ArchivedThreadEntry[]>([]);
+  const [archivedWorkspaces, setArchivedWorkspaces] = useState<WorkspaceInfo[]>([]);
+  const [nextCursorByWorkspace, setNextCursorByWorkspace] = useState<
+    Record<string, string | null>
+  >({});
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busyKey, setBusyKey] = useState<string | null>(null);
+
+  const hasMoreArchivedThreads = useMemo(
+    () => Object.values(nextCursorByWorkspace).some((cursor) => Boolean(cursor)),
+    [nextCursorByWorkspace],
+  );
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -104,6 +170,7 @@ export function ArchivedThreadsSection() {
     try {
       const workspaces = await listWorkspaces();
       const connectedWorkspaces = workspaces.filter((workspace) => workspace.connected);
+      setArchivedWorkspaces(connectedWorkspaces);
       const pages = await Promise.all(
         connectedWorkspaces.map(async (workspace) => {
           try {
@@ -115,26 +182,18 @@ export function ArchivedThreadsSection() {
               null,
               true,
             );
+            const page = readArchivedThreadPage(workspace, response);
             return {
-              entries: readDataArray(response)
-                .map(readThreadRecord)
-                .filter((thread): thread is Record<string, unknown> =>
-                  Boolean(thread),
-                )
-                .map((thread, index) => {
-                  const summary = buildThreadSummaryFromThread({
-                    workspaceId: workspace.id,
-                    thread,
-                    fallbackIndex: index,
-                  });
-                  return summary ? { workspace, thread: summary } : null;
-                })
-                .filter((entry): entry is ArchivedThreadEntry => Boolean(entry)),
+              workspaceId: workspace.id,
+              entries: page.entries,
+              nextCursor: page.nextCursor,
               error: null,
             };
           } catch (workspaceError) {
             return {
+              workspaceId: workspace.id,
               entries: [] as ArchivedThreadEntry[],
+              nextCursor: null,
               error: getWorkspaceErrorMessage(workspace, workspaceError),
             };
           }
@@ -144,11 +203,13 @@ export function ArchivedThreadsSection() {
         .map((page) => page.error)
         .filter((message): message is string => Boolean(message));
       setError(errors.length > 0 ? errors.join("\n") : null);
-      setEntries(
-        pages
-          .flatMap((page) => page.entries)
-          .sort((a, b) => (b.thread.recencyAt ?? b.thread.updatedAt) - (a.thread.recencyAt ?? a.thread.updatedAt)),
+      setNextCursorByWorkspace(
+        pages.reduce<Record<string, string | null>>((acc, page) => {
+          acc[page.workspaceId] = page.nextCursor;
+          return acc;
+        }, {}),
       );
+      setEntries(sortArchivedEntries(pages.flatMap((page) => page.entries)));
     } catch (loadError) {
       setError(getErrorMessage(loadError));
     } finally {
@@ -159,6 +220,82 @@ export function ArchivedThreadsSection() {
   useEffect(() => {
     void refresh();
   }, [refresh]);
+
+  const handleLoadMore = useCallback(async () => {
+    const cursors = nextCursorByWorkspace;
+    const workspaceIdsWithCursor = new Set(
+      Object.entries(cursors)
+        .filter(([, cursor]) => Boolean(cursor))
+        .map(([workspaceId]) => workspaceId),
+    );
+    if (workspaceIdsWithCursor.size === 0) {
+      return;
+    }
+    setLoadingMore(true);
+    setError(null);
+    try {
+      const pages = await Promise.all(
+        archivedWorkspaces
+          .filter(
+            (workspace) =>
+              workspace.connected && workspaceIdsWithCursor.has(workspace.id),
+          )
+          .map(async (workspace): Promise<ArchivedThreadPage> => {
+            const cursor = cursors[workspace.id] ?? null;
+            if (!cursor) {
+              return {
+                workspaceId: workspace.id,
+                entries: [],
+                nextCursor: null,
+                error: null,
+              };
+            }
+            try {
+              const response = await listThreads(
+                workspace.id,
+                cursor,
+                50,
+                "recency_at",
+                null,
+                true,
+              );
+              const page = readArchivedThreadPage(workspace, response);
+              return {
+                workspaceId: workspace.id,
+                entries: page.entries,
+                nextCursor: page.nextCursor,
+                error: null,
+              };
+            } catch (workspaceError) {
+              return {
+                workspaceId: workspace.id,
+                entries: [],
+                nextCursor: cursor,
+                error: getWorkspaceErrorMessage(workspace, workspaceError),
+              };
+            }
+          }),
+      );
+      const errors = pages
+        .map((page) => page.error)
+        .filter((message): message is string => Boolean(message));
+      setError(errors.length > 0 ? errors.join("\n") : null);
+      setNextCursorByWorkspace((current) => {
+        const next = { ...current };
+        pages.forEach((page) => {
+          next[page.workspaceId] = page.nextCursor;
+        });
+        return next;
+      });
+      setEntries((current) =>
+        mergeArchivedEntries(current, pages.flatMap((page) => page.entries)),
+      );
+    } catch (loadError) {
+      setError(getErrorMessage(loadError));
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [archivedWorkspaces, nextCursorByWorkspace]);
 
   const handleUnarchive = useCallback(
     async (entry: ArchivedThreadEntry) => {
@@ -233,6 +370,16 @@ export function ArchivedThreadsSection() {
         >
           {loading ? t("common:status.loading") : t("common:actions.refresh")}
         </button>
+        {hasMoreArchivedThreads ? (
+          <button
+            type="button"
+            className="ghost settings-button-compact"
+            onClick={() => void handleLoadMore()}
+            disabled={loading || loadingMore}
+          >
+            {loadingMore ? t("common:status.loading") : t("codex.archived.loadMore")}
+          </button>
+        ) : null}
       </div>
       {error ? <div className="settings-group-error">{error}</div> : null}
       <div className="settings-thread-list">

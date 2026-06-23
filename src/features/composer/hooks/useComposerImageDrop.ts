@@ -106,6 +106,29 @@ async function readNativeClipboardAttachmentPaths() {
   }
 }
 
+function isValidInlineImageDataUrl(value: string) {
+  if (!value.startsWith("data:image/")) {
+    return false;
+  }
+  const commaIndex = value.indexOf(",");
+  if (commaIndex < 0) {
+    return false;
+  }
+  const metadata = value.slice(0, commaIndex).toLowerCase();
+  if (!metadata.split(";").includes("base64")) {
+    return false;
+  }
+  const payload = value.slice(commaIndex + 1).trim();
+  if (!payload) {
+    return false;
+  }
+  try {
+    return atob(payload).length > 0;
+  } catch {
+    return false;
+  }
+}
+
 function readFilesAsDataUrls(files: File[]) {
   return Promise.all(
     files.map(
@@ -118,7 +141,7 @@ function readFilesAsDataUrls(files: File[]) {
           reader.readAsDataURL(file);
         }),
     ),
-  ).then((items) => items.filter(Boolean));
+  ).then((items) => items.filter(isValidInlineImageDataUrl));
 }
 
 function getDragPosition(position: { x: number; y: number }) {

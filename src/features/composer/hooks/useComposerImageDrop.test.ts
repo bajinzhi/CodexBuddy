@@ -66,7 +66,10 @@ function renderImageDropHook(options: { disabled: boolean; onAttachImages?: (pat
   };
 }
 
-function setMockFileReader() {
+function setMockFileReader(
+  getResult: (file: File) => string | ArrayBuffer | null = (file) =>
+    `data:${file.type};base64,MOCK`,
+) {
   const OriginalFileReader = window.FileReader;
   class MockFileReader {
     result: string | ArrayBuffer | null = null;
@@ -74,7 +77,7 @@ function setMockFileReader() {
     onerror: ((ev: ProgressEvent<FileReader>) => unknown) | null = null;
 
     readAsDataURL(file: File) {
-      this.result = `data:${file.type};base64,MOCK`;
+      this.result = getResult(file);
       this.onload?.({} as ProgressEvent<FileReader>);
     }
   }
@@ -178,6 +181,32 @@ describe("useComposerImageDrop", () => {
     expect(onAttachImages).toHaveBeenCalledWith([
       "data:image/png;base64,MOCK",
     ]);
+
+    hook.unmount();
+    restoreFileReader();
+  });
+
+  it("ignores pasted image data URLs with empty base64 payloads", async () => {
+    const restoreFileReader = setMockFileReader((file) => `data:${file.type};base64,`);
+    const onAttachImages = vi.fn();
+    const hook = renderImageDropHook({ disabled: false, onAttachImages });
+    const preventDefault = vi.fn();
+
+    const file = new File([""], "paste.png", { type: "image/png" });
+    const item = {
+      type: "image/png",
+      getAsFile: () => file,
+    };
+
+    await act(async () => {
+      await hook.result.handlePaste({
+        clipboardData: { items: [item] },
+        preventDefault,
+      } as unknown as React.ClipboardEvent<HTMLTextAreaElement>);
+    });
+
+    expect(preventDefault).toHaveBeenCalled();
+    expect(onAttachImages).not.toHaveBeenCalled();
 
     hook.unmount();
     restoreFileReader();

@@ -759,6 +759,27 @@ fn inline_attachment_value(value: &Value) -> Option<String> {
     .filter(|raw| !raw.is_empty())
 }
 
+fn validate_inline_image_data_url(data_url: &str) -> Result<(), String> {
+    let comma_index = data_url
+        .find(',')
+        .ok_or_else(|| "Invalid image data URL: missing base64 image data".to_string())?;
+    let metadata = data_url[..comma_index].to_ascii_lowercase();
+    if !metadata.split(';').any(|part| part == "base64") {
+        return Err("Invalid image data URL: missing base64 image data".to_string());
+    }
+    let payload = data_url[comma_index + 1..].trim();
+    if payload.is_empty() {
+        return Err("Invalid image data URL: empty image data".to_string());
+    }
+    let decoded = STANDARD
+        .decode(payload)
+        .map_err(|err| format!("Invalid image data URL: Invalid image data base64: {err}"))?;
+    if decoded.is_empty() {
+        return Err("Invalid image data URL: empty image data".to_string());
+    }
+    Ok(())
+}
+
 fn attachment_content_base64(value: &Value) -> Option<String> {
     value
         .as_object()
@@ -855,6 +876,7 @@ fn process_attachment_value(
         return Ok(());
     };
     if raw_value.starts_with("data:image/") {
+        validate_inline_image_data_url(&raw_value)?;
         input.push(json!({ "type": "image", "url": raw_value }));
         return Ok(());
     }
@@ -924,6 +946,9 @@ pub(crate) fn prepare_attachments_for_remote(
             || raw_value.starts_with("http://")
             || raw_value.starts_with("https://")
         {
+            if raw_value.starts_with("data:image/") {
+                validate_inline_image_data_url(&raw_value)?;
+            }
             prepared.push(value);
             continue;
         }
@@ -1056,6 +1081,9 @@ fn attachment_requires_file_staging(value: &Value) -> Result<bool, String> {
         || raw_value.starts_with("http://")
         || raw_value.starts_with("https://")
     {
+        if raw_value.starts_with("data:image/") {
+            validate_inline_image_data_url(&raw_value)?;
+        }
         return Ok(false);
     }
 
@@ -1679,6 +1707,70 @@ mod tests {
                 json!({ "type": "image", "url": endpoint_url }),
             ]
         );
+    }
+
+    #[test]
+    fn inline_image_data_url_is_accepted_when_base64_payload_is_non_empty() {
+        let data_url = "data:image/png;base64,YWJj";
+        let built = build_turn_input_items(
+            "workspace-1",
+            "thread-1",
+            "".to_string(),
+            Some(vec![json!(data_url)]),
+            None,
+        )
+        .unwrap();
+
+        assert_eq!(
+            built.input,
+            vec![json!({ "type": "image", "url": data_url })]
+        );
+    }
+
+    #[test]
+    fn inline_image_data_url_rejects_empty_base64_payload() {
+        let result = build_turn_input_items(
+            "workspace-1",
+            "thread-1",
+            "".to_string(),
+            Some(vec![json!("data:image/png;base64,")]),
+            None,
+        );
+
+        let err = match result {
+            Ok(_) => panic!("empty inline image data URL should be rejected"),
+            Err(err) => err,
+        };
+        assert!(err.contains("empty image data"));
+    }
+
+    #[test]
+    fn inline_image_data_url_rejects_malformed_base64_payload() {
+        let result = build_turn_input_items(
+            "workspace-1",
+            "thread-1",
+            "".to_string(),
+            Some(vec![json!("data:image/png;base64,not valid base64")]),
+            None,
+        );
+
+        let err = match result {
+            Ok(_) => panic!("malformed inline image data URL should be rejected"),
+            Err(err) => err,
+        };
+        assert!(err.contains("Invalid image data"));
+    }
+
+    #[test]
+    fn prepare_remote_attachments_rejects_empty_inline_image_data_url() {
+        let result =
+            prepare_attachments_for_remote(Some(vec![json!("data:image/png;base64,")]));
+
+        let err = match result {
+            Ok(_) => panic!("empty remote inline image data URL should be rejected"),
+            Err(err) => err,
+        };
+        assert!(err.contains("empty image data"));
     }
 
     #[test]
